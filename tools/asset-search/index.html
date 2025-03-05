@@ -1,0 +1,2764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adobe Marketing Hub Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FA0F00',
+                        secondary: '#D30000',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header with transparent background and black text -->
+        <header class="p-4 shadow-sm text-black border-b border-gray-200">
+            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-3 md:mb-0">
+                    <!-- Adobe Logo SVG -->
+                    <svg class="h-8 w-auto mr-3" viewBox="0 0 64.57 35" aria-label="Adobe Logo">
+                        <path fill="#eb1000" d="M6.27,10.22h4.39l6.2,14.94h-4.64l-3.92-9.92-2.59,6.51h3.08l1.23,3.41H0l6.27-14.94ZM22.03,13.32c.45,0,.94.04,1.43.16v-3.7h3.88v14.72c-.89.4-2.81.89-4.73.89-3.48,0-6.47-1.98-6.47-5.93s2.88-6.13,5.89-6.13ZM22.52,22.19c.36,0,.65-.07.94-.16v-5.42c-.29-.11-.58-.16-.96-.16-1.27,0-2.45.94-2.45,2.92s1.2,2.81,2.47,2.81ZM34.25,13.32c3.23,0,5.98,2.18,5.98,6.02s-2.74,6.02-5.98,6.02-6-2.18-6-6.02,2.72-6.02,6-6.02ZM34.25,22.13c1.11,0,2.14-.89,2.14-2.79s-1.03-2.79-2.14-2.79-2.12.89-2.12,2.79.96,2.79,2.12,2.79ZM41.16,9.78h3.9v3.7c.47-.09.96-.16,1.45-.16,3.03,0,5.84,1.98,5.84,5.86,0,4.1-2.99,6.18-6.53,6.18-1.52,0-3.46-.31-4.66-.87v-14.72ZM45.91,22.17c1.34,0,2.56-.96,2.56-2.94,0-1.85-1.2-2.72-2.5-2.72-.36,0-.65.04-.91.16v5.35c.22.09.51.16.85.16ZM58.97,13.32c2.92,0,5.6,1.87,5.6,5.64,0,.51-.02,1-.09,1.49h-7.27c.4,1.32,1.56,1.94,3.01,1.94,1.18,0,2.27-.29,3.5-.82v2.97c-1.14.58-2.5.82-3.9.82-3.7,0-6.58-2.23-6.58-6.02s2.61-6.02,5.73-6.02ZM60.93,18.02c-.2-1.27-1.05-1.78-1.92-1.78s-1.58.54-1.87,1.78h3.79Z"/>
+                    </svg>
+                    <div>
+                        <h1 class="text-xl font-bold">Marketing Hub Search</h1>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="signInBtn" class="px-3 py-1.5 bg-primary hover:bg-secondary text-white rounded-md flex items-center">
+                        <i class="fas fa-adobe mr-2"></i>
+                        <span>Sign In with Adobe</span>
+                    </button>
+                    <button id="basketBtn" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-md relative">
+                        <i class="fas fa-shopping-basket"></i>
+                        <span id="basketCounter" class="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                    </button>
+                    <button id="settingsBtn" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-md flex items-center">
+                        <i class="fas fa-cog mr-2"></i>
+                        <span class="hidden sm:inline">Settings</span>
+                    </button>
+                    <button id="toggleViewBtn" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-md">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button id="darkModeToggle" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-md">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow container mx-auto p-4">
+            <!-- Configuration Panel (Hidden by default) -->
+            <div id="configPanel" class="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-md shadow-md hidden">
+                <h2 class="text-lg font-semibold mb-4">API Endpoint Configuration</h2>
+                <div>
+                    <label for="apiEndpoint" class="block mb-1 font-medium">API Endpoint</label>
+                    <input type="text" id="apiEndpoint" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" 
+                        placeholder="https://delivery-pXXXX-eYYYY.adobeaemcloud.com/adobe/assets" value="https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets">
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">The URL to your Adobe Experience Manager Assets API</p>
+                </div>
+                
+                <!-- Hidden inputs that aren't shown in UI but are referenced in code -->
+                <input type="hidden" id="apiKey" value="asset_search_service">
+                <input type="hidden" id="limitResults" value="50">
+                <input type="hidden" id="imsToken" placeholder="Bearer token from authentication">
+                
+                <div class="mt-4 flex justify-between">
+                    <div id="authStatusContainer" class="flex items-center">
+                        <div id="authStatus" class="text-sm">
+                            <span class="text-red-500 dark:text-red-400 flex items-center">
+                                <i class="fas fa-circle text-xs mr-2"></i>Not signed in
+                            </span>
+                        </div>
+                    </div>
+                    <button id="saveConfigBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md">
+                        Save
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="mb-6 flex flex-col md:flex-row gap-4">
+                <div class="flex-grow relative">
+                    <input type="text" id="searchInput" class="w-full p-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" placeholder="Search assets...">
+                    <button id="searchBtn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="flex gap-2">
+                    <select id="filterType" class="p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base">
+                        <option value="">All Types</option>
+                        <option value="image/vnd.adobe.photoshop">Photoshop</option>
+                        <option value="image/jpeg">JPEG</option>
+                        <option value="video/mp4">MP4</option>
+                        <option value="application/pdf">PDF</option>
+                        <option value="video/quicktime">QUICKTIME</option>
+                        <option value="application/vnd.ms-excel">MS Excel</option>
+                        <option value="image/png">PNG</option>
+                        <option value="application/zip">ZIP</option>
+                        <option value="audio/">Audio</option>
+                        <option value="application/octet-stream">Binary</option>
+                        <option value="application/msword">MS Word</option>
+                    </select>
+                    <button id="refreshBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="fixed inset-0 bg-white/80 dark:bg-gray-900/80 flex flex-col justify-center items-center z-30 hidden">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary/30 border-t-4 border-t-primary mb-4"></div>
+                    <p class="text-lg font-medium" id="loadingText">Searching assets...</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2" id="loadingSubtext">This may take a moment</p>
+                </div>
+            </div>
+
+            <!-- Asset Container (Full Width) -->
+            <div class="w-full">
+                <!-- Asset Grid -->
+                <div id="assetGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <!-- Asset items will be populated here -->
+                </div>
+                
+                <!-- Pagination Controls -->
+                <div id="paginationControls" class="mt-6 flex justify-center items-center space-x-4 hidden">
+                    <button id="loadMoreBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md">
+                        Load More
+                    </button>
+                    <div id="paginationInfo" class="text-sm text-gray-600 dark:text-gray-400">
+                        Showing <span id="currentCount">0</span> of <span id="totalCount">0</span>
+                    </div>
+                </div>
+                
+                <!-- Empty State -->
+                <div id="emptyState" class="flex flex-col items-center justify-center py-16 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-search text-5xl mb-4"></i>
+                    <p class="text-xl">No assets found</p>
+                    <p class="mt-2">Configure your API settings or try a different search</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Asset Preview Modal -->
+        <div id="assetPreviewModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h3 id="previewTitle" class="font-medium truncate">Asset Preview</h3>
+                    <button id="closePreviewBtn" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6 flex flex-col items-center">
+                    <div id="previewContent" class="max-h-[70vh] overflow-auto w-full flex justify-center">
+                        <!-- Preview content will be inserted here -->
+                    </div>
+                    <div id="previewInfo" class="mt-4 w-full text-sm text-gray-600 dark:text-gray-300">
+                        <!-- Asset information will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-gray-100 dark:bg-gray-800 p-4 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p>Adobe Marketing Hub Search | Using Adobe Experience Manager Delivery API</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Adobe IMS Configuration
+            const imsConfig = {
+                clientId: 'aemcs-poe-assetselector', // AEM CS Assets Selector client ID
+                redirectUri: window.location.href, // Use current URL as redirect
+                scope: 'AdobeID,openid,read_organizations,additional_info.projectedProductContext',
+                responseType: 'token' // Using implicit grant flow for client-side apps
+            };
+            
+            // Function to initiate IMS login flow
+            function loginWithIMS() {
+                // Create and show the auth loading indicator
+                const authLoadingIndicator = document.createElement('div');
+                authLoadingIndicator.id = 'authLoadingIndicator';
+                authLoadingIndicator.className = 'fixed inset-0 bg-white/50 dark:bg-gray-900/50 flex flex-col justify-center items-center z-50';
+                authLoadingIndicator.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary/30 border-t-4 border-t-primary mb-4"></div>
+                        <p class="text-lg font-medium">Preparing Adobe Authentication...</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Please wait while we connect to Adobe's authentication service</p>
+                    </div>
+                `;
+                document.body.appendChild(authLoadingIndicator);
+                
+                // Save current app state to restore after authentication
+                const currentState = {
+                    apiEndpoint: document.getElementById('apiEndpoint').value,
+                    apiKey: document.getElementById('apiKey').value,
+                    limitResults: document.getElementById('limitResults').value
+                };
+                
+                // Store current state in memory so we can retrieve it later
+                window.imsState = currentState;
+                
+                // Create the authorization URL
+                const authUrl = `https://ims-na1.adobelogin.com/ims/authorize/v2?` +
+                    `client_id=${encodeURIComponent(imsConfig.clientId)}` +
+                    `&redirect_uri=${encodeURIComponent(imsConfig.redirectUri)}` +
+                    `&scope=${encodeURIComponent(imsConfig.scope)}` +
+                    `&response_type=${imsConfig.responseType}`;
+                
+                // Delay opening the window to give the user time to see the loading indicator
+                setTimeout(() => {
+                    // Store the auth window reference globally to close it later
+                    window.authWindow = window.open(authUrl, 'adobeImsLogin', 
+                        'width=800,height=600,location=yes,resizable=yes,scrollbars=yes,status=yes');
+                    
+                    if (!window.authWindow) {
+                        // Remove the loading indicator
+                        if (document.body.contains(authLoadingIndicator)) {
+                            document.body.removeChild(authLoadingIndicator);
+                        }
+                        showNotification('Popup blocked. Please allow popups for this site and try again.', 'error');
+                        return;
+                    }
+                    
+                    // Update the loading indicator message after opening the window
+                    const loadingText = authLoadingIndicator.querySelector('p.text-lg');
+                    const loadingSubtext = authLoadingIndicator.querySelector('p.text-sm');
+                    if (loadingText && loadingSubtext) {
+                        loadingText.textContent = 'Adobe Authentication Window Opened';
+                        loadingSubtext.textContent = 'Please complete the sign in process in the popup window';
+                    }
+                    
+                    // Remove loading indicator after a longer delay to ensure user notices it
+                    setTimeout(() => {
+                        if (document.body.contains(authLoadingIndicator)) {
+                            document.body.removeChild(authLoadingIndicator);
+                        }
+                        // Show a helper notification to guide users
+                        showNotification('Adobe login window opened. Please complete authentication in the popup.', 'info', 10000);
+                    }, 1500);
+                    
+                    // Handle message events from the popup
+                    window.addEventListener('message', receiveImsToken, false);
+                    
+                    // Function to monitor for popup closure with a longer interval
+                    const checkClosed = setInterval(() => {
+                        if (window.authWindow && window.authWindow.closed) {
+                            clearInterval(checkClosed);
+                            window.removeEventListener('message', receiveImsToken);
+                            
+                            // Show loading when checking for token
+                            const tokenCheckIndicator = document.createElement('div');
+                            tokenCheckIndicator.className = 'fixed inset-0 bg-white/50 dark:bg-gray-900/50 flex flex-col justify-center items-center z-50';
+                            tokenCheckIndicator.innerHTML = `
+                                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary/30 border-t-4 border-t-primary mb-4"></div>
+                                    <p class="text-lg font-medium">Processing Authentication</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Retrieving your access token...</p>
+                                </div>
+                            `;
+                            document.body.appendChild(tokenCheckIndicator);
+                            
+                            // Add a longer delay before checking for the token to give more time for processing
+                            setTimeout(() => {
+                                // Check if we have a token in the URL hash (in case the popup redirected to our main window)
+                                const hasToken = handleImsRedirect();
+                                
+                                // Remove the token check indicator
+                                if (document.body.contains(tokenCheckIndicator)) {
+                                    document.body.removeChild(tokenCheckIndicator);
+                                }
+                                
+                                // If we don't have a token yet, prompt the user to enter it manually
+                                const imsTokenField = document.getElementById('imsToken');
+                                if (!hasToken && !imsTokenField.value) {
+                                    // Show manual token entry helper
+                                    showManualTokenHelper();
+                                }
+                            }, 2000); // Wait 2 seconds before checking for token
+                        }
+                    }, 1000); // Check every second if the popup is closed (instead of 500ms)
+                }, 800); // Wait 800ms before opening the authentication window
+            }
+            
+            // Function to show a manual token entry helper
+            function showManualTokenHelper() {
+                const helper = document.createElement('div');
+                helper.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50';
+                helper.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-lg overflow-hidden shadow-xl p-6">
+                        <h3 class="text-xl font-bold mb-4">Adobe Authentication Help</h3>
+                        <p class="mb-4">The authentication window was closed, but we couldn't automatically retrieve your token.</p>
+                        
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 mb-4">
+                            <p class="font-medium mb-2">To complete authentication:</p>
+                            <ol class="list-decimal ml-5 space-y-2">
+                                <li>If you completed authentication in the popup window, check the address bar in that window.</li>
+                                <li>Look for a URL that starts with your current domain and has <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">access_token=</code> in it.</li>
+                                <li>Copy the entire <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">access_token</code> value (the long string after the equals sign).</li>
+                                <li>Paste it in the field below, and click "Use Token".</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="manualToken" class="block mb-1 font-medium">Access Token</label>
+                            <input type="text" id="manualToken" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" 
+                                placeholder="Paste your access_token here">
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button id="cancelTokenHelperBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md">
+                                Cancel
+                            </button>
+                            <button id="useManualTokenBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md">
+                                Use Token
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(helper);
+                
+                // Add event listeners
+                document.getElementById('cancelTokenHelperBtn').addEventListener('click', () => {
+                    document.body.removeChild(helper);
+                });
+                
+                document.getElementById('useManualTokenBtn').addEventListener('click', () => {
+                    const manualToken = document.getElementById('manualToken').value.trim();
+                    if (manualToken) {
+                        // Format the token with Bearer prefix if it doesn't have it
+                        const token = manualToken.startsWith('Bearer ') ? manualToken : `Bearer ${manualToken}`;
+                        document.getElementById('imsToken').value = token;
+                        showNotification('Token applied successfully!', 'success');
+                        document.body.removeChild(helper);
+                        
+                        // Update auth status UI
+                        updateAuthStatusUI(true);
+                        
+                        // Update sign in button to show signed in state
+                        const signInBtn = document.getElementById('signInBtn');
+                        signInBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Signed In';
+                        signInBtn.classList.remove('bg-primary', 'hover:bg-secondary');
+                        signInBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                        
+                        // Trigger a reload of the search
+                        setTimeout(() => {
+                            document.getElementById('searchBtn').click();
+                        }, 300);
+                    } else {
+                        showNotification('Please enter a valid token', 'error');
+                    }
+                });
+                
+                // Focus the input field
+                setTimeout(() => {
+                    document.getElementById('manualToken').focus();
+                }, 100);
+            }
+            
+            // Function to handle IMS auth response
+            function receiveImsToken(event) {
+                // Only accept messages from Adobe domains
+                if (!event.origin.includes('adobe.com')) {
+                    return;
+                }
+                
+                try {
+                    // Parse the received data
+                    const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                    console.log('IMS Response Data:', JSON.stringify(data, null, 2));
+                    
+                    // Create a debug modal to display the full token response
+                    showImsResponseDebug(data);
+                    
+                    // Check if this is an IMS auth response with access token
+                    if (data && data.access_token) {
+                        // Format the token properly with 'Bearer' prefix
+                        const token = `Bearer ${data.access_token}`;
+                        
+                        // Update the IMS token input field
+                        document.getElementById('imsToken').value = token;
+                        
+                        // Restore application state if we saved it
+                        if (window.imsState) {
+                            document.getElementById('apiEndpoint').value = window.imsState.apiEndpoint;
+                            document.getElementById('apiKey').value = window.imsState.apiKey;
+                            document.getElementById('limitResults').value = window.imsState.limitResults;
+                        }
+                        
+                        // Update auth status in settings panel if needed
+                        updateAuthStatusUI(true);
+                        
+                        // Update sign in button to show signed in state
+                        const signInBtn = document.getElementById('signInBtn');
+                        signInBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Signed In';
+                        signInBtn.classList.remove('bg-primary', 'hover:bg-secondary');
+                        signInBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                        
+                        // Show a success message
+                        showNotification('Successfully authenticated with Adobe IMS', 'success');
+                        
+                        // Close the authentication window if it's still open
+                        if (window.authWindow && !window.authWindow.closed) {
+                            window.authWindow.close();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error processing IMS response:', error);
+                    showNotification('Error authenticating with Adobe IMS', 'error');
+                }
+            }
+            
+            // Function to update the authentication status UI
+            function updateAuthStatusUI(isAuthenticated) {
+                const authStatus = document.getElementById('authStatus');
+                if (authStatus) {
+                    if (isAuthenticated) {
+                        authStatus.innerHTML = `
+                            <span class="text-green-500 dark:text-green-400 flex items-center">
+                                <i class="fas fa-circle text-xs mr-2"></i>Signed in successfully
+                            </span>
+                        `;
+                    } else {
+                        authStatus.innerHTML = `
+                            <span class="text-red-500 dark:text-red-400 flex items-center">
+                                <i class="fas fa-circle text-xs mr-2"></i>Not signed in
+                            </span>
+                        `;
+                    }
+                }
+            }
+            
+            // Function to display the IMS response in a debug modal
+            function showImsResponseDebug(data) {
+                // Create modal element if it doesn't exist
+                let debugModal = document.getElementById('imsResponseModal');
+                if (!debugModal) {
+                    debugModal = document.createElement('div');
+                    debugModal.id = 'imsResponseModal';
+                    debugModal.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50';
+                    debugModal.innerHTML = `
+                        <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg overflow-hidden shadow-xl max-h-[90vh] flex flex-col">
+                            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                <h3 class="font-medium">Adobe IMS Response Data</h3>
+                                <button id="closeDebugModalBtn" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="p-6 overflow-auto flex-1">
+                                <pre id="imsResponseJson" class="bg-gray-100 dark:bg-gray-900 p-4 rounded-md overflow-x-auto text-sm"></pre>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(debugModal);
+                    
+                    // Add close button functionality
+                    document.getElementById('closeDebugModalBtn').addEventListener('click', () => {
+                        debugModal.classList.add('hidden');
+                    });
+                    
+                    // Close when clicking outside
+                    debugModal.addEventListener('click', (e) => {
+                        if (e.target === debugModal) {
+                            debugModal.classList.add('hidden');
+                        }
+                    });
+                } else {
+                    // Show the modal if it already exists
+                    debugModal.classList.remove('hidden');
+                }
+                
+                // Format and display the JSON data
+                const jsonElement = document.getElementById('imsResponseJson');
+                
+                // Sanitize the data by removing potentially sensitive information
+                // We'll keep the structure but mask certain values
+                const sanitizedData = JSON.parse(JSON.stringify(data)); // Deep clone
+                if (sanitizedData.access_token) {
+                    // Only show the first few and last few characters of the token
+                    const token = sanitizedData.access_token;
+                    sanitizedData.access_token = token.substring(0, 10) + '...' + token.substring(token.length - 10);
+                }
+                if (sanitizedData.refresh_token) {
+                    const token = sanitizedData.refresh_token;
+                    sanitizedData.refresh_token = token.substring(0, 10) + '...' + token.substring(token.length - 10);
+                }
+                
+                // Format with proper indentation
+                jsonElement.textContent = JSON.stringify(sanitizedData, null, 2);
+            }
+            
+            // Helper function to show notifications
+            function showNotification(message, type = 'info', duration = 3000) {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg z-50 transition-opacity duration-300 ${
+                    type === 'success' ? 'bg-green-500 text-white' : 
+                    type === 'error' ? 'bg-red-500 text-white' : 
+                    'bg-blue-500 text-white'
+                }`;
+                
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-${
+                            type === 'success' ? 'check-circle' : 
+                            type === 'error' ? 'exclamation-circle' : 
+                            'info-circle'
+                        } mr-2"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                
+                // Add to DOM
+                document.body.appendChild(notification);
+                
+                // Fade out and remove after the specified duration
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        if (document.body.contains(notification)) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 300);
+                }, duration);
+            }
+            
+            // Check if we have a hash fragment from an IMS redirect
+            function handleImsRedirect() {
+                // Check if we have a hash in the URL
+                if (window.location.hash) {
+                    try {
+                        // Parse the hash fragment
+                        const params = new URLSearchParams(window.location.hash.substring(1));
+                        const accessToken = params.get('access_token');
+                        
+                        if (accessToken) {
+                            // Format the token with 'Bearer' prefix
+                            const token = `Bearer ${accessToken}`;
+                            
+                            // Set token in the field
+                            document.getElementById('imsToken').value = token;
+                            
+                            // Create a data object with token info to display in the debug modal
+                            // We're constructing this object to simulate the full IMS response
+                            // since we only have the access token from the URL hash
+                            const tokenData = {
+                                access_token: accessToken,
+                                token_type: 'bearer',
+                                expires_in: 86400, // Typical expiration of 24 hours
+                                scope: imsConfig.scope.split(','),
+                                source: 'URL hash fragment',
+                                note: 'This is reconstructed from the URL hash, not the full IMS response'
+                            };
+                            
+                            // Display the token information in the debug modal
+                            showImsResponseDebug(tokenData);
+                            
+                            // Clear the hash from the URL
+                            history.replaceState(null, null, ' ');
+                            
+                            // Show success message
+                            showNotification('Successfully authenticated with Adobe IMS', 'success');
+                            
+                            // Close the authentication window if it's still open
+                            if (window.authWindow && !window.authWindow.closed) {
+                                window.authWindow.close();
+                            }
+                            
+                            return true; // Indicate that we found and processed a token
+                        }
+                    } catch (error) {
+                        console.error('Error handling IMS redirect:', error);
+                    }
+                }
+                return false; // Indicate that we did not find a token
+            }
+            // Initialize dark mode based on user preference
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('darkModeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+            }
+
+            // Dark mode toggle
+            document.getElementById('darkModeToggle').addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                const icon = document.documentElement.classList.contains('dark') ? 
+                    '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+                document.getElementById('darkModeToggle').innerHTML = icon;
+            });
+
+            // Settings button to show endpoint configuration
+            document.getElementById('settingsBtn').addEventListener('click', () => {
+                const configPanel = document.getElementById('configPanel');
+                configPanel.classList.toggle('hidden');
+            });
+            
+            // Sign In button should initiate Adobe login
+            document.getElementById('signInBtn').addEventListener('click', () => {
+                loginWithIMS();
+            });
+
+            // Save configuration
+            document.getElementById('saveConfigBtn').addEventListener('click', () => {
+                // In a real app, we would save this configuration and use it
+                // for API calls. Here we'll just hide the panel and simulate loading.
+                document.getElementById('configPanel').classList.add('hidden');
+                loadAssets();
+            });
+
+            // Toggle view (grid/list)
+            let isGridView = true;
+            document.getElementById('toggleViewBtn').addEventListener('click', () => {
+                isGridView = !isGridView;
+                const icon = isGridView ? '<i class="fas fa-th"></i>' : '<i class="fas fa-list"></i>';
+                document.getElementById('toggleViewBtn').innerHTML = icon;
+                
+                const assetGrid = document.getElementById('assetGrid');
+                if (isGridView) {
+                    assetGrid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4';
+                } else {
+                    assetGrid.className = 'grid grid-cols-1 gap-2';
+                }
+                displayAssets(mockAssets);
+            });
+
+            // Search functionality using Search Assets API
+            document.getElementById('searchBtn').addEventListener('click', async () => {
+                try {
+                    // Update loading indicator text for search
+                    document.getElementById('loadingText').textContent = 'Searching assets...';
+                    document.getElementById('loadingSubtext').textContent = 'Fetching results for "' + document.getElementById('searchInput').value.trim() + '"';
+                    
+                    // Search from the root level
+                    const folderPath = '/';
+                    
+                    // Clear any saved cursor for this search
+                    delete paginationCursors[`cursor_${folderPath}`];
+                    
+                    // Call loadAssets to use the search API
+                    await loadAssets(folderPath);
+                } catch (error) {
+                    console.error('Search error:', error);
+                    // Ensure loading indicator is hidden on error
+                    document.getElementById('loadingIndicator').classList.add('hidden');
+                    // Show error notification
+                    showNotification('Search failed: ' + (error.message || 'Unknown error'), 'error');
+                }
+            });
+
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('searchBtn').click();
+                }
+            });
+
+            // Filter by type using Search Assets API
+            document.getElementById('filterType').addEventListener('change', async (e) => {
+                try {
+                    // Update loading indicator text for filter change
+                    const filterType = document.getElementById('filterType');
+                    const filterText = filterType.options[filterType.selectedIndex].text;
+                    document.getElementById('loadingText').textContent = 'Filtering assets...';
+                    document.getElementById('loadingSubtext').textContent = filterType.value ? `Showing only ${filterText} files` : 'Showing all file types';
+                    
+                    // Search from the root level
+                    const folderPath = '/';
+                    
+                    // Clear any saved cursor for this filter
+                    delete paginationCursors[`cursor_${folderPath}`];
+                    
+                    // Call loadAssets to use the search API with the new filter
+                    await loadAssets(folderPath);
+                } catch (error) {
+                    console.error('Filter error:', error);
+                    // Ensure loading indicator is hidden on error
+                    document.getElementById('loadingIndicator').classList.add('hidden');
+                    // Show error notification
+                    showNotification('Filter failed: ' + (error.message || 'Unknown error'), 'error');
+                }
+            });
+
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                // Update loading indicator text for refresh
+                document.getElementById('loadingText').textContent = 'Refreshing assets...';
+                document.getElementById('loadingSubtext').textContent = 'Getting the latest content';
+                
+                // Clear any saved cursors
+                for (const key in paginationCursors) {
+                    delete paginationCursors[key];
+                }
+                
+                // Call loadAssets to refresh
+                loadAssets();
+            });
+
+            // Preview modal functionality
+            const assetPreviewModal = document.getElementById('assetPreviewModal');
+            document.getElementById('closePreviewBtn').addEventListener('click', () => {
+                assetPreviewModal.classList.add('hidden');
+            });
+
+            // Close modal when clicking outside
+            assetPreviewModal.addEventListener('click', (e) => {
+                if (e.target === assetPreviewModal) {
+                    assetPreviewModal.classList.add('hidden');
+                }
+            });
+
+            // Escape key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !assetPreviewModal.classList.contains('hidden')) {
+                    assetPreviewModal.classList.add('hidden');
+                }
+            });
+
+            // Mock data to simulate API response
+            const mockFolders = [
+                { name: 'Marketing', path: '/Marketing' },
+                { name: 'Products', path: '/Products' },
+                { name: 'Campaigns', path: '/Campaigns' },
+                { name: 'Social Media', path: '/Social Media' }
+            ];
+
+            const mockAssets = [
+                {
+                    id: '1',
+                    name: 'Product Image 1',
+                    path: '/Products/product1.jpg',
+                    type: 'image',
+                    url: 'https://picsum.photos/id/1/800/600',
+                    thumbnail: 'https://picsum.photos/id/1/200/150',
+                    description: 'Main product image for marketing',
+                    size: '2.4 MB',
+                    dimensions: '1920x1080',
+                    created: '2023-06-15'
+                },
+                {
+                    id: '2',
+                    name: 'Product Video Tutorial',
+                    path: '/Products/tutorial.mp4',
+                    type: 'video',
+                    url: 'https://picsum.photos/id/2/800/600',
+                    thumbnail: 'https://picsum.photos/id/2/200/150',
+                    description: 'How-to video for product assembly',
+                    size: '14.7 MB',
+                    duration: '2:34',
+                    created: '2023-07-22'
+                },
+                {
+                    id: '3',
+                    name: 'Campaign Banner',
+                    path: '/Campaigns/summer_banner.jpg',
+                    type: 'image',
+                    url: 'https://picsum.photos/id/3/800/600',
+                    thumbnail: 'https://picsum.photos/id/3/200/150',
+                    description: 'Summer campaign banner',
+                    size: '1.8 MB',
+                    dimensions: '1200x600',
+                    created: '2023-05-10'
+                },
+                {
+                    id: '4',
+                    name: 'Product Specifications',
+                    path: '/Products/specs.pdf',
+                    type: 'document',
+                    url: 'https://picsum.photos/id/4/800/600',
+                    thumbnail: 'https://picsum.photos/id/4/200/150',
+                    description: 'Technical specifications document',
+                    size: '3.2 MB',
+                    pages: '12',
+                    created: '2023-04-05'
+                },
+                {
+                    id: '5',
+                    name: 'Team Photo',
+                    path: '/Marketing/team.jpg',
+                    type: 'image',
+                    url: 'https://picsum.photos/id/5/800/600',
+                    thumbnail: 'https://picsum.photos/id/5/200/150',
+                    description: 'Company team photo',
+                    size: '3.7 MB',
+                    dimensions: '2400x1600',
+                    created: '2023-02-28'
+                },
+                {
+                    id: '6',
+                    name: 'Social Media Banner',
+                    path: '/Social Media/banner.jpg',
+                    type: 'image',
+                    url: 'https://picsum.photos/id/6/800/600',
+                    thumbnail: 'https://picsum.photos/id/6/200/150',
+                    description: 'Social media campaign banner',
+                    size: '1.2 MB',
+                    dimensions: '1500x500',
+                    created: '2023-08-03'
+                },
+                {
+                    id: '7',
+                    name: 'Product Demo Video',
+                    path: '/Products/demo.mp4',
+                    type: 'video',
+                    url: 'https://picsum.photos/id/7/800/600',
+                    thumbnail: 'https://picsum.photos/id/7/200/150',
+                    description: 'Product demonstration video',
+                    size: '28.5 MB',
+                    duration: '4:12',
+                    created: '2023-06-30'
+                },
+                {
+                    id: '8',
+                    name: 'Marketing Strategy',
+                    path: '/Marketing/strategy.pdf',
+                    type: 'document',
+                    url: 'https://picsum.photos/id/8/800/600',
+                    thumbnail: 'https://picsum.photos/id/8/200/150',
+                    description: 'Q3 marketing strategy document',
+                    size: '5.1 MB',
+                    pages: '24',
+                    created: '2023-07-01'
+                }
+            ];
+
+            // Function to populate folder tree
+            function populateFolderTree(folders) {
+                const folderTree = document.getElementById('folderTree');
+                // Clear any existing folders except the root
+                const rootFolder = folderTree.querySelector('li[data-path="/"]');
+                folderTree.innerHTML = '';
+                folderTree.appendChild(rootFolder);
+
+                // Add folders
+                folders.forEach(folder => {
+                    const li = document.createElement('li');
+                    li.className = 'py-2 cursor-pointer hover:text-primary flex items-center';
+                    li.setAttribute('data-path', folder.path);
+                    li.innerHTML = `<i class="fas fa-folder mr-2"></i>${folder.name}`;
+                    li.addEventListener('click', () => {
+                        // In a real app, would load assets from this folder
+                        loadAssets(folder.path);
+                    });
+                    folderTree.appendChild(li);
+                });
+            }
+
+            // Function to display assets
+            // Format asset data from API response
+            function formatApiAsset(apiAsset) {
+                // Format based on the official API response structure
+                const repoMeta = apiAsset.repositoryMetadata || {};
+                const assetMeta = apiAsset.assetMetadata || {};
+                
+                return {
+                    id: apiAsset.assetId || '',
+                    name: repoMeta["repo:name"] || 'Unnamed Asset',
+                    path: repoMeta["repo:path"] || '/',
+                    type: repoMeta["dc:format"] || 'unknown',
+                    // Construct URL based on asset ID
+                    url: `${document.getElementById('apiEndpoint').value}/${apiAsset.assetId}`,
+                    // Construct thumbnail URL (no width parameter)
+                    thumbnail: `${document.getElementById('apiEndpoint').value}/${apiAsset.assetId}`,
+                    description: assetMeta["dc:description"] || 'No description available',
+                    size: repoMeta["repo:size"] ? formatBytes(repoMeta["repo:size"]) : 'Unknown size',
+                    dimensions: (repoMeta["tiff:imageWidth"] && repoMeta["tiff:imageLength"]) ? 
+                        `${repoMeta["tiff:imageWidth"]}x${repoMeta["tiff:imageLength"]}` : 'Unknown dimensions',
+                    created: repoMeta["repo:createDate"] ? new Date(repoMeta["repo:createDate"]).toLocaleDateString() : 'Unknown date'
+                };
+            }
+            
+            // Format bytes to human-readable format
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 Bytes';
+                
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+            
+            // Initialize selected assets storage
+            const selectedAssets = new Map();
+            let selectionMode = false;
+            
+            // Function to add the multi-select toolbar
+            function createSelectionToolbar() {
+                // Check if toolbar already exists
+                if (document.getElementById('selectionToolbar')) {
+                    return;
+                }
+                
+                const toolbar = document.createElement('div');
+                toolbar.id = 'selectionToolbar';
+                toolbar.className = 'fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center transform transition-transform duration-300 z-40 shadow-lg';
+                toolbar.style.transform = 'translateY(100%)';
+                
+                toolbar.innerHTML = `
+                    <div class="flex items-center">
+                        <span id="selectedCount" class="font-medium mr-2">0</span>
+                        <span>items selected</span>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button id="cancelSelectionBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md">
+                            Cancel
+                        </button>
+                        <button id="addToBasketBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md flex items-center" disabled>
+                            <i class="fas fa-shopping-basket mr-2"></i>Add to Basket
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(toolbar);
+                
+                // Add event listeners to toolbar buttons
+                document.getElementById('cancelSelectionBtn').addEventListener('click', () => {
+                    exitSelectionMode();
+                });
+                
+                document.getElementById('addToBasketBtn').addEventListener('click', () => {
+                    if (selectedAssets.size > 0) {
+                        // Add selected assets to basket
+                        selectedAssets.forEach((asset, id) => {
+                            assetBasket.set(id, asset);
+                        });
+                        
+                        // Update basket counter
+                        updateBasketCounter();
+                        
+                        // Show confirmation
+                        showNotification(`${selectedAssets.size} ${selectedAssets.size === 1 ? 'asset' : 'assets'} added to basket`, 'success');
+                        
+                        // Exit selection mode
+                        exitSelectionMode();
+                        
+                        // Show the basket panel
+                        showBasketPanel();
+                    }
+                });
+                
+                // Show the toolbar with animation
+                setTimeout(() => {
+                    toolbar.style.transform = 'translateY(0)';
+                }, 10);
+            }
+            
+            // Function to show/hide the selection toolbar
+            function updateSelectionToolbar() {
+                const toolbar = document.getElementById('selectionToolbar');
+                const selectedCount = document.getElementById('selectedCount');
+                const addToBasketBtn = document.getElementById('addToBasketBtn');
+                
+                if (toolbar) {
+                    // Update selected count
+                    selectedCount.textContent = selectedAssets.size;
+                    
+                    // Enable/disable add to basket button
+                    if (selectedAssets.size > 0) {
+                        addToBasketBtn.removeAttribute('disabled');
+                        addToBasketBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        addToBasketBtn.setAttribute('disabled', 'true');
+                        addToBasketBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+            }
+            
+            // Function to exit selection mode
+            function exitSelectionMode() {
+                selectionMode = false;
+                selectedAssets.clear();
+                
+                // Update UI to reflect selection mode is off
+                document.querySelectorAll('.asset-card').forEach(card => {
+                    card.classList.remove('selected');
+                    card.querySelector('.selection-checkbox')?.classList.add('hidden');
+                });
+                
+                // Hide the toolbar with animation
+                const toolbar = document.getElementById('selectionToolbar');
+                if (toolbar) {
+                    toolbar.style.transform = 'translateY(100%)';
+                    // Remove the toolbar after animation completes
+                    setTimeout(() => {
+                        toolbar.remove();
+                    }, 300);
+                }
+            }
+            
+            // Function to display assets with selection capability
+            function displayAssets(assets) {
+                const assetGrid = document.getElementById('assetGrid');
+                const emptyState = document.getElementById('emptyState');
+                
+                assetGrid.innerHTML = '';
+                
+                if (assets.length === 0) {
+                    assetGrid.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+                
+                assetGrid.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                
+                // Add multi-selection toggle button to the search bar area if it doesn't exist
+                if (!document.getElementById('toggleMultiSelectBtn')) {
+                    const searchContainer = document.querySelector('.mb-6.flex.flex-col.md\\:flex-row.gap-4');
+                    const selectButton = document.createElement('button');
+                    selectButton.id = 'toggleMultiSelectBtn';
+                    selectButton.className = 'px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-md flex items-center';
+                    selectButton.innerHTML = '<i class="fas fa-check-square mr-2"></i>Select';
+                    
+                    // Insert before the refresh button
+                    searchContainer.querySelector('div.flex.gap-2').prepend(selectButton);
+                    
+                    // Add event listener to toggle selection mode
+                    selectButton.addEventListener('click', () => {
+                        selectionMode = !selectionMode;
+                        
+                        if (selectionMode) {
+                            // Enter selection mode
+                            selectButton.innerHTML = '<i class="fas fa-times mr-2"></i>Cancel';
+                            selectButton.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                            selectButton.classList.add('bg-red-500', 'hover:bg-red-600', 'text-white');
+                            
+                            // Show checkboxes on all assets
+                            document.querySelectorAll('.asset-card').forEach(card => {
+                                card.querySelector('.selection-checkbox').classList.remove('hidden');
+                            });
+                            
+                            // Create and show the selection toolbar
+                            createSelectionToolbar();
+                        } else {
+                            // Exit selection mode
+                            selectButton.innerHTML = '<i class="fas fa-check-square mr-2"></i>Select';
+                            selectButton.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                            selectButton.classList.remove('bg-red-500', 'hover:bg-red-600', 'text-white');
+                            
+                            exitSelectionMode();
+                        }
+                    });
+                }
+                
+                assets.forEach(apiAsset => {
+                    // Format the asset data from API response
+                    const asset = formatApiAsset(apiAsset);
+                    
+                    const assetCard = document.createElement('div');
+                    assetCard.className = 'asset-card bg-white dark:bg-gray-800 rounded-md shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200 relative';
+                    assetCard.setAttribute('data-asset-id', asset.id);
+                    
+                    // Different layout based on view mode
+                    if (isGridView) {
+                        assetCard.innerHTML = `
+                            <div class="selection-checkbox absolute top-2 left-2 z-20 w-5 h-5 rounded-md bg-white/90 border border-gray-300 flex items-center justify-center ${selectionMode ? '' : 'hidden'}">
+                                <i class="fas fa-check text-primary hidden"></i>
+                            </div>
+                            <div class="h-40 overflow-hidden bg-gray-200 dark:bg-gray-700 relative">
+                                <img src="${asset.thumbnail}" alt="${asset.name}" class="w-full h-full object-cover">
+                                <div class="absolute top-2 right-2 bg-gray-800/70 text-white text-xs px-2 py-1 rounded-md">
+                                    ${asset.type}
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <h3 class="font-medium truncate">${asset.name}</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 truncate">${asset.description}</p>
+                                <div class="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <span>${asset.size}</span>
+                                    <span>${asset.created}</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        assetCard.className += ' flex items-center';
+                        assetCard.innerHTML = `
+                            <div class="selection-checkbox absolute top-1/2 left-2 transform -translate-y-1/2 z-20 w-5 h-5 rounded-md bg-white/90 border border-gray-300 flex items-center justify-center ${selectionMode ? '' : 'hidden'}">
+                                <i class="fas fa-check text-primary hidden"></i>
+                            </div>
+                            <div class="h-16 w-16 overflow-hidden bg-gray-200 dark:bg-gray-700 ml-6">
+                                <img src="${asset.thumbnail}" alt="${asset.name}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="p-3 flex-grow">
+                                <h3 class="font-medium">${asset.name}</h3>
+                                <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                                    <span>${asset.type}</span>
+                                    <span>${asset.size}</span>
+                                </div>
+                            </div>
+                            <div class="px-3">
+                                <button class="text-gray-500 hover:text-primary">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        `;
+                    }
+                    
+                    // Add click events for selection and preview
+                    assetCard.addEventListener('click', (e) => {
+                        if (selectionMode) {
+                            // Toggle selection
+                            const checkbox = assetCard.querySelector('.selection-checkbox');
+                            const checkIcon = checkbox.querySelector('.fa-check');
+                            
+                            if (selectedAssets.has(asset.id)) {
+                                // Deselect
+                                selectedAssets.delete(asset.id);
+                                assetCard.classList.remove('selected');
+                                assetCard.style.outline = '';
+                                checkIcon.classList.add('hidden');
+                            } else {
+                                // Select
+                                selectedAssets.set(asset.id, asset);
+                                assetCard.classList.add('selected');
+                                assetCard.style.outline = '2px solid #5D5CDE';
+                                checkIcon.classList.remove('hidden');
+                            }
+                            
+                            // Update selection UI
+                            updateSelectionToolbar();
+                            
+                            // Prevent preview when in selection mode
+                            e.stopPropagation();
+                        } else {
+                            // Preview asset when not in selection mode
+                            previewAsset(asset);
+                        }
+                    });
+                    
+                    assetGrid.appendChild(assetCard);
+                });
+            }
+            
+            // Asset basket to store selected assets
+            const assetBasket = new Map();
+            
+            // Function to update the basket counter in the header
+            function updateBasketCounter() {
+                const counter = document.getElementById('basketCounter');
+                if (counter) {
+                    const count = assetBasket.size;
+                    counter.textContent = count.toString();
+                    
+                    // Show/hide counter based on whether basket has items
+                    if (count > 0) {
+                        counter.classList.remove('hidden');
+                    } else {
+                        counter.classList.add('hidden');
+                    }
+                }
+            }
+            
+            // Add event listener for the basket button in the header
+            document.getElementById('basketBtn').addEventListener('click', () => {
+                showBasketPanel();
+            });
+            
+            // Function to show the basket panel with all assets
+            function showBasketPanel() {
+                // Create the basket modal panel
+                const basketModal = document.createElement('div');
+                basketModal.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50';
+                basketModal.id = 'basketModal';
+                
+                // Generate basket items HTML
+                let basketItemsHTML = '';
+                if (assetBasket.size === 0) {
+                    basketItemsHTML = `
+                        <div class="flex flex-col items-center justify-center py-8 text-gray-500">
+                            <i class="fas fa-shopping-basket text-5xl mb-4 opacity-30"></i>
+                            <p class="text-xl font-medium">Your basket is empty</p>
+                            <p class="mt-2 text-sm">Select assets and use "Add to Basket" to add them here</p>
+                        </div>
+                    `;
+                } else {
+                    basketItemsHTML = `
+                        <div class="overflow-y-auto max-h-[50vh]">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Size</th>
+                                        <th class="py-3 px-4 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    `;
+                    
+                    assetBasket.forEach((asset, id) => {
+                        basketItemsHTML += `
+                            <tr>
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center">
+                                        <div class="h-12 w-12 bg-gray-200 dark:bg-gray-600 mr-3 overflow-hidden flex-shrink-0">
+                                            <img src="${asset.thumbnail}" alt="${asset.name}" class="h-full w-full object-cover">
+                                        </div>
+                                        <div class="truncate max-w-xs">
+                                            <p class="font-medium truncate">${asset.name}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">${asset.type}</td>
+                                <td class="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">${asset.size}</td>
+                                <td class="py-3 px-4 text-right">
+                                    <button class="text-red-500 hover:text-red-700 remove-basket-item" data-id="${id}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    basketItemsHTML += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                // Create the complete modal content
+                basketModal.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg overflow-hidden shadow-xl">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                            <h3 class="font-medium text-lg flex items-center">
+                                <i class="fas fa-shopping-basket mr-2"></i>
+                                Asset Basket (${assetBasket.size} items)
+                            </h3>
+                            <button id="closeBasketBtn" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="p-6">
+                            ${basketItemsHTML}
+                        </div>
+                        
+                        <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                            <div class="flex justify-between items-center mb-4">
+                                <button id="clearBasketBtn" class="px-4 py-2 text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed" ${assetBasket.size === 0 ? 'disabled' : ''}>
+                                    <i class="fas fa-trash mr-2"></i>Clear Basket
+                                </button>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Total Items: ${assetBasket.size}</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <button id="shareAllBtn" class="py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed" ${assetBasket.size === 0 ? 'disabled' : ''}>
+                                    <i class="fas fa-share-alt mr-2"></i>Share All Links
+                                </button>
+                                <button id="downloadBasketZipBtn" class="py-3 bg-primary hover:bg-secondary text-white rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed" ${assetBasket.size === 0 ? 'disabled' : ''}>
+                                    <i class="fas fa-file-archive mr-2"></i>Download as ZIP
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add to DOM
+                document.body.appendChild(basketModal);
+                
+                // Add event listeners
+                document.getElementById('closeBasketBtn').addEventListener('click', () => {
+                    document.body.removeChild(basketModal);
+                });
+                
+                // Close when clicking outside
+                basketModal.addEventListener('click', (e) => {
+                    if (e.target === basketModal) {
+                        document.body.removeChild(basketModal);
+                    }
+                });
+                
+                // Add ESC key handler
+                const handleEsc = (e) => {
+                    if (e.key === 'Escape') {
+                        document.body.removeChild(basketModal);
+                        document.removeEventListener('keydown', handleEsc);
+                    }
+                };
+                document.addEventListener('keydown', handleEsc);
+                
+                // Add event listeners for remove buttons
+                document.querySelectorAll('.remove-basket-item').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const id = e.currentTarget.getAttribute('data-id');
+                        if (id) {
+                            assetBasket.delete(id);
+                            updateBasketCounter();
+                            // Refresh the basket panel
+                            document.body.removeChild(basketModal);
+                            showBasketPanel();
+                            showNotification('Item removed from basket', 'info');
+                        }
+                    });
+                });
+                
+                // Add event listener for clear basket button
+                document.getElementById('clearBasketBtn')?.addEventListener('click', () => {
+                    if (assetBasket.size > 0) {
+                        if (confirm('Are you sure you want to clear all items from your basket?')) {
+                            assetBasket.clear();
+                            updateBasketCounter();
+                            // Refresh the basket panel
+                            document.body.removeChild(basketModal);
+                            showBasketPanel();
+                            showNotification('Basket cleared', 'info');
+                        }
+                    }
+                });
+                
+                // Add event listener for download as ZIP button
+                document.getElementById('downloadBasketZipBtn')?.addEventListener('click', () => {
+                    if (assetBasket.size > 0) {
+                        document.body.removeChild(basketModal);
+                        const basketAssets = Array.from(assetBasket.values());
+                        createAndDownloadZip(basketAssets);
+                    }
+                });
+                
+                // Add event listener for Share All Links button
+                document.getElementById('shareAllBtn')?.addEventListener('click', () => {
+                    if (assetBasket.size > 0) {
+                        showShareAllLinksInterface(Array.from(assetBasket.values()));
+                    }
+                });
+                
+                // Function to show the share all links interface
+                function showShareAllLinksInterface(assets) {
+                    // Create the share interface modal
+                    const shareModal = document.createElement('div');
+                    shareModal.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50';
+                    shareModal.id = 'shareAllLinksModal';
+                    
+                    // Generate initial modal content
+                    shareModal.innerHTML = `
+                        <div class="bg-white dark:bg-gray-800 w-full max-w-4xl rounded-lg overflow-hidden shadow-xl">
+                            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                <h3 class="font-medium text-lg flex items-center">
+                                    <i class="fas fa-share-alt mr-2"></i>
+                                    Share Links for ${assets.length} Assets
+                                </h3>
+                                <button id="closeShareModalBtn" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="p-6">
+                                <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 text-blue-700 dark:text-blue-300">
+                                    <div class="flex">
+                                        <i class="fas fa-share-alt text-lg mt-1 mr-3"></i>
+                                        <div>
+                                            <p class="font-medium">Share Links Ready</p>
+                                            <p class="mt-1 text-sm">
+                                                Below are direct links to all your selected assets. Click the copy button to copy individual links or use "Copy All Links" to get all URLs at once.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <button id="copyAllLinksBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md flex items-center">
+                                        <i class="fas fa-copy mr-2"></i>Copy All Links
+                                    </button>
+                                </div>
+                                
+                                <div class="overflow-y-auto max-h-[60vh] border border-gray-200 dark:border-gray-700 rounded-md">
+                                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                        <thead class="bg-gray-50 dark:bg-gray-700">
+                                            <tr>
+                                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">#</th>
+                                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset</th>
+                                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Size</th>
+                                                <th class="py-3 px-4 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="shareLinksTableBody">
+                                            <!-- Will be populated with asset rows -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>Tip: Click "Copy All Links" to share multiple assets at once
+                                </span>
+                                <button id="closeDownloadAllBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add to DOM
+                    document.body.appendChild(shareModal);
+                    
+                    // Add close event listeners
+                    document.getElementById('closeShareModalBtn').addEventListener('click', () => {
+                        document.body.removeChild(shareModal);
+                    });
+                    
+                    document.getElementById('closeDownloadAllBtn').addEventListener('click', () => {
+                        document.body.removeChild(shareModal);
+                    });
+                    
+                    // Close when clicking outside the modal
+                    shareModal.addEventListener('click', (e) => {
+                        if (e.target === shareModal) {
+                            document.body.removeChild(shareModal);
+                        }
+                    });
+                    
+                    // Add ESC key handler
+                    const handleEsc = (e) => {
+                        if (e.key === 'Escape') {
+                            document.body.removeChild(shareModal);
+                            document.removeEventListener('keydown', handleEsc);
+                        }
+                    };
+                    document.addEventListener('keydown', handleEsc);
+                    
+                    // Populate the table with assets
+                    const tableBody = document.getElementById('shareLinksTableBody');
+                    
+                    // Add event listener for Copy All Links button
+                    document.getElementById('copyAllLinksBtn').addEventListener('click', () => {
+                        // Extract URLs from all assets and format them
+                        const allLinks = assets.map((asset) => {
+                            return `${asset.name}: ${asset.url}`;
+                        }).join('\n\n');
+                        
+                        // Copy to clipboard
+                        navigator.clipboard.writeText(allLinks)
+                            .then(() => {
+                                showNotification('All links copied to clipboard!', 'success');
+                            })
+                            .catch(err => {
+                                console.error('Error copying links: ', err);
+                                showNotification('Failed to copy links to clipboard', 'error');
+                            });
+                    });
+                    
+                    // Generate a row for each asset
+                    assets.forEach((asset, index) => {
+                        // Determine file extension for download filename
+                        let extension = '.txt';
+                        if (asset.type.includes('image/')) {
+                            extension = asset.type.includes('png') ? '.png' : '.jpg';
+                        } else if (asset.type.includes('video/')) {
+                            extension = '.mp4';
+                        } else if (asset.type.includes('pdf')) {
+                            extension = '.pdf';
+                        } else if (asset.type.includes('excel')) {
+                            extension = '.xlsx';
+                        } else if (asset.type.includes('word')) {
+                            extension = '.docx';
+                        }
+                        
+                        // Normalize filename to avoid special characters
+                        const sanitizedName = asset.name.replace(/[^\w\s.-]/gi, '_');
+                        const fileName = sanitizedName.includes(extension) ? sanitizedName : sanitizedName + extension;
+                        
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700';
+                        row.innerHTML = `
+                            <td class="py-4 px-4 whitespace-nowrap">${index + 1}</td>
+                            <td class="py-4 px-4">
+                                <div class="flex items-center">
+                                    <div class="h-10 w-10 bg-gray-200 dark:bg-gray-600 mr-3 flex-shrink-0 overflow-hidden">
+                                        <img src="${asset.thumbnail}" alt="${asset.name}" class="h-full w-full object-cover">
+                                    </div>
+                                    <div class="max-w-xs">
+                                        <p class="font-medium truncate">${asset.name}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${asset.type}</td>
+                            <td class="py-4 px-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${asset.size}</td>
+                            <td class="py-4 px-4 whitespace-nowrap text-center">
+                                <button class="copy-link-btn px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center justify-center" data-url="${asset.url}">
+                                    <i class="fas fa-link mr-1"></i>Copy Link
+                                </button>
+                            </td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                    
+                    // Add event listeners for the copy link buttons
+                    document.querySelectorAll('.copy-link-btn').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const url = e.currentTarget.getAttribute('data-url');
+                            if (url) {
+                                navigator.clipboard.writeText(url)
+                                    .then(() => {
+                                        showNotification('Link copied to clipboard!', 'success');
+                                    })
+                                    .catch(err => {
+                                        console.error('Error copying text: ', err);
+                                        showNotification('Failed to copy link', 'error');
+                                    });
+                            }
+                        });
+                    });
+                }
+            }
+            
+            // Function to create and download zip file with fallback approach
+            async function createAndDownloadZip(basketAssets) {
+                // Use either provided basket assets or selected assets
+                const assets = basketAssets || Array.from(selectedAssets.values());
+                // Show loading overlay
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.className = 'fixed inset-0 bg-black/50 flex flex-col items-center justify-center z-50';
+                loadingOverlay.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                        <h3 class="text-lg font-bold mb-4">Creating ZIP File</h3>
+                        <div class="flex items-center mb-4">
+                            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mr-3"></div>
+                            <span id="zipProgressText">Preparing files...</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                            <div id="zipProgressBar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="zipStatusText" class="mt-2 text-xs text-gray-500 dark:text-gray-400"></p>
+                    </div>
+                `;
+                document.body.appendChild(loadingOverlay);
+                
+                try {
+                    // First, dynamically load JSZip library
+                    if (!window.JSZip) {
+                        const progressText = document.getElementById('zipProgressText');
+                        progressText.textContent = 'Loading ZIP library...';
+                        
+                        // Load JSZip from CDN
+                        await new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+                            script.onload = resolve;
+                            script.onerror = reject;
+                            document.head.appendChild(script);
+                        });
+                    }
+                    
+                    // Create a new JSZip instance
+                    const zip = new JSZip();
+                    const progressBar = document.getElementById('zipProgressBar');
+                    const progressText = document.getElementById('zipProgressText');
+                    const statusText = document.getElementById('zipStatusText');
+                    
+                    // We already defined assets earlier (using basketAssets or selectedAssets),
+                    // so we don't need to redefine it here which was causing the error
+                    let completedAssets = 0;
+                    let successfulAssets = 0;
+                    let fallbackAssets = 0;
+                    
+                    // Process each asset
+                    for (const asset of assets) {
+                        progressText.textContent = `Processing ${completedAssets + 1} of ${assets.length}: ${asset.name}`;
+                        
+                        try {
+                            // Determine file extension
+                            let extension = '.txt';
+                            if (asset.type.includes('image/')) {
+                                extension = asset.type.includes('png') ? '.png' : '.jpg';
+                            } else if (asset.type.includes('video/')) {
+                                extension = '.mp4';
+                            } else if (asset.type.includes('pdf')) {
+                                extension = '.pdf';
+                            } else if (asset.type.includes('excel')) {
+                                extension = '.xlsx';
+                            } else if (asset.type.includes('word')) {
+                                extension = '.docx';
+                            }
+                            
+                            // Normalize filename to avoid special characters
+                            const sanitizedName = asset.name.replace(/[^\w\s.-]/gi, '_');
+                            const fileName = sanitizedName.includes(extension) ? sanitizedName : sanitizedName + extension;
+                            
+                            // Try to fetch the asset data with timeout
+                            let blob = null;
+                            try {
+                                statusText.textContent = `Fetching ${asset.name}...`;
+                                
+                                // Create a timeout promise to abort fetch if it takes too long
+                                const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
+                                    const controller = new AbortController();
+                                    const id = setTimeout(() => controller.abort(), timeout);
+                                    
+                                    try {
+                                        const response = await fetch(url, {
+                                            ...options,
+                                            signal: controller.signal
+                                        });
+                                        clearTimeout(id);
+                                        return response;
+                                    } catch (error) {
+                                        clearTimeout(id);
+                                        throw error;
+                                    }
+                                };
+                                
+                                // Attempt to fetch the asset with timeout
+                                const response = await fetchWithTimeout(asset.url);
+                                
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error ${response.status}`);
+                                }
+                                
+                                blob = await response.blob();
+                                
+                                // Validate that we got a non-empty blob with the right type
+                                if (blob.size === 0) {
+                                    throw new Error("Empty blob received");
+                                }
+                                
+                                // Add file to zip
+                                zip.file(fileName, blob);
+                                successfulAssets++;
+                                statusText.textContent = `Successfully added ${asset.name}`;
+                            } catch (fetchError) {
+                                console.warn(`Could not fetch asset ${asset.name}:`, fetchError);
+                                statusText.textContent = `Using fallback for ${asset.name}`;
+                                
+                                // FALLBACK: Create a text file with asset metadata
+                                const metadata = {
+                                    name: asset.name,
+                                    type: asset.type,
+                                    size: asset.size,
+                                    path: asset.path,
+                                    description: asset.description,
+                                    created: asset.created,
+                                    url: asset.url
+                                };
+                                
+                                // Create a detailed info file
+                                const infoContent = `Asset Information:\n\n${
+                                    Object.entries(metadata)
+                                        .map(([key, value]) => `${key}: ${value}`)
+                                        .join('\n')
+                                }\n\nNote: This is a placeholder file. The original asset could not be downloaded due to access restrictions.`;
+                                
+                                // Add the info file to the zip
+                                const fallbackFileName = `${fileName}.info.txt`;
+                                zip.file(fallbackFileName, infoContent);
+                                fallbackAssets++;
+                            }
+                            
+                            // Update progress
+                            completedAssets++;
+                            const progress = Math.floor((completedAssets / assets.length) * 100);
+                            progressBar.style.width = `${progress}%`;
+                        } catch (error) {
+                            console.error(`Error processing asset ${asset.name}:`, error);
+                            statusText.textContent = `Error processing ${asset.name}: ${error.message}`;
+                            completedAssets++;
+                            // Continue with other assets despite the error
+                        }
+                    }
+                    
+                    // Check if we have at least some content to put in the ZIP
+                    if (successfulAssets === 0 && fallbackAssets === 0) {
+                        throw new Error('No assets could be processed for the ZIP file');
+                    }
+                    
+                    // Generate the zip file
+                    progressText.textContent = 'Generating ZIP file...';
+                    statusText.textContent = 'Finalizing your download...';
+                    
+                    const zipBlob = await zip.generateAsync({ 
+                        type: 'blob',
+                        compression: 'DEFLATE',
+                        compressionOptions: { level: 6 }
+                    }, (metadata) => {
+                        progressBar.style.width = `${metadata.percent}%`;
+                    });
+                    
+                    // Validate the ZIP blob
+                    if (!zipBlob || zipBlob.size === 0) {
+                        throw new Error('Generated ZIP file is empty or invalid');
+                    }
+                    
+                    // Remove loading overlay
+                    document.body.removeChild(loadingOverlay);
+                    
+                    // Show download interface with status information
+                    showZipDownloadInterface(zipBlob, {
+                        total: assets.length,
+                        success: successfulAssets,
+                        fallback: fallbackAssets
+                    });
+                    
+                } catch (error) {
+                    console.error('Error creating ZIP file:', error);
+                    
+                    // Remove loading overlay
+                    if (document.body.contains(loadingOverlay)) {
+                        document.body.removeChild(loadingOverlay);
+                    }
+                    
+                    // Show error notification
+                    showNotification('Error creating ZIP file: ' + error.message, 'error');
+                    
+                    // Exit selection mode
+                    exitSelectionMode();
+                }
+            }
+            
+            // Function to show the ZIP download interface
+            function showZipDownloadInterface(zipBlob, stats) {
+                // Create object URL for the zip file
+                const zipUrl = URL.createObjectURL(zipBlob);
+                
+                // Create download overlay
+                const downloadOverlay = document.createElement('div');
+                downloadOverlay.className = 'fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[60] p-4';
+                
+                // Generate a suitable filename 
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+                const zipFilename = `adobe_assets_${timestamp}.zip`;
+                
+                // Prepare status message based on fallbacks
+                let statusMessage = '';
+                if (stats && stats.fallback > 0) {
+                    statusMessage = `
+                        <div class="mt-2 mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 text-left text-sm">
+                            <p class="text-yellow-700 dark:text-yellow-200">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                ${stats.success} of ${stats.total} assets were successfully included. 
+                                ${stats.fallback} assets could not be downloaded directly and were replaced with info files.
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                downloadOverlay.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full">
+                        <h3 class="text-xl font-bold mb-4">Download ZIP File</h3>
+                        <p class="mb-2">Your ZIP file with ${selectedAssets.size} assets is ready to download.</p>
+                        ${statusMessage}
+                        <div class="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-200">
+                            <p class="font-medium">Download Instructions:</p>
+                            <ol class="list-decimal ml-5 mt-2 space-y-1">
+                                <li>Right-click on the button below and select "Save link as..."</li>
+                                <li>Choose a location on your computer</li>
+                                <li>Save the file as: <span class="font-medium">${zipFilename}</span></li>
+                            </ol>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row justify-center gap-4">
+                            <a href="${zipUrl}" download="${zipFilename}" class="px-6 py-3 bg-primary hover:bg-secondary text-white text-center rounded-md flex items-center justify-center">
+                                <i class="fas fa-file-archive mr-2"></i>Download ZIP (${formatBytes(zipBlob.size)})
+                            </a>
+                            <button id="closeZipOverlayBtn" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md">
+                                Close
+                            </button>
+                        </div>
+                        
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
+                            Note: The download link will be valid until you close this window.
+                        </p>
+                    </div>
+                `;
+                
+                document.body.appendChild(downloadOverlay);
+                
+                // Add event listener for close button
+                document.getElementById('closeZipOverlayBtn').addEventListener('click', () => {
+                    document.body.removeChild(downloadOverlay);
+                    // Release the blob URL
+                    URL.revokeObjectURL(zipUrl);
+                    // Exit selection mode
+                    exitSelectionMode();
+                });
+                
+                // Add event listener for ESC key
+                const escHandler = (e) => {
+                    if (e.key === 'Escape') {
+                        document.body.removeChild(downloadOverlay);
+                        URL.revokeObjectURL(zipUrl);
+                        document.removeEventListener('keydown', escHandler);
+                        exitSelectionMode();
+                    }
+                };
+                document.addEventListener('keydown', escHandler);
+            }
+
+            // Function to preview an asset
+            function previewAsset(asset) {
+                const previewTitle = document.getElementById('previewTitle');
+                const previewContent = document.getElementById('previewContent');
+                const previewInfo = document.getElementById('previewInfo');
+                
+                previewTitle.textContent = asset.name;
+                
+                // Clear previous content
+                previewContent.innerHTML = '';
+                
+                // Display appropriate content based on asset type
+                if (asset.type === 'image' || asset.type.includes('image')) {
+                    previewContent.innerHTML = `
+                        <div class="flex flex-col items-center w-full">
+                            <img id="previewImage" src="${asset.url}" alt="${asset.name}" class="max-w-full max-h-[60vh] object-contain mb-4">
+                            
+                            <div class="flex space-x-3 mt-2">
+                                <button id="transformWithAIBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md flex items-center">
+                                    <i class="fas fa-magic mr-2"></i>Transform with AI
+                                </button>
+                                <button id="downloadImageBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md flex items-center">
+                                    <i class="fas fa-download mr-2"></i>Download
+                                </button>
+                            </div>
+                            
+                            <!-- AI Transformation Panel (hidden by default) -->
+                            <div id="aiTransformPanel" class="w-full mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-md hidden">
+                                <h3 class="font-medium mb-2">Transform this image with AI</h3>
+                                <div class="mb-4">
+                                    <label for="aiPrompt" class="block mb-1 text-sm font-medium">Describe your transformation</label>
+                                    <textarea id="aiPrompt" rows="3" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm"
+                                        placeholder="Example: Convert this image to a watercolor painting, Make it look like a sketch, Add a sunset background..."></textarea>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="generateAIBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md flex items-center">
+                                        <i class="fas fa-bolt mr-2"></i>Generate
+                                    </button>
+                                    <button id="cancelAIBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md">
+                                        Cancel
+                                    </button>
+                                </div>
+                                
+                                <!-- AI Generation Progress and Result -->
+                                <div id="aiGenerationProgress" class="mt-4 hidden">
+                                    <div class="flex items-center">
+                                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mr-3"></div>
+                                        <span>Generating AI transformation...</span>
+                                    </div>
+                                </div>
+                                
+                                <div id="aiGenerationResult" class="mt-4 hidden">
+                                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                        <h4 class="font-medium mb-2">Transformed Image</h4>
+                                        <div class="flex flex-col items-center">
+                                            <img id="transformedImage" src="" alt="AI transformed image" class="max-w-full max-h-[40vh] object-contain mb-2">
+                                            <div class="flex space-x-2">
+                                                <button id="useTransformedBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md">
+                                                    Use this version
+                                                </button>
+                                                <button id="downloadTransformedBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md flex items-center">
+                                                    <i class="fas fa-download mr-2"></i>Download
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    previewInfo.innerHTML = `
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <p class="font-medium">Type</p>
+                                <p>${asset.type}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Size</p>
+                                <p>${asset.size}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Dimensions</p>
+                                <p>${asset.dimensions}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Created</p>
+                                <p>${asset.created}</p>
+                            </div>
+                        </div>
+                        <p class="mt-4">${asset.description}</p>
+                    `;
+                } else if (asset.type === 'video' || asset.type.includes('video')) {
+                    previewContent.innerHTML = `
+                        ${asset.url && asset.url.endsWith('.mp4') ? 
+                        `<video controls class="max-w-full max-h-[60vh]">
+                            <source src="${asset.url}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>` : 
+                        `<div class="relative w-full" style="padding-top: 56.25%;">
+                            <img src="${asset.thumbnail}" alt="${asset.name}" class="absolute top-0 left-0 w-full h-full object-contain">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <button class="w-16 h-16 bg-primary/80 hover:bg-primary rounded-full flex items-center justify-center">
+                                    <i class="fas fa-play text-white text-xl"></i>
+                                </button>
+                            </div>
+                        </div>`}
+                    `;
+                    previewInfo.innerHTML = `
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <p class="font-medium">Type</p>
+                                <p>${asset.type}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Size</p>
+                                <p>${asset.size}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Duration</p>
+                                <p>${asset.duration || 'Unknown'}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Created</p>
+                                <p>${asset.created}</p>
+                            </div>
+                        </div>
+                        <p class="mt-4">${asset.description}</p>
+                    `;
+                } else if (asset.type === 'document' || asset.type.includes('pdf') || asset.type.includes('application')) {
+                    previewContent.innerHTML = `
+                        <div class="bg-gray-100 dark:bg-gray-700 p-8 rounded-lg flex flex-col items-center">
+                            <i class="fas fa-file-pdf text-red-500 text-5xl mb-4"></i>
+                            <p>${asset.name}</p>
+                            ${asset.url ? `
+                            <a href="${asset.url}" target="_blank" class="mt-4 px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md">
+                                <i class="fas fa-external-link-alt mr-2"></i>View Document
+                            </a>` : `
+                            <button class="mt-4 px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed">
+                                <i class="fas fa-external-link-alt mr-2"></i>Document Unavailable
+                            </button>`}
+                        </div>
+                    `;
+                    previewInfo.innerHTML = `
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <p class="font-medium">Type</p>
+                                <p>${asset.type}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Size</p>
+                                <p>${asset.size}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Pages</p>
+                                <p>${asset.pages || 'Unknown'}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Created</p>
+                                <p>${asset.created}</p>
+                            </div>
+                        </div>
+                        <p class="mt-4">${asset.description}</p>
+                    `;
+                } else {
+                    // Generic preview for other asset types
+                    previewContent.innerHTML = `
+                        <div class="bg-gray-100 dark:bg-gray-700 p-8 rounded-lg flex flex-col items-center">
+                            <i class="fas fa-file text-primary text-5xl mb-4"></i>
+                            <p>${asset.name}</p>
+                            ${asset.url ? `
+                            <a href="${asset.url}" target="_blank" class="mt-4 px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md">
+                                <i class="fas fa-external-link-alt mr-2"></i>Open Asset
+                            </a>` : ''}
+                        </div>
+                    `;
+                    previewInfo.innerHTML = `
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <p class="font-medium">Type</p>
+                                <p>${asset.type}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Size</p>
+                                <p>${asset.size}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Path</p>
+                                <p class="truncate">${asset.path}</p>
+                            </div>
+                            <div>
+                                <p class="font-medium">Created</p>
+                                <p>${asset.created}</p>
+                            </div>
+                        </div>
+                        <p class="mt-4">${asset.description}</p>
+                    `;
+                }
+                
+                // Show modal
+                document.getElementById('assetPreviewModal').classList.remove('hidden');
+                
+                // Set up AI transformation functionality for images
+                if (asset.type === 'image' || asset.type.includes('image')) {
+                    // Toggle AI transformation panel
+                    document.getElementById('transformWithAIBtn').addEventListener('click', () => {
+                        document.getElementById('aiTransformPanel').classList.toggle('hidden');
+                    });
+                    
+                    // Cancel AI transformation
+                    document.getElementById('cancelAIBtn').addEventListener('click', () => {
+                        document.getElementById('aiTransformPanel').classList.add('hidden');
+                        document.getElementById('aiPrompt').value = '';
+                    });
+                    
+                    // Handle download button
+                    document.getElementById('downloadImageBtn').addEventListener('click', () => {
+                        // Create a temporary link for downloading
+                        const link = document.createElement('a');
+                        link.href = document.getElementById('previewImage').src;
+                        link.download = asset.name;
+                        // Show browser's native save dialog
+                        showNotification('Right-click on the image and select "Save image as..." to download', 'info');
+                    });
+                    
+                    // Handle AI image generation
+                    document.getElementById('generateAIBtn').addEventListener('click', async () => {
+                        const prompt = document.getElementById('aiPrompt').value.trim();
+                        
+                        if (!prompt) {
+                            showNotification('Please describe the transformation you want to apply', 'error');
+                            return;
+                        }
+                        
+                        // Show generation progress
+                        document.getElementById('aiGenerationProgress').classList.remove('hidden');
+                        document.getElementById('aiGenerationResult').classList.add('hidden');
+                        
+                        try {
+                            // Call the AI transformation function
+                            await transformImageWithAI(asset, prompt);
+                        } catch (error) {
+                            console.error('AI transformation error:', error);
+                            document.getElementById('aiGenerationProgress').classList.add('hidden');
+                            showNotification('Error generating AI transformation: ' + error.message, 'error');
+                        }
+                    });
+                    
+                    // Handle using the transformed image
+                    document.getElementById('useTransformedBtn')?.addEventListener('click', () => {
+                        const transformedImageSrc = document.getElementById('transformedImage').src;
+                        if (transformedImageSrc) {
+                            document.getElementById('previewImage').src = transformedImageSrc;
+                            document.getElementById('aiTransformPanel').classList.add('hidden');
+                            showNotification('Transformed image applied', 'success');
+                        }
+                    });
+                    
+                    // Handle downloading transformed image with improved guidance
+                    document.getElementById('downloadTransformedBtn')?.addEventListener('click', () => {
+                        const transformedImageSrc = document.getElementById('transformedImage').src;
+                        if (transformedImageSrc) {
+                            // Create a fullscreen overlay with the image and clear download instructions
+                            const downloadOverlay = document.createElement('div');
+                            downloadOverlay.className = 'fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[60] p-4';
+                            
+                            // Get the file name from the original asset but update it to reflect the transformation
+                            const originalName = asset.name.replace(/\.[^/.]+$/, ""); // Remove extension
+                            const transformedName = `${originalName}_transformed.jpg`;
+                            
+                            downloadOverlay.innerHTML = `
+                                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full flex flex-col items-center text-center">
+                                    <h3 class="text-xl font-bold mb-4">Download Transformed Image</h3>
+                                    <p class="mb-4">Right-click on the image below and select "Save image as..." to download</p>
+                                    <p class="text-sm text-gray-500 mb-4">Suggested filename: <span class="font-medium">${transformedName}</span></p>
+                                    
+                                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-2 mb-4 max-h-[60vh] overflow-auto">
+                                        <img src="${transformedImageSrc}" alt="Transformed image" class="max-w-full object-contain" id="downloadImage">
+                                    </div>
+                                    
+                                    <div class="flex flex-col sm:flex-row gap-3">
+                                        <button id="closeDownloadOverlayBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md">
+                                            Close
+                                        </button>
+                                        <button id="copyToClipboardBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md flex items-center">
+                                            <i class="fas fa-copy mr-2"></i>Copy to Clipboard
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            document.body.appendChild(downloadOverlay);
+                            
+                            // Add event listener for close button
+                            document.getElementById('closeDownloadOverlayBtn').addEventListener('click', () => {
+                                document.body.removeChild(downloadOverlay);
+                            });
+                            
+                            // Add event listener for ESC key
+                            const escHandler = (e) => {
+                                if (e.key === 'Escape') {
+                                    document.body.removeChild(downloadOverlay);
+                                    document.removeEventListener('keydown', escHandler);
+                                }
+                            };
+                            document.addEventListener('keydown', escHandler);
+                            
+                            // Add copy to clipboard functionality 
+                            document.getElementById('copyToClipboardBtn').addEventListener('click', async () => {
+                                const img = document.getElementById('downloadImage');
+                                
+                                try {
+                                    // Create a canvas element to draw the image
+                                    const canvas = document.createElement('canvas');
+                                    const ctx = canvas.getContext('2d');
+                                    canvas.width = img.naturalWidth;
+                                    canvas.height = img.naturalHeight;
+                                    
+                                    // Draw the image to the canvas
+                                    ctx.drawImage(img, 0, 0);
+                                    
+                                    // Get blob from canvas
+                                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                                    
+                                    try {
+                                        // Try to copy the image to clipboard
+                                        await navigator.clipboard.write([
+                                            new ClipboardItem({
+                                                [blob.type]: blob
+                                            })
+                                        ]);
+                                        
+                                        // Show success notification
+                                        showNotification('Image copied to clipboard!', 'success');
+                                    } catch (clipboardErr) {
+                                        console.error('Copy to clipboard error:', clipboardErr);
+                                        showNotification('Could not copy to clipboard. Browser may not support this feature.', 'error');
+                                    }
+                                } catch (err) {
+                                    console.error('Error preparing image for clipboard:', err);
+                                    showNotification('Error copying image to clipboard', 'error');
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+            
+            // Function to transform an image using AI
+            async function transformImageWithAI(asset, prompt) {
+                // Create a unique handler ID for this transformation
+                const handlerId = `aiTransform_${Date.now()}`;
+                
+                // Get the current image
+                const imageElement = document.getElementById('previewImage');
+                const imageUrl = imageElement.src;
+                
+                // Create a loading message to show during processing
+                showNotification('Preparing image for AI transformation...', 'info');
+                
+                // Register a handler for the AI response
+                window.Poe.registerHandler(handlerId, (result, context) => {
+                    // Hide progress indicator
+                    document.getElementById('aiGenerationProgress').classList.add('hidden');
+                    
+                    // Check for errors
+                    if (result.status === 'error') {
+                        showNotification('Error generating AI transformation: ' + 
+                            (result.responses[0]?.statusText || 'Unknown error'), 'error');
+                        return;
+                    }
+                    
+                    // Process each response (there should be just one from FLUX)
+                    for (const response of result.responses) {
+                        if (response.status === 'complete') {
+                            // Check if the response contains image attachments
+                            if (response.attachments && response.attachments.length > 0) {
+                                const imageAttachment = response.attachments[0];
+                                
+                                // Display the result
+                                document.getElementById('transformedImage').src = imageAttachment.url;
+                                document.getElementById('aiGenerationResult').classList.remove('hidden');
+                                showNotification('AI transformation complete!', 'success');
+                            } else {
+                                // If there's no attachment but the message is complete, check for error message in content
+                                const errorContent = response.content || 'No image was generated. Try a different prompt.';
+                                
+                                if (errorContent.toLowerCase().includes('error') || 
+                                    errorContent.toLowerCase().includes('unable to') ||
+                                    errorContent.toLowerCase().includes('failed')) {
+                                    showNotification(errorContent, 'error');
+                                } else {
+                                    showNotification('No image was generated. Try a different prompt.', 'error');
+                                }
+                            }
+                        } else if (response.status === 'incomplete') {
+                            // For streaming updates, we can show partial generation progress
+                            if (response.content && response.content.includes('seconds elapsed')) {
+                                // Update progress message with time elapsed
+                                const progressElement = document.getElementById('aiGenerationProgress').querySelector('span');
+                                if (progressElement) {
+                                    progressElement.textContent = response.content;
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                try {
+                    // We need to create a file object from the image URL to send as an attachment
+                    // First, we'll fetch the image to get the binary data
+                    let imageFile = null;
+                    
+                    try {
+                        // Convert the image to a file for attachment
+                        // This is a complex process that involves:
+                        // 1. Creating a canvas element
+                        // 2. Loading the image onto the canvas
+                        // 3. Converting the canvas to a blob
+                        // 4. Creating a File object from the blob
+                        
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Create a temporary image element to load the source image
+                        const img = new Image();
+                        
+                        // Wait for the image to load by wrapping in a Promise
+                        await new Promise((resolve, reject) => {
+                            img.onload = resolve;
+                            img.onerror = () => reject(new Error('Failed to load image'));
+                            img.crossOrigin = 'anonymous'; // Try to handle CORS
+                            img.src = imageUrl;
+                        });
+                        
+                        // Set canvas dimensions to match the image
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        
+                        // Draw the image onto the canvas
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Convert the canvas to a blob
+                        const blob = await new Promise(resolve => {
+                            canvas.toBlob(resolve, 'image/jpeg', 0.9);
+                        });
+                        
+                        // Create a File object from the blob
+                        if (blob) {
+                            imageFile = new File([blob], `${asset.name}.jpg`, { type: 'image/jpeg' });
+                        } else {
+                            throw new Error('Failed to convert image to file');
+                        }
+                    } catch (imgError) {
+                        console.error('Error preparing image:', imgError);
+                        showNotification('Unable to process the image for transformation. The image may be from a restricted domain.', 'error');
+                        
+                        // We'll continue without the image attachment and mention this in the prompt
+                        showNotification('Continuing with text-only prompt. Results may vary.', 'info');
+                    }
+                    
+                    // Create the FLUX prompt with clear instructions
+                    let enhancedPrompt = 'Transform this image: ' + prompt;
+                    
+                    // Add image source context if we couldn't attach the file
+                    if (!imageFile) {
+                        enhancedPrompt = `I'm trying to transform an image with this description: "${asset.name}". 
+                        Please create a new image based on this transformation request: ${prompt}`;
+                    }
+                    
+                    // Show generation progress
+                    document.getElementById('aiGenerationProgress').classList.remove('hidden');
+                    
+                    // Send the message to FLUX for image transformation
+                    if (imageFile) {
+                        // Send with image attachment
+                        await window.Poe.sendUserMessage(`@FLUX-pro-1.1 ${enhancedPrompt}`, {
+                            attachments: [imageFile],
+                            handler: handlerId,
+                            stream: true, // Enable streaming to get progress updates
+                            openChat: false
+                        });
+                    } else {
+                        // Send text-only prompt
+                        await window.Poe.sendUserMessage(`@FLUX-pro-1.1 ${enhancedPrompt}`, {
+                            handler: handlerId,
+                            stream: true,
+                            openChat: false
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error sending message to FLUX:', error);
+                    document.getElementById('aiGenerationProgress').classList.add('hidden');
+                    
+                    if (error.errorType === 'USER_REJECTED_CONFIRMATION') {
+                        showNotification('The image domain is not in the allowed list. Please try a different image.', 'error');
+                    } else {
+                        showNotification('Failed to communicate with the AI service: ' + error.message, 'error');
+                    }
+                    
+                    throw error;
+                }
+            }
+
+            // In-memory storage for pagination cursors (replacing sessionStorage)
+            const paginationCursors = {};
+            
+            // Load assets using Search Assets API
+            async function loadAssets(folderPath = '/') {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                const assetGrid = document.getElementById('assetGrid');
+                const emptyState = document.getElementById('emptyState');
+                
+                // Show loading
+                loadingIndicator.classList.remove('hidden');
+                assetGrid.classList.add('hidden');
+                emptyState.classList.add('hidden');
+                
+                try {
+                    // Call the Search Assets API with appropriate parameters
+                    const searchParams = { folderPath: folderPath };
+                    
+                    // Add pagination cursor if we have one saved for this folder
+                    const savedCursor = paginationCursors[`cursor_${folderPath}`];
+                    if (savedCursor) {
+                        searchParams.cursor = savedCursor;
+                    }
+                    
+                    const result = await searchAssets(searchParams);
+                    
+                    // Hide loading indicator
+                    loadingIndicator.classList.add('hidden');
+                    
+                    // Save cursor for pagination if provided
+                    if (result.cursor) {
+                        paginationCursors[`cursor_${folderPath}`] = result.cursor;
+                    }
+                    
+                    // Display the assets
+                    displayAssets(result.assets || []);
+                    
+                    // Show pagination controls if needed
+                    if (result.cursor) {
+                        updatePaginationInfo(result.assets.length, result.totalCount);
+                    }
+                    
+                    // Highlight the selected folder
+                    document.querySelectorAll('#folderTree li').forEach(li => {
+                        if (li.getAttribute('data-path') === folderPath) {
+                            li.classList.add('text-primary', 'font-medium');
+                        } else {
+                            li.classList.remove('text-primary', 'font-medium');
+                        }
+                    });
+                } catch (error) {
+                    // Handle error
+                    loadingIndicator.classList.add('hidden');
+                    console.error('Error loading assets:', error);
+                    
+                    // Show detailed error message in empty state with better formatting
+                    emptyState.classList.remove('hidden');
+                    
+                    // Format the error message with line breaks for better readability
+                    const errorMessage = error.message || 'Please check your API configuration and try again';
+                    const formattedMessage = errorMessage.replace(/\n\n/g, '</p><p class="mt-2">');
+                    
+                    emptyState.innerHTML = `
+                        <div class="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg border-l-4 border-red-500 max-w-2xl mx-auto">
+                            <div class="flex">
+                                <i class="fas fa-exclamation-circle text-3xl text-red-500 mr-4"></i>
+                                <div>
+                                    <h3 class="text-lg font-medium text-red-800 dark:text-red-200">API Connection Error</h3>
+                                    <div class="mt-2 text-red-700 dark:text-red-300">
+                                        <p>${formattedMessage}</p>
+                                    </div>
+                                    <div class="mt-4">
+                                        <button id="retryButton" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors duration-200">
+                                            <i class="fas fa-sync-alt mr-2"></i>Retry
+                                        </button>
+                                        <button id="showConfigBtn" class="ml-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors duration-200">
+                                            <i class="fas fa-cog mr-2"></i>Update Settings
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add event listeners to the buttons
+                    document.getElementById('retryButton').addEventListener('click', () => {
+                        loadAssets();
+                    });
+                    
+                    document.getElementById('showConfigBtn').addEventListener('click', () => {
+                        document.getElementById('configPanel').classList.remove('hidden');
+                    });
+                }
+            }
+
+            // Connect the Sign In button to the login function
+            // Note: This is already set up in the header button through another listener
+            
+            // Check for IMS auth redirect when the page loads
+            handleImsRedirect();
+            
+            // Show initial search prompt and then search for Adobe logo
+            document.getElementById('searchInput').value = 'Adobe logo';
+            showInitialSearchPrompt();
+            
+            // Perform initial search after a brief delay
+            setTimeout(() => {
+                document.getElementById('searchBtn').click();
+            }, 800);
+            
+            // Load More button functionality
+            document.getElementById('loadMoreBtn').addEventListener('click', async () => {
+                try {
+                    // Update loading indicator text for loading more results
+                    document.getElementById('loadingText').textContent = 'Loading more assets...';
+                    document.getElementById('loadingSubtext').textContent = 'Fetching next page of results';
+                    
+                    // Always search from root folder
+                    const folderPath = '/';
+                    
+                    // We'll use the saved cursor for this folder to load the next set
+                    const savedCursor = paginationCursors[`cursor_${folderPath}`];
+                    if (savedCursor) {
+                        // Show loading indicator
+                        document.getElementById('loadingIndicator').classList.remove('hidden');
+                        
+                        // Call the search API with the cursor
+                        const result = await searchAssets({
+                            folderPath: folderPath,
+                            cursor: savedCursor
+                        });
+                        
+                        // Hide loading
+                        document.getElementById('loadingIndicator').classList.add('hidden');
+                        
+                        // Update the cursor for next page if available
+                        if (result.cursor) {
+                            paginationCursors[`cursor_${folderPath}`] = result.cursor;
+                        } else {
+                            // No more results, hide the load more button
+                            document.getElementById('paginationControls').classList.add('hidden');
+                        }
+                        
+                        // Append the new assets to the existing grid
+                        if (result.assets && result.assets.length > 0) {
+                            const existingAssets = Array.from(document.getElementById('assetGrid').querySelectorAll('.asset-card'));
+                            const allAssets = document.getElementById('assetGrid').childElementCount > 0 
+                                ? [...mockAssets.slice(0, existingAssets.length), ...result.assets]
+                                : result.assets;
+                            
+                            displayAssets(allAssets);
+                            
+                            // Update pagination info
+                            updatePaginationInfo(allAssets.length, result.totalCount);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading more assets:', error);
+                    document.getElementById('loadingIndicator').classList.add('hidden');
+                    showNotification('Error loading more assets: ' + (error.message || 'Unknown error'), 'error');
+                }
+            });
+            
+            // Function to show initial search prompt
+            function showInitialSearchPrompt() {
+                const assetGrid = document.getElementById('assetGrid');
+                const emptyState = document.getElementById('emptyState');
+                const paginationControls = document.getElementById('paginationControls');
+                
+                // Check if user is already authenticated
+                const hasToken = document.getElementById('imsToken').value.trim() !== '';
+                
+                // Hide asset grid and pagination
+                assetGrid.classList.add('hidden');
+                paginationControls.classList.add('hidden');
+                
+                // Show empty state with search prompt
+                emptyState.classList.remove('hidden');
+                emptyState.innerHTML = `
+                    <div class="max-w-md mx-auto text-center">
+                        <i class="fas fa-search text-5xl mb-6 text-primary/70"></i>
+                        <h2 class="text-2xl font-bold mb-3">Search Adobe Assets</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">Enter keywords in the search box above to find assets from Adobe Experience Manager.</p>
+                        
+                        ${!hasToken ? `
+                        <div class="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-md border-l-4 border-yellow-500 text-left">
+                            <div class="flex">
+                                <i class="fas fa-exclamation-triangle text-yellow-500 text-lg mt-1 mr-3"></i>
+                                <div>
+                                    <p class="font-medium text-yellow-800 dark:text-yellow-200">Authentication Required</p>
+                                    <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+                                        You need to sign in with Adobe to search assets. Click the "Sign In with Adobe" button in the header.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border-l-4 border-blue-500 text-left">
+                                <i class="fas fa-info-circle text-blue-500 text-lg mr-3"></i>
+                                <div>
+                                    <p class="text-sm text-blue-800 dark:text-blue-200">Try searching for specific keywords like "marketing", "campaign", or "product"</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center p-3 bg-gray-100 dark:bg-gray-700 rounded-md text-left">
+                                <i class="fas fa-filter text-gray-500 dark:text-gray-400 text-lg mr-3"></i>
+                                <div>
+                                    <p class="text-sm">Use the type filter to narrow results by file type</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Removed Demo Search and Configure Endpoint buttons -->
+                    </div>
+                `;
+                
+                // No buttons to add listeners to
+                
+                // Update sign in button to show signed in state if already authenticated
+                if (hasToken) {
+                    updateAuthStatusUI(true);
+                    const signInBtn = document.getElementById('signInBtn');
+                    signInBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Signed In';
+                    signInBtn.classList.remove('bg-primary', 'hover:bg-secondary');
+                    signInBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                }
+            }
+            
+            // Function to update pagination info
+            function updatePaginationInfo(currentCount, totalCount) {
+                const paginationControls = document.getElementById('paginationControls');
+                const currentCountElem = document.getElementById('currentCount');
+                const totalCountElem = document.getElementById('totalCount');
+                
+                if (currentCount && totalCount) {
+                    currentCountElem.textContent = currentCount;
+                    totalCountElem.textContent = totalCount;
+                    paginationControls.classList.remove('hidden');
+                    
+                    // Hide load more button if we've loaded all assets
+                    if (currentCount >= totalCount) {
+                        document.getElementById('loadMoreBtn').classList.add('hidden');
+                    } else {
+                        document.getElementById('loadMoreBtn').classList.remove('hidden');
+                    }
+                } else {
+                    paginationControls.classList.add('hidden');
+                }
+            }
+
+            // Search Assets API implementation according to official API spec
+            async function searchAssets(params = {}) {
+                const endpoint = document.getElementById('apiEndpoint').value;
+                const apiKey = document.getElementById('apiKey').value;
+                const imsToken = document.getElementById('imsToken').value;
+                const limit = parseInt(document.getElementById('limitResults').value) || 50;
+                
+                // Construct the search URL
+                const searchUrl = `${endpoint}/search`;
+                
+                // Initialize query array for the search API
+                const queryArray = [];
+                
+                // Add search term if provided
+                const searchTerm = document.getElementById('searchInput').value.trim();
+                if (searchTerm) {
+                    queryArray.push({
+                        match: {
+                            text: searchTerm
+                        }
+                    });
+                }
+                
+                // Add filter by type if selected
+                const assetType = document.getElementById('filterType').value;
+                if (assetType) {
+                    // Handle audio type as a special case with a prefix match
+                    if (assetType === 'audio/') {
+                        queryArray.push({
+                            prefix: {
+                                "metadata.repositoryMetadata.dc:format": assetType
+                            }
+                        });
+                    } else {
+                        queryArray.push({
+                            term: {
+                                "metadata.repositoryMetadata.dc:format": [assetType]
+                            }
+                        });
+                    }
+                }
+                
+                // Add folder path filter if provided
+                if (params.folderPath && params.folderPath !== '/') {
+                    queryArray.push({
+                        term: {
+                            "metadata.repositoryMetadata.repo:path": [params.folderPath + '*']
+                        }
+                    });
+                }
+                
+                // Build the request payload according to the API specification
+                const payload = {
+                    query: queryArray,
+                    limit: limit
+                };
+                
+                // Add sorting if needed
+                payload.orderBy = "metadata.repositoryMetadata.repo:createDate desc";
+                
+                // Add cursor for pagination if provided
+                if (params.cursor) {
+                    payload.cursor = params.cursor;
+                }
+                
+                // Setup proper headers according to the API documentation
+                const formattedToken = imsToken.startsWith('Bearer ') ? imsToken : `Bearer ${imsToken}`;
+                
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-Adobe-Accept-Experimental': '1',
+                    'Authorization': formattedToken,
+                    'X-Api-Key': apiKey
+                };
+                
+                // Log the authorization header and request details
+                console.log('Authorization header:', formattedToken);
+                console.log('API Key header:', apiKey);
+                console.log('Search request payload:', JSON.stringify(payload));
+                
+                try {
+                    // Use the actual API endpoint and make a real fetch call
+                    console.log(`Making API request to: ${searchUrl}`);
+                    console.log('Request payload:', JSON.stringify(payload, null, 2));
+                    
+                    let response;
+                    try {
+                        response = await fetch(searchUrl, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(payload)
+                        });
+                    } catch (fetchError) {
+                        // Network error handling
+                        console.error('Network error:', fetchError);
+                        throw new Error(`Network error: Unable to connect to the API endpoint. Please check your internet connection and try again. (${fetchError.message})`);
+                    }
+                    
+                    // Handle different HTTP error status codes with specific messages
+                    if (!response.ok) {
+                        let errorDetails = '';
+                        
+                        try {
+                            // Try to parse the error response body
+                            const errorData = await response.json();
+                            console.error('API error response:', errorData);
+                            
+                            if (errorData.detail || errorData.title) {
+                                errorDetails = `\n\nDetails: ${errorData.title || ''} ${errorData.detail || ''}`;
+                            }
+                        } catch (e) {
+                            // If we can't parse the JSON, just use the status text
+                            console.error('Could not parse error response:', e);
+                        }
+                        
+                        // Custom error messages based on status code
+                        switch (response.status) {
+                            case 400:
+                                throw new Error(`Bad Request (400): The API request was invalid. Please check your search parameters.${errorDetails}`);
+                            case 401:
+                                throw new Error(`Authentication Error (401): Your API credentials are invalid or expired. Please update your API Key and IMS Token.${errorDetails}`);
+                            case 403:
+                                throw new Error(`Access Denied (403): You don't have permission to access this resource. Please verify your API Key and IMS Token have the correct permissions.${errorDetails}`);
+                            case 404:
+                                throw new Error(`Not Found (404): The requested resource could not be found. Please check your endpoint URL.${errorDetails}`);
+                            case 429:
+                                throw new Error(`Rate Limit Exceeded (429): Too many requests. Please try again later.${errorDetails}`);
+                            case 500:
+                            case 502:
+                            case 503:
+                            case 504:
+                                throw new Error(`Server Error (${response.status}): The AEM server encountered an error. Please try again later.${errorDetails}`);
+                            default:
+                                throw new Error(`API Error: ${response.status} ${response.statusText}${errorDetails}`);
+                        }
+                    }
+                    
+                    // Parse the successful response
+                    let data;
+                    try {
+                        data = await response.json();
+                        console.log('API response:', JSON.stringify(data, null, 2));
+                    } catch (parseError) {
+                        console.error('Error parsing response:', parseError);
+                        throw new Error('Error parsing API response. The server returned invalid data.');
+                    }
+                    
+                    // Process and return the real API response based on the official API response format
+                    return {
+                        assets: data.hits?.results || [],
+                        cursor: data.cursor || null,
+                        totalCount: data.search_metadata?.totalCount?.total || data.hits?.results?.length || 0
+                    };
+                    
+                    // Fallback to mock data if needed - uncomment this for testing without a working API
+                    /*
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            // Filter mock data based on search parameters
+                            let filteredAssets = [...mockAssets];
+                            
+                            // Apply search term filter
+                            if (searchTerm) {
+                                filteredAssets = filteredAssets.filter(asset => 
+                                    asset.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                    asset.description.toLowerCase().includes(searchTerm.toLowerCase())
+                                );
+                            }
+                            
+                            // Apply asset type filter
+                            if (assetType) {
+                                filteredAssets = filteredAssets.filter(asset => asset.type === assetType);
+                            }
+                            
+                            // Apply folder path filter if provided
+                            if (params.folderPath && params.folderPath !== '/') {
+                                filteredAssets = filteredAssets.filter(asset => 
+                                    asset.path.startsWith(params.folderPath));
+                            }
+                            
+                            // Apply pagination
+                            if (params.cursor) {
+                                const cursorIndex = parseInt(params.cursor);
+                                filteredAssets = filteredAssets.slice(cursorIndex, cursorIndex + limit);
+                            } else {
+                                filteredAssets = filteredAssets.slice(0, limit);
+                            }
+                            
+                            resolve({
+                                assets: filteredAssets,
+                                cursor: filteredAssets.length < mockAssets.length ? filteredAssets.length.toString() : null,
+                                totalCount: mockAssets.length
+                            });
+                        }, 1000);
+                    });
+                    */
+                } catch (error) {
+                    console.error('Error searching assets:', error);
+                    throw error;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
