@@ -77,21 +77,24 @@
         </div>
         
         <!-- Main Content -->
-        <!-- Download by SKU Section -->
+        <!-- Search by SKU Section -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold mb-4">Download by SKU</h2>
+            <h2 class="text-xl font-semibold mb-4">Search by SKU</h2>
             <div class="flex gap-2">
-                <input type="text" id="downloadSkuInput" 
+                <input type="text" id="searchSkuInput" 
                     class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                     bg-white dark:bg-gray-700 text-base" 
                     placeholder="Enter product SKU" />
-                <button id="downloadSkuBtn" 
+                <button id="searchSkuBtn" 
                     class="bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 
                     rounded-md transition-colors duration-200">
-                    Download
+                    Search
                 </button>
             </div>
-            <div id="skuDownloadStatus" class="mt-3 text-sm hidden"></div>
+            <div id="skuSearchStatus" class="mt-3 text-sm hidden"></div>
+            <div id="skuSearchResults" class="mt-4 space-y-3 hidden">
+                <!-- Search results will be displayed here -->
+            </div>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -548,17 +551,18 @@
         const closePreviewBtn = document.getElementById('closePreviewBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         
-        // Download by SKU elements
-        const downloadSkuInput = document.getElementById('downloadSkuInput');
-        const downloadSkuBtn = document.getElementById('downloadSkuBtn');
-        const skuDownloadStatus = document.getElementById('skuDownloadStatus');
+        // Search by SKU elements
+        const searchSkuInput = document.getElementById('searchSkuInput');
+        const searchSkuBtn = document.getElementById('searchSkuBtn');
+        const skuSearchStatus = document.getElementById('skuSearchStatus');
+        const skuSearchResults = document.getElementById('skuSearchResults');
         
-        // Download by SKU event listener
-        downloadSkuBtn.addEventListener('click', handleSkuDownload);
+        // Search by SKU event listener
+        searchSkuBtn.addEventListener('click', handleSkuSearch);
         
-        // Handle download by SKU
-        async function handleSkuDownload() {
-            const sku = downloadSkuInput.value.trim();
+        // Handle search by SKU
+        async function handleSkuSearch() {
+            const sku = searchSkuInput.value.trim();
             
             if (!sku) {
                 alert('Please enter a SKU');
@@ -571,50 +575,189 @@
             }
             
             // Show loading state
-            skuDownloadStatus.innerHTML = `
+            skuSearchStatus.innerHTML = `
                 <div class="flex items-center text-gray-600 dark:text-gray-300">
                     <div class="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
-                    Downloading files for SKU: ${sku}...
+                    Searching files for SKU: ${sku}...
                 </div>
             `;
-            skuDownloadStatus.classList.remove('hidden');
+            skuSearchStatus.classList.remove('hidden');
+            skuSearchResults.classList.add('hidden');
             
             try {
-                // Create the download link
-                const downloadUrl = `${apiSettings.apiUrl}/downloadBySKU?sku=${encodeURIComponent(sku)}`;
+                // Use the specific searchBySKU endpoint
+                const searchUrl = `${apiSettings.apiUrl}/searchBySKU?sku=${encodeURIComponent(sku)}`;
+                const response = await fetch(searchUrl, {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(`${apiSettings.username}:${apiSettings.password}`)
+                    }
+                });
                 
-                // Open in new tab
-                window.open(downloadUrl, '_blank');
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Authentication failed. Please check your username and password in settings.');
+                    } else {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error ${response.status}: ${errorText}`);
+                    }
+                }
                 
-                // Show success message
-                skuDownloadStatus.innerHTML = `
-                    <div class="flex items-center text-green-600 dark:text-green-400">
-                        <svg class="h-5 w-5 mr-1 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                        Download initiated. If prompted, please allow the download.
-                    </div>
-                `;
+                // Parse the response - it's a single file object, not an array
+                const fileData = await response.json();
                 
-                // After 5 seconds, hide the status
-                setTimeout(() => {
-                    skuDownloadStatus.classList.add('hidden');
-                }, 5000);
-                
+                // Show results
+                if (!fileData || Object.keys(fileData).length === 0) {
+                    skuSearchStatus.innerHTML = `
+                        <div class="flex items-center text-gray-500 dark:text-gray-400">
+                            <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                            No files found with SKU: ${sku}
+                        </div>
+                    `;
+                    skuSearchResults.classList.add('hidden');
+                } else {
+                    // Update status
+                    skuSearchStatus.innerHTML = `
+                        <div class="flex items-center text-green-600 dark:text-green-400">
+                            <svg class="h-5 w-5 mr-1 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            Found file with SKU: ${sku}
+                        </div>
+                    `;
+                    
+                    // Generate results HTML
+                    skuSearchResults.innerHTML = '';
+                    
+                    const fileCard = document.createElement('div');
+                    fileCard.className = 'bg-white dark:bg-gray-700 shadow rounded-lg p-4';
+                    
+                    // Get the title or fall back to filename
+                    const title = fileData.title || fileData.filename;
+                    
+                    // Check if it's an image file
+                    const isImage = fileData.filename.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+                    const imageUrl = `${apiSettings.apiUrl}/images/${fileData.filename}`;
+                    
+                    // Build file card content
+                    let cardContent = `
+                        <div class="flex items-start gap-4">
+                    `;
+                    
+                    // If it's an image, show a thumbnail
+                    if (isImage) {
+                        cardContent += `
+                            <div class="flex-shrink-0 w-20 h-20 bg-gray-100 dark:bg-gray-600 rounded-md overflow-hidden">
+                                <img src="${imageUrl}" alt="${title}" class="w-full h-full object-cover" />
+                            </div>
+                        `;
+                    } else {
+                        // Show a file icon for non-images
+                        cardContent += `
+                            <div class="flex-shrink-0 text-gray-500 dark:text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                        `;
+                    }
+                    
+                    // Add file details
+                    cardContent += `
+                            <div class="flex-1">
+                                <h3 class="font-medium text-lg">${title}</h3>
+                                
+                                <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                    `;
+                    
+                    // Add metadata fields
+                    if (fileData.description) {
+                        cardContent += `
+                            <div class="col-span-1 sm:col-span-2">
+                                <span class="font-medium">Description:</span> ${fileData.description}
+                            </div>
+                        `;
+                    }
+                    
+                    cardContent += `
+                            <div><span class="font-medium">Filename:</span> 
+                                <a href="${imageUrl}" target="_blank" 
+                                   class="text-primary hover:underline">
+                                    ${fileData.filename}
+                                </a>
+                            </div>
+                            <div><span class="font-medium">SKU:</span> ${fileData.sku}</div>
+                    `;
+                    
+                    // Add other relevant metadata
+                    if (fileData.customerName) {
+                        cardContent += `
+                            <div><span class="font-medium">Customer:</span> ${fileData.customerName}</div>
+                        `;
+                    }
+                    
+                    if (fileData.tags && fileData.tags.length > 0) {
+                        cardContent += `
+                            <div class="col-span-1 sm:col-span-2">
+                                <span class="font-medium">Tags:</span> ${
+                                    typeof fileData.tags === 'string' 
+                                        ? fileData.tags 
+                                        : fileData.tags.join(', ')
+                                }
+                            </div>
+                        `;
+                    }
+                    
+                    // Close the details div and add download link
+                    cardContent += `
+                                </div>
+                                
+                                <div class="mt-3 flex gap-3">
+                                    <a href="${imageUrl}" 
+                                       target="_blank"
+                                       class="text-primary hover:underline inline-flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        View
+                                    </a>
+                                    <a href="${imageUrl}" 
+                                       target="_blank"
+                                       download="${fileData.filename}"
+                                       class="text-primary hover:underline inline-flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    fileCard.innerHTML = cardContent;
+                    
+                    // Add to results
+                    skuSearchResults.appendChild(fileCard);
+                    skuSearchResults.classList.remove('hidden');
+                }
             } catch (error) {
-                console.error('SKU download error:', error);
+                console.error('SKU search error:', error);
                 
                 // Show error
-                skuDownloadStatus.innerHTML = `
+                skuSearchStatus.innerHTML = `
                     <div class="flex items-start text-red-600 dark:text-red-400">
                         <svg class="h-5 w-5 mr-1 text-red-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                         </svg>
                         <div>
-                            Download failed: ${error.message}
+                            Search failed: ${error.message}
                         </div>
                     </div>
                 `;
+                skuSearchResults.classList.add('hidden');
             }
         }
         
