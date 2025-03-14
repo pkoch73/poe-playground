@@ -262,7 +262,7 @@
                             <input type="url" id="apiUrl" name="apiUrl" 
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                                 bg-white dark:bg-gray-700 text-base" 
-                                placeholder="https://your-worker.workers.dev" />
+                                placeholder="https://image-uploader.miphi.io" />
                         </div>
                         
                         <div>
@@ -352,7 +352,7 @@
                             <h4 class="font-medium text-lg mb-2">Upload File</h4>
                             <p class="text-sm mb-2">This example shows how to upload a file with metadata using cURL:</p>
                             <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
-                                <pre><code class="language-bash">curl -X POST "https://your-worker.workers.dev/upload" \
+                                <pre><code class="language-bash">curl -X POST "https://image-uploader.miphi.io/upload" \
     -u "username:password" \
     -F "file=@/path/to/your/file.jpg" \
     -F "title=My File Title" \
@@ -362,7 +362,7 @@
     -F "tags=tag1,tag2,tag3"</code></pre>
                             </div>
                             <p class="text-sm mt-2">
-                                <strong>Note:</strong> Replace <code>your-worker.workers.dev</code>, <code>username</code>, <code>password</code>, and the file path with your actual values.
+                                <strong>Note:</strong> Replace <code>username</code>, <code>password</code>, and the file path with your actual values.
                             </p>
                         </div>
                         
@@ -371,7 +371,7 @@
                             <h4 class="font-medium text-lg mb-2">Download File</h4>
                             <p class="text-sm mb-2">To download a file using its filename:</p>
                             <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
-                                <pre><code class="language-bash">curl -X GET "https://your-worker.workers.dev/images/filename.jpg" \
+                                <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/images/filename.jpg" \
     -u "username:password" \
     --output downloaded_file.jpg</code></pre>
                             </div>
@@ -385,7 +385,7 @@
                             <h4 class="font-medium text-lg mb-2">Fetch File Metadata</h4>
                             <p class="text-sm mb-2">To get only the metadata for a file:</p>
                             <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
-                                <pre><code class="language-bash">curl -X GET "https://your-worker.workers.dev/images/filename.jpg?metadata=true" \
+                                <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/images/filename.jpg?metadata=true" \
     -u "username:password"</code></pre>
                             </div>
                             <p class="text-sm mt-2">
@@ -398,7 +398,7 @@
                             <h4 class="font-medium text-lg mb-2">Search Files</h4>
                             <p class="text-sm mb-2">To search for files by keyword or metadata:</p>
                             <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
-                                <pre><code class="language-bash">curl -X GET "https://your-worker.workers.dev/search?q=searchterm" \
+                                <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/search?q=searchterm" \
     -u "username:password"</code></pre>
                             </div>
                             <p class="text-sm mt-2">
@@ -411,7 +411,7 @@
                             <h4 class="font-medium text-lg mb-2">Search by Customer</h4>
                             <p class="text-sm mb-2">To search for files associated with a specific customer:</p>
                             <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
-                                <pre><code class="language-bash">curl -X GET "https://your-worker.workers.dev/search?q=customerName:ACME%20Corp" \
+                                <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/search?q=customerName:ACME%20Corp" \
     -u "username:password"</code></pre>
                             </div>
                             <p class="text-sm mt-2">
@@ -424,7 +424,7 @@
                             <h4 class="font-medium text-lg mb-2">Download by SKU</h4>
                             <p class="text-sm mb-2">To download all files associated with a specific SKU:</p>
                             <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
-                                <pre><code class="language-bash">curl -X GET "https://your-worker.workers.dev/downloadBySKU?sku=PROD12345" \
+                                <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/downloadBySKU?sku=PROD12345" \
     -u "username:password" \
     --output products_PROD12345.zip</code></pre>
                             </div>
@@ -442,7 +442,7 @@
                                 Alternatively, you can use a Basic Auth header:
                             </p>
                             <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm mt-2">
-                                <pre><code class="language-bash">curl -X GET "https://your-worker.workers.dev/images/file.jpg" \
+                                <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/images/file.jpg" \
     -H "Authorization: Basic $(echo -n 'username:password' | base64)"</code></pre>
                             </div>
                         </div>
@@ -499,7 +499,7 @@
     <script>
         // Default configuration for the Cloudflare Worker
         let apiSettings = {
-            apiUrl: "https://image-uploader.philipp-koch.workers.dev",
+            apiUrl: "https://image-uploader.miphi.io",
             username: "",
             password: ""
         };
@@ -709,10 +709,111 @@
                         `;
                     }
                     
-                    // Close the details div and add download link
+                    // Close the details div
                     cardContent += `
                                 </div>
-                                
+                    `;
+                    
+                    // Add image transformation options for Cloudflare if it's an image
+                    if (isImage) {
+                        cardContent += `
+                                <div class="mt-4 pt-3 border-t dark:border-gray-600">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h4 class="font-medium">Cloudflare Image Transformations</h4>
+                                        <button type="button" id="toggleTransform-${fileData.filename}" class="text-xs text-primary hover:underline">Show/Hide Options</button>
+                                    </div>
+                                    
+                                    <div id="transformOptions-${fileData.filename}" class="hidden mb-4">
+                                        <div class="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+                                            <div>
+                                                <label class="block text-xs mb-1">Width</label>
+                                                <input type="number" id="width-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700" placeholder="auto" min="1" max="5000">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs mb-1">Height</label>
+                                                <input type="number" id="height-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700" placeholder="auto" min="1" max="5000">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs mb-1">Format</label>
+                                                <select id="format-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700">
+                                                    <option value="">Original</option>
+                                                    <option value="webp">WebP</option>
+                                                    <option value="avif">AVIF</option>
+                                                    <option value="png">PNG</option>
+                                                    <option value="jpeg">JPEG</option>
+                                                    <option value="gif">GIF</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs mb-1">Quality (1-100)</label>
+                                                <input type="number" id="quality-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700" placeholder="80" min="1" max="100" value="80">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs mb-1">Fit</label>
+                                                <select id="fit-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700">
+                                                    <option value="">Auto</option>
+                                                    <option value="scale-down">Scale Down</option>
+                                                    <option value="contain">Contain</option>
+                                                    <option value="cover">Cover</option>
+                                                    <option value="crop">Crop</option>
+                                                    <option value="pad">Pad</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs mb-1">Gravity</label>
+                                                <select id="gravity-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700">
+                                                    <option value="">Auto</option>
+                                                    <option value="auto">Smart</option>
+                                                    <option value="top">Top</option>
+                                                    <option value="bottom">Bottom</option>
+                                                    <option value="left">Left</option>
+                                                    <option value="right">Right</option>
+                                                    <option value="center">Center</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex justify-between items-center mb-2">
+                                            <button type="button" id="applyTransform-${fileData.filename}" class="bg-primary text-white px-3 py-1 rounded text-sm hover:bg-opacity-90">Preview Transformation</button>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">Powered by Cloudflare Images</div>
+                                        </div>
+                                        
+                                        <div id="transformPreview-${fileData.filename}" class="hidden mt-3">
+                                            <div class="flex flex-col sm:flex-row gap-4 mb-3">
+                                                <div class="w-full sm:w-1/2">
+                                                    <div class="text-xs mb-1 text-center">Original</div>
+                                                    <div class="bg-gray-100 dark:bg-gray-600 rounded overflow-hidden">
+                                                        <img src="${imageUrl}" alt="Original" class="w-full h-auto object-contain max-h-60">
+                                                    </div>
+                                                </div>
+                                                <div class="w-full sm:w-1/2">
+                                                    <div class="text-xs mb-1 text-center">Transformed</div>
+                                                    <div class="bg-gray-100 dark:bg-gray-600 rounded overflow-hidden">
+                                                        <img id="transformedImage-${fileData.filename}" src="${imageUrl}" alt="Transformed" class="w-full h-auto object-contain max-h-60">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex justify-between items-center text-xs mb-2">
+                                                <span>Transformed URL:</span>
+                                                <button type="button" id="copyUrl-${fileData.filename}" class="text-primary hover:text-primary-dark flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                                    </svg>
+                                                    Copy URL
+                                                </button>
+                                            </div>
+                                            <div class="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs font-mono overflow-x-auto whitespace-nowrap mb-2 relative">
+                                                <span id="transformedUrl-${fileData.filename}">${imageUrl}</span>
+                                                <span id="copyFeedback-${fileData.filename}" class="absolute right-2 top-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full opacity-0 transition-opacity duration-300">Copied!</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                        `;
+                    }
+                    
+                    // Add action buttons
+                    cardContent += `
                                 <div class="mt-3 flex gap-3">
                                     <a href="${imageUrl}" 
                                        target="_blank"
@@ -1845,6 +1946,152 @@ Troubleshooting steps:
                 submitBtn.disabled = false;
             }
         }
+        
+        // Function to set up Cloudflare image transformation functionality
+        function setupImageTransformHandlers(filename) {
+            // Add event listeners to toggle, apply transform buttons
+            const toggleBtn = document.getElementById(`toggleTransform-${filename}`);
+            const transformOptions = document.getElementById(`transformOptions-${filename}`);
+            const applyBtn = document.getElementById(`applyTransform-${filename}`);
+            const transformPreview = document.getElementById(`transformPreview-${filename}`);
+            
+            if (!toggleBtn || !transformOptions || !applyBtn || !transformPreview) {
+                console.error(`Missing elements for image transform for ${filename}`);
+                return;
+            }
+            
+            // Toggle display of transform options
+            toggleBtn.addEventListener('click', () => {
+                if (transformOptions.classList.contains('hidden')) {
+                    transformOptions.classList.remove('hidden');
+                } else {
+                    transformOptions.classList.add('hidden');
+                }
+            });
+            
+            // Handle apply transform button
+            applyBtn.addEventListener('click', () => {
+                applyImageTransformation(filename);
+            });
+            
+            // Handle copy URL button
+            const copyUrlBtn = document.getElementById(`copyUrl-${filename}`);
+            const copyFeedback = document.getElementById(`copyFeedback-${filename}`);
+            
+            if (copyUrlBtn && copyFeedback) {
+                copyUrlBtn.addEventListener('click', () => {
+                    const urlText = document.getElementById(`transformedUrl-${filename}`);
+                    if (urlText) {
+                        // Copy to clipboard
+                        navigator.clipboard.writeText(urlText.textContent)
+                            .then(() => {
+                                // Show success feedback
+                                copyFeedback.classList.remove('opacity-0');
+                                copyFeedback.classList.add('opacity-100');
+                                
+                                // Hide feedback after 2 seconds
+                                setTimeout(() => {
+                                    copyFeedback.classList.remove('opacity-100');
+                                    copyFeedback.classList.add('opacity-0');
+                                }, 2000);
+                            })
+                            .catch(err => {
+                                console.error('Failed to copy URL: ', err);
+                                alert('Failed to copy URL. Please try selecting and copying manually.');
+                            });
+                    }
+                });
+            }
+            
+            // Handle real-time preview on form changes
+            const formElements = [
+                document.getElementById(`width-${filename}`),
+                document.getElementById(`height-${filename}`),
+                document.getElementById(`format-${filename}`),
+                document.getElementById(`quality-${filename}`),
+                document.getElementById(`fit-${filename}`),
+                document.getElementById(`gravity-${filename}`)
+            ];
+            
+            formElements.forEach(elem => {
+                if (elem) {
+                    elem.addEventListener('change', () => {
+                        // Preview immediately when options change
+                        applyImageTransformation(filename);
+                    });
+                }
+            });
+        }
+        
+        // Function to apply image transformations and update preview
+        function applyImageTransformation(filename) {
+            // Get all form values
+            const width = document.getElementById(`width-${filename}`).value;
+            const height = document.getElementById(`height-${filename}`).value;
+            const format = document.getElementById(`format-${filename}`).value;
+            const quality = document.getElementById(`quality-${filename}`).value;
+            const fit = document.getElementById(`fit-${filename}`).value;
+            const gravity = document.getElementById(`gravity-${filename}`).value;
+            
+            // Build the Cloudflare transformation URL parameters
+            const params = [];
+            if (width) params.push(`width=${width}`);
+            if (height) params.push(`height=${height}`);
+            if (format) params.push(`format=${format}`);
+            if (quality) params.push(`quality=${quality}`);
+            if (fit) params.push(`fit=${fit}`);
+            if (gravity) params.push(`gravity=${gravity}`);
+            
+            // Set default quality to 50 if format is specified but no quality
+            if (format && !quality) {
+                params.push('quality=50');
+            }
+            
+            // Build the complete URL with transformations
+            const originalUrl = `${apiSettings.apiUrl}/images/${filename}`;
+            let transformedUrl = originalUrl;
+            
+            // Only add transformations if parameters exist
+            if (params.length > 0) {
+                // Correct URL format with /images/ path segment
+                transformedUrl = `${apiSettings.apiUrl}/cdn-cgi/image/${params.join(',')}/images/${filename}`;
+            }
+            
+            // Update the transformed image preview
+            const transformedImage = document.getElementById(`transformedImage-${filename}`);
+            const transformedUrlText = document.getElementById(`transformedUrl-${filename}`);
+            const transformPreview = document.getElementById(`transformPreview-${filename}`);
+            
+            if (transformedImage && transformedUrlText) {
+                transformedImage.src = transformedUrl;
+                transformedUrlText.textContent = transformedUrl;
+                transformPreview.classList.remove('hidden');
+            }
+        }
+        
+        // Observer to handle dynamically added SKU search results
+        const skuSearchResultsObserver = new MutationObserver((mutations) => {
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    // Check if any of the added nodes contain transform buttons
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) { // Element node
+                            // Look for transform toggle buttons
+                            const toggleBtns = node.querySelectorAll('[id^="toggleTransform-"]');
+                            
+                            toggleBtns.forEach(btn => {
+                                // Extract filename from button ID
+                                const filename = btn.id.replace('toggleTransform-', '');
+                                setupImageTransformHandlers(filename);
+                            });
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Start observing SKU search results
+        skuSearchResultsObserver.observe(skuSearchResults, { childList: true });
         
         // Initialize the UI
         loadFiles();
