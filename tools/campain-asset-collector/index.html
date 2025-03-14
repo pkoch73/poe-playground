@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Assets Collector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4A49B0',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(107, 114, 128, 0.5);
+        }
+        .asset-card:hover .asset-actions {
+            opacity: 1;
+        }
+        .asset-actions {
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-6 max-w-7xl">
+        <header class="mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                    <i class="fas fa-photo-film mr-3 text-primary"></i>
+                    Campaign Assets Collector
+                </h1>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span id="source-status" class="text-xs text-gray-500 dark:text-gray-400 mr-4">
+                        <i class="fas fa-circle-info mr-1"></i> Demo Mode (Using Sample Data)
+                    </span>
+                    <span id="mode-indicator" class="text-sm text-gray-600 dark:text-gray-300">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:inline"></i>
+                    </span>
+                </div>
+            </div>
+            
+            <nav class="flex border-b border-gray-200 dark:border-gray-700">
+                <button id="browse-tab" class="py-3 px-4 text-primary dark:text-primary border-b-2 border-primary font-medium text-sm">
+                    <i class="fas fa-images mr-2"></i>Browse
+                </button>
+                <button id="basket-tab" class="py-3 px-4 text-gray-500 dark:text-gray-400 font-medium text-sm">
+                    <i class="fas fa-shopping-basket mr-2"></i>Basket <span id="basket-count" class="bg-primary text-white rounded-full px-2 py-0.5 text-xs ml-1">0</span>
+                </button>
+                <button id="collections-tab" class="py-3 px-4 text-gray-500 dark:text-gray-400 font-medium text-sm">
+                    <i class="fas fa-folder-open mr-2"></i>Collections <span id="collections-count" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full px-2 py-0.5 text-xs ml-1">0</span>
+                </button>
+            </nav>
+        </header>
+
+        <!-- Browse Section -->
+        <section id="browse-section" class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div class="flex items-center space-x-4 w-full md:w-auto">
+                    <select id="source-selector" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="dynamic-media">Dynamic Media</option>
+                        <option value="dropbox">Dropbox</option>
+                    </select>
+                    <button id="refresh-btn" class="p-2 text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="relative w-full md:w-64">
+                    <input id="search-assets" type="text" placeholder="Search assets..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md pl-10 pr-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+
+            <div id="assets-loading" class="flex justify-center items-center py-10">
+                <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+            </div>
+
+            <div id="assets-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 hidden"></div>
+
+            <div id="no-assets" class="hidden py-12 text-center">
+                <i class="fas fa-folder-open text-gray-300 dark:text-gray-700 text-5xl mb-4"></i>
+                <p class="text-gray-500 dark:text-gray-400">No assets found. Try changing your search or source.</p>
+            </div>
+
+            <div id="pagination" class="flex justify-center mt-6 space-x-2 hidden">
+                <button id="prev-page" class="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span id="page-info" class="px-3 py-1">Page 1 of 1</span>
+                <button id="next-page" class="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Basket Section -->
+        <section id="basket-section" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Your Basket</h2>
+                <button id="clear-basket" class="text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-trash-alt mr-1"></i> Clear Basket
+                </button>
+            </div>
+
+            <div id="basket-empty" class="py-12 text-center">
+                <i class="fas fa-shopping-basket text-gray-300 dark:text-gray-700 text-5xl mb-4"></i>
+                <p class="text-gray-500 dark:text-gray-400">Your basket is empty. Add assets from the Browse section.</p>
+            </div>
+
+            <div id="basket-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8 hidden"></div>
+
+            <div id="save-collection-form" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mt-8 hidden">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Save as Collection</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="collection-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Collection Name*</label>
+                        <input type="text" id="collection-name" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary" required>
+                    </div>
+                    <div>
+                        <label for="project-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Name</label>
+                        <input type="text" id="project-name" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label for="owner-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Owner Name</label>
+                        <input type="text" id="owner-name" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label for="region" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Region</label>
+                        <select id="region" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">Select Region</option>
+                            <option value="North America">North America</option>
+                            <option value="Europe">Europe</option>
+                            <option value="Asia">Asia</option>
+                            <option value="Africa">Africa</option>
+                            <option value="South America">South America</option>
+                            <option value="Australia">Australia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="language" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Language</label>
+                        <select id="language" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                            <option value="">Select Language</option>
+                            <option value="English">English</option>
+                            <option value="Spanish">Spanish</option>
+                            <option value="French">French</option>
+                            <option value="German">German</option>
+                            <option value="Chinese">Chinese</option>
+                            <option value="Japanese">Japanese</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="collection-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                        <textarea id="collection-description" rows="3" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button id="save-collection-btn" class="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-save mr-2"></i>Save Collection
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Collections Section -->
+        <section id="collections-section" class="hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Your Collections</h2>
+                <div class="relative w-full md:w-64">
+                    <input id="search-collections" type="text" placeholder="Search collections..." class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md pl-10 pr-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+
+            <div id="collections-empty" class="py-12 text-center">
+                <i class="fas fa-folder-open text-gray-300 dark:text-gray-700 text-5xl mb-4"></i>
+                <p class="text-gray-500 dark:text-gray-400">You don't have any saved collections yet.</p>
+            </div>
+
+            <div id="collections-list" class="hidden space-y-4"></div>
+        </section>
+
+        <!-- Collection Detail Modal -->
+        <div id="collection-modal" class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 id="modal-title" class="text-lg font-medium text-gray-900 dark:text-white"></h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="modal-content" class="p-6 overflow-y-auto custom-scrollbar flex-1"></div>
+                <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 p-4">
+                    <div>
+                        <button id="share-collection" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-md transition-colors mr-2">
+                            <i class="fas fa-share-alt mr-2"></i>Share
+                        </button>
+                        <button id="zip-collection" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-md transition-colors">
+                            <i class="fas fa-file-archive mr-2"></i>Save as ZIP
+                        </button>
+                    </div>
+                    <button id="delete-collection" class="text-red-500 hover:text-red-700 dark:hover:text-red-400 font-medium py-2 px-4 rounded-md transition-colors">
+                        <i class="fas fa-trash-alt mr-2"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed bottom-4 right-4 bg-gray-800 dark:bg-gray-700 text-white px-4 py-3 rounded-lg shadow-lg opacity-0 transition-opacity duration-300 flex items-center z-50">
+            <i id="toast-icon" class="mr-2"></i>
+            <span id="toast-message"></span>
+        </div>
+
+        <script>
+            // Dark mode detection
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+
+            // Store data in memory (since localStorage isn't available)
+            const appState = {
+                currentSource: 'dynamic-media',
+                currentPage: 1,
+                totalPages: 1,
+                searchQuery: '',
+                activeTab: 'browse',
+                basket: [],
+                collections: [],
+                mockAssets: {
+                    'dynamic-media': [
+                        { id: 'dm-001', name: 'Product Banner', type: 'image/jpeg', url: 'https://picsum.photos/id/1/800/600', thumbnail: 'https://picsum.photos/id/1/200/150', dateAdded: '2023-05-15' },
+                        { id: 'dm-002', name: 'Campaign Hero', type: 'image/png', url: 'https://picsum.photos/id/10/800/600', thumbnail: 'https://picsum.photos/id/10/200/150', dateAdded: '2023-06-12' },
+                        { id: 'dm-003', name: 'Team Photo', type: 'image/jpeg', url: 'https://picsum.photos/id/20/800/600', thumbnail: 'https://picsum.photos/id/20/200/150', dateAdded: '2023-07-04' },
+                        { id: 'dm-004', name: 'Office Building', type: 'image/jpeg', url: 'https://picsum.photos/id/30/800/600', thumbnail: 'https://picsum.photos/id/30/200/150', dateAdded: '2023-08-22' },
+                        { id: 'dm-005', name: 'Product Showcase', type: 'image/png', url: 'https://picsum.photos/id/40/800/600', thumbnail: 'https://picsum.photos/id/40/200/150', dateAdded: '2023-09-18' },
+                        { id: 'dm-006', name: 'Conference Visual', type: 'image/jpeg', url: 'https://picsum.photos/id/50/800/600', thumbnail: 'https://picsum.photos/id/50/200/150', dateAdded: '2023-10-05' },
+                        { id: 'dm-007', name: 'Dashboard Screenshot', type: 'image/png', url: 'https://picsum.photos/id/60/800/600', thumbnail: 'https://picsum.photos/id/60/200/150', dateAdded: '2023-11-11' },
+                        { id: 'dm-008', name: 'Marketing Material', type: 'image/jpeg', url: 'https://picsum.photos/id/70/800/600', thumbnail: 'https://picsum.photos/id/70/200/150', dateAdded: '2023-12-24' }
+                    ],
+                    'dropbox': [
+                        { id: 'db-001', name: 'Project Mockup', type: 'image/png', url: 'https://picsum.photos/id/100/800/600', thumbnail: 'https://picsum.photos/id/100/200/150', dateAdded: '2023-06-02' },
+                        { id: 'db-002', name: 'Logo Design', type: 'image/png', url: 'https://picsum.photos/id/110/800/600', thumbnail: 'https://picsum.photos/id/110/200/150', dateAdded: '2023-07-15' },
+                        { id: 'db-003', name: 'Social Media Post', type: 'image/jpeg', url: 'https://picsum.photos/id/120/800/600', thumbnail: 'https://picsum.photos/id/120/200/150', dateAdded: '2023-08-30' },
+                        { id: 'db-004', name: 'Client Presentation', type: 'image/jpeg', url: 'https://picsum.photos/id/130/800/600', thumbnail: 'https://picsum.photos/id/130/200/150', dateAdded: '2023-09-10' },
+                        { id: 'db-005', name: 'Icon Set', type: 'image/png', url: 'https://picsum.photos/id/140/800/600', thumbnail: 'https://picsum.photos/id/140/200/150', dateAdded: '2023-10-22' },
+                        { id: 'db-006', name: 'Website Background', type: 'image/jpeg', url: 'https://picsum.photos/id/150/800/600', thumbnail: 'https://picsum.photos/id/150/200/150', dateAdded: '2023-11-14' },
+                        { id: 'db-007', name: 'Pattern Design', type: 'image/png', url: 'https://picsum.photos/id/160/800/600', thumbnail: 'https://picsum.photos/id/160/200/150', dateAdded: '2023-12-01' },
+                        { id: 'db-008', name: 'Brochure Template', type: 'image/jpeg', url: 'https://picsum.photos/id/170/800/600', thumbnail: 'https://picsum.photos/id/170/200/150', dateAdded: '2024-01-05' }
+                    ]
+                }
+            };
+
+            // DOM Elements
+            const elements = {
+                // Tabs
+                browseTab: document.getElementById('browse-tab'),
+                basketTab: document.getElementById('basket-tab'),
+                collectionsTab: document.getElementById('collections-tab'),
+                browseSection: document.getElementById('browse-section'),
+                basketSection: document.getElementById('basket-section'),
+                collectionsSection: document.getElementById('collections-section'),
+                
+                // Browse
+                sourceSelector: document.getElementById('source-selector'),
+                refreshBtn: document.getElementById('refresh-btn'),
+                searchAssets: document.getElementById('search-assets'),
+                assetsLoading: document.getElementById('assets-loading'),
+                assetsContainer: document.getElementById('assets-container'),
+                noAssets: document.getElementById('no-assets'),
+                pagination: document.getElementById('pagination'),
+                prevPage: document.getElementById('prev-page'),
+                nextPage: document.getElementById('next-page'),
+                pageInfo: document.getElementById('page-info'),
+                
+                // Basket
+                basketCount: document.getElementById('basket-count'),
+                clearBasket: document.getElementById('clear-basket'),
+                basketEmpty: document.getElementById('basket-empty'),
+                basketItems: document.getElementById('basket-items'),
+                saveCollectionForm: document.getElementById('save-collection-form'),
+                saveCollectionBtn: document.getElementById('save-collection-btn'),
+                
+                // Collections
+                collectionsCount: document.getElementById('collections-count'),
+                searchCollections: document.getElementById('search-collections'),
+                collectionsEmpty: document.getElementById('collections-empty'),
+                collectionsList: document.getElementById('collections-list'),
+                
+                // Modal
+                collectionModal: document.getElementById('collection-modal'),
+                modalTitle: document.getElementById('modal-title'),
+                modalContent: document.getElementById('modal-content'),
+                closeModal: document.getElementById('close-modal'),
+                shareCollection: document.getElementById('share-collection'),
+                zipCollection: document.getElementById('zip-collection'),
+                deleteCollection: document.getElementById('delete-collection'),
+                
+                // Toast
+                toast: document.getElementById('toast'),
+                toastIcon: document.getElementById('toast-icon'),
+                toastMessage: document.getElementById('toast-message')
+            };
+
+            // Show a toast notification
+            function showToast(message, type = 'success') {
+                const toast = elements.toast;
+                const icon = elements.toastIcon;
+                const msg = elements.toastMessage;
+                
+                icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+                msg.textContent = message;
+                
+                toast.classList.remove('opacity-0');
+                toast.classList.add('opacity-100');
+                
+                setTimeout(() => {
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0');
+                }, 3000);
+            }
+
+            // Switch tabs
+            function switchTab(tab) {
+                // Update tab styling
+                [elements.browseTab, elements.basketTab, elements.collectionsTab].forEach(el => {
+                    el.classList.remove('text-primary', 'border-b-2', 'border-primary');
+                    el.classList.add('text-gray-500', 'dark:text-gray-400');
+                });
+                
+                // Hide all sections
+                elements.browseSection.classList.add('hidden');
+                elements.basketSection.classList.add('hidden');
+                elements.collectionsSection.classList.add('hidden');
+                
+                // Show the selected tab
+                if (tab === 'browse') {
+                    elements.browseTab.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    elements.browseTab.classList.add('text-primary', 'dark:text-primary', 'border-b-2', 'border-primary');
+                    elements.browseSection.classList.remove('hidden');
+                    loadAssets();
+                } else if (tab === 'basket') {
+                    elements.basketTab.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    elements.basketTab.classList.add('text-primary', 'dark:text-primary', 'border-b-2', 'border-primary');
+                    elements.basketSection.classList.remove('hidden');
+                    updateBasketDisplay();
+                } else if (tab === 'collections') {
+                    elements.collectionsTab.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    elements.collectionsTab.classList.add('text-primary', 'dark:text-primary', 'border-b-2', 'border-primary');
+                    elements.collectionsSection.classList.remove('hidden');
+                    loadCollections();
+                }
+                
+                appState.activeTab = tab;
+            }
+
+            // Load assets
+            function loadAssets() {
+                const { currentSource, searchQuery, currentPage } = appState;
+                const assets = appState.mockAssets[currentSource];
+                
+                // Show loading state
+                elements.assetsLoading.classList.remove('hidden');
+                elements.assetsContainer.classList.add('hidden');
+                elements.noAssets.classList.add('hidden');
+                elements.pagination.classList.add('hidden');
+                
+                // Simulate API delay
+                setTimeout(() => {
+                    let filteredAssets = assets;
+                    
+                    // Apply search filter if any
+                    if (searchQuery) {
+                        const query = searchQuery.toLowerCase();
+                        filteredAssets = assets.filter(asset => 
+                            asset.name.toLowerCase().includes(query) || 
+                            asset.id.toLowerCase().includes(query)
+                        );
+                    }
+                    
+                    // Pagination
+                    const itemsPerPage = 8;
+                    const totalPages = Math.ceil(filteredAssets.length / itemsPerPage);
+                    appState.totalPages = totalPages;
+                    
+                    const start = (currentPage - 1) * itemsPerPage;
+                    const end = start + itemsPerPage;
+                    const paginatedAssets = filteredAssets.slice(start, end);
+                    
+                    // Update page info
+                    elements.pageInfo.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+                    elements.prevPage.disabled = currentPage <= 1;
+                    elements.nextPage.disabled = currentPage >= totalPages;
+                    
+                    // Hide loading, show content
+                    elements.assetsLoading.classList.add('hidden');
+                    
+                    if (paginatedAssets.length > 0) {
+                        elements.assetsContainer.classList.remove('hidden');
+                        elements.pagination.classList.remove('hidden');
+                        renderAssets(paginatedAssets);
+                    } else {
+                        elements.noAssets.classList.remove('hidden');
+                    }
+                }, 500);
+            }
+
+            // Render assets in the container
+            function renderAssets(assets) {
+                const container = elements.assetsContainer;
+                container.innerHTML = '';
+                
+                assets.forEach(asset => {
+                    // Check if the asset is in the basket
+                    const isInBasket = appState.basket.some(item => item.id === asset.id);
+                    
+                    const card = document.createElement('div');
+                    card.className = 'asset-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 transition-all hover:shadow-lg';
+                    
+                    card.innerHTML = `
+                        <div class="relative">
+                            <img src="${asset.thumbnail}" alt="${asset.name}" class="w-full h-32 object-cover">
+                            <div class="asset-actions absolute top-2 right-2 flex space-x-1">
+                                <button class="copy-url-btn bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 p-1.5 rounded-full shadow hover:text-primary transition-colors" data-url="${asset.url}" title="Copy URL">
+                                    <i class="fas fa-link text-xs"></i>
+                                </button>
+                                <button class="view-asset-btn bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 p-1.5 rounded-full shadow hover:text-primary transition-colors" data-url="${asset.url}" title="View Asset">
+                                    <i class="fas fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-medium text-gray-900 dark:text-white text-sm truncate" title="${asset.name}">${asset.name}</h3>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-xs text-gray-500 dark:text-gray-400">${asset.dateAdded}</span>
+                                <button class="basket-btn ${isInBasket ? 'text-primary' : 'text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary'} transition-colors" data-id="${asset.id}" title="${isInBasket ? 'Remove from Basket' : 'Add to Basket'}">
+                                    <i class="fas ${isInBasket ? 'fa-check-circle' : 'fa-plus-circle'}"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(card);
+                    
+                    // Add event listeners
+                    const basketBtn = card.querySelector('.basket-btn');
+                    basketBtn.addEventListener('click', () => {
+                        toggleBasketItem(asset);
+                        
+                        if (appState.basket.some(item => item.id === asset.id)) {
+                            basketBtn.innerHTML = '<i class="fas fa-check-circle"></i>';
+                            basketBtn.classList.add('text-primary');
+                            basketBtn.classList.remove('text-gray-500', 'dark:text-gray-400');
+                            basketBtn.title = 'Remove from Basket';
+                        } else {
+                            basketBtn.innerHTML = '<i class="fas fa-plus-circle"></i>';
+                            basketBtn.classList.remove('text-primary');
+                            basketBtn.classList.add('text-gray-500', 'dark:text-gray-400');
+                            basketBtn.title = 'Add to Basket';
+                        }
+                    });
+                    
+                    const copyUrlBtn = card.querySelector('.copy-url-btn');
+                    copyUrlBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const url = copyUrlBtn.dataset.url;
+                        copyToClipboard(url);
+                        showToast('URL copied to clipboard');
+                    });
+                    
+                    const viewAssetBtn = card.querySelector('.view-asset-btn');
+                    viewAssetBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openAssetPreview(asset);
+                    });
+                });
+            }
+
+            // Toggle an item in the basket
+            function toggleBasketItem(asset) {
+                const index = appState.basket.findIndex(item => item.id === asset.id);
+                
+                if (index === -1) {
+                    appState.basket.push(asset);
+                    showToast(`Added "${asset.name}" to basket`);
+                } else {
+                    appState.basket.splice(index, 1);
+                    showToast(`Removed "${asset.name}" from basket`, 'error');
+                }
+                
+                updateBasketCount();
+                
+                // If we're on the basket tab, update the display
+                if (appState.activeTab === 'basket') {
+                    updateBasketDisplay();
+                }
+            }
+
+            // Update basket count badge
+            function updateBasketCount() {
+                const count = appState.basket.length;
+                elements.basketCount.textContent = count;
+                
+                if (count > 0) {
+                    elements.basketCount.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                    elements.basketCount.classList.add('bg-primary', 'text-white');
+                    elements.clearBasket.disabled = false;
+                } else {
+                    elements.basketCount.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                    elements.basketCount.classList.remove('bg-primary', 'text-white');
+                    elements.clearBasket.disabled = true;
+                }
+            }
+
+            // Update the basket display
+            function updateBasketDisplay() {
+                const count = appState.basket.length;
+                
+                if (count > 0) {
+                    elements.basketEmpty.classList.add('hidden');
+                    elements.basketItems.classList.remove('hidden');
+                    elements.saveCollectionForm.classList.remove('hidden');
+                    
+                    // Render basket items
+                    elements.basketItems.innerHTML = '';
+                    
+                    appState.basket.forEach(asset => {
+                        const card = document.createElement('div');
+                        card.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700';
+                        
+                        card.innerHTML = `
+                            <div class="relative">
+                                <img src="${asset.thumbnail}" alt="${asset.name}" class="w-full h-32 object-cover">
+                                <button class="remove-basket-item absolute top-2 right-2 bg-white dark:bg-gray-800 text-red-500 p-1.5 rounded-full shadow hover:text-red-700 transition-colors" data-id="${asset.id}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="p-3">
+                                <h3 class="font-medium text-gray-900 dark:text-white text-sm truncate" title="${asset.name}">${asset.name}</h3>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">${asset.dateAdded}</span>
+                                    <button class="copy-url-btn text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary" data-url="${asset.url}">
+                                        <i class="fas fa-link"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        elements.basketItems.appendChild(card);
+                        
+                        // Add event listeners
+                        const removeBtn = card.querySelector('.remove-basket-item');
+                        removeBtn.addEventListener('click', () => {
+                            const index = appState.basket.findIndex(item => item.id === asset.id);
+                            if (index !== -1) {
+                                appState.basket.splice(index, 1);
+                                updateBasketCount();
+                                updateBasketDisplay();
+                                showToast(`Removed "${asset.name}" from basket`, 'error');
+                            }
+                        });
+                        
+                        const copyUrlBtn = card.querySelector('.copy-url-btn');
+                        copyUrlBtn.addEventListener('click', () => {
+                            copyToClipboard(asset.url);
+                            showToast('URL copied to clipboard');
+                        });
+                    });
+                } else {
+                    elements.basketEmpty.classList.remove('hidden');
+                    elements.basketItems.classList.add('hidden');
+                    elements.saveCollectionForm.classList.add('hidden');
+                }
+            }
+
+            // Save current basket as a collection
+            function saveAsCollection() {
+                const nameInput = document.getElementById('collection-name');
+                const projectInput = document.getElementById('project-name');
+                const ownerInput = document.getElementById('owner-name');
+                const regionSelect = document.getElementById('region');
+                const languageSelect = document.getElementById('language');
+                const descriptionInput = document.getElementById('collection-description');
+                
+                const name = nameInput.value.trim();
+                
+                if (!name) {
+                    showToast('Please enter a collection name', 'error');
+                    nameInput.focus();
+                    return;
+                }
+                
+                if (appState.basket.length === 0) {
+                    showToast('Your basket is empty', 'error');
+                    return;
+                }
+                
+                // Create collection object
+                const collection = {
+                    id: 'coll-' + Date.now(),
+                    name: name,
+                    project: projectInput.value.trim(),
+                    owner: ownerInput.value.trim(),
+                    region: regionSelect.value,
+                    language: languageSelect.value,
+                    description: descriptionInput.value.trim(),
+                    assets: [...appState.basket],
+                    dateCreated: new Date().toISOString().split('T')[0]
+                };
+                
+                // Add to collections
+                appState.collections.push(collection);
+                
+                // Update collections count
+                elements.collectionsCount.textContent = appState.collections.length;
+                
+                // Reset form
+                nameInput.value = '';
+                projectInput.value = '';
+                ownerInput.value = '';
+                regionSelect.value = '';
+                languageSelect.value = '';
+                descriptionInput.value = '';
+                
+                // Clear basket
+                appState.basket = [];
+                updateBasketCount();
+                updateBasketDisplay();
+                
+                showToast(`Collection "${name}" saved successfully`);
+            }
+
+            // Load collections
+            function loadCollections() {
+                const { collections } = appState;
+                const searchQuery = elements.searchCollections.value.toLowerCase();
+                
+                // Filter collections based on search query
+                let filteredCollections = collections;
+                if (searchQuery) {
+                    filteredCollections = collections.filter(collection => 
+                        collection.name.toLowerCase().includes(searchQuery) ||
+                        (collection.project && collection.project.toLowerCase().includes(searchQuery)) ||
+                        (collection.owner && collection.owner.toLowerCase().includes(searchQuery)) ||
+                        (collection.description && collection.description.toLowerCase().includes(searchQuery))
+                    );
+                }
+                
+                if (filteredCollections.length > 0) {
+                    elements.collectionsEmpty.classList.add('hidden');
+                    elements.collectionsList.classList.remove('hidden');
+                    
+                    // Render collections
+                    elements.collectionsList.innerHTML = '';
+                    
+                    filteredCollections.forEach(collection => {
+                        const card = document.createElement('div');
+                        card.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all cursor-pointer';
+                        
+                        // Get thumbnails for the collection preview (up to 4)
+                        const thumbnails = collection.assets.slice(0, 4).map(asset => asset.thumbnail);
+                        const remainingCount = Math.max(0, collection.assets.length - 4);
+                        
+                        let thumbnailsHtml = '';
+                        if (thumbnails.length === 1) {
+                            thumbnailsHtml = `
+                                <div class="w-full h-32">
+                                    <img src="${thumbnails[0]}" alt="${collection.name}" class="w-full h-full object-cover">
+                                </div>
+                            `;
+                        } else if (thumbnails.length > 0) {
+                            thumbnailsHtml = `
+                                <div class="grid grid-cols-2 gap-1 h-32">
+                                    ${thumbnails.map((thumb, i) => `
+                                        <div class="relative">
+                                            <img src="${thumb}" alt="" class="w-full h-16 object-cover">
+                                            ${i === 3 && remainingCount > 0 ? `<div class="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center text-white">+${remainingCount}</div>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        } else {
+                            thumbnailsHtml = `
+                                <div class="w-full h-32 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                    <i class="fas fa-folder-open text-gray-400 dark:text-gray-500 text-4xl"></i>
+                                </div>
+                            `;
+                        }
+                        
+                        card.innerHTML = `
+                            ${thumbnailsHtml}
+                            <div class="p-4">
+                                <h3 class="font-medium text-gray-900 dark:text-white">${collection.name}</h3>
+                                <div class="flex items-center mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <span class="flex items-center mr-4">
+                                        <i class="fas fa-image mr-1"></i>
+                                        ${collection.assets.length} asset${collection.assets.length !== 1 ? 's' : ''}
+                                    </span>
+                                    <span>${collection.dateCreated}</span>
+                                </div>
+                                ${collection.description ? `<p class="mt-2 text-sm text-gray-600 dark:text-gray-300 line-clamp-2">${collection.description}</p>` : ''}
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    ${collection.project ? `<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-1 rounded">${collection.project}</span>` : ''}
+                                    ${collection.region ? `<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-1 rounded">${collection.region}</span>` : ''}
+                                    ${collection.language ? `<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-1 rounded">${collection.language}</span>` : ''}
+                                </div>
+                            </div>
+                        `;
+                        
+                        elements.collectionsList.appendChild(card);
+                        
+                        // Add event listener to open collection
+                        card.addEventListener('click', () => {
+                            openCollectionModal(collection);
+                        });
+                    });
+                } else {
+                    elements.collectionsEmpty.classList.remove('hidden');
+                    elements.collectionsList.classList.add('hidden');
+                }
+            }
+
+            // Open collection modal
+            function openCollectionModal(collection) {
+                elements.modalTitle.textContent = collection.name;
+                
+                const content = elements.modalContent;
+                content.innerHTML = '';
+                
+                // Collection metadata
+                const metadataDiv = document.createElement('div');
+                metadataDiv.className = 'mb-6 pb-4 border-b border-gray-200 dark:border-gray-700';
+                
+                let metadataHtml = '';
+                
+                if (collection.description) {
+                    metadataHtml += `<p class="mb-4 text-gray-700 dark:text-gray-300">${collection.description}</p>`;
+                }
+                
+                metadataHtml += `<div class="grid grid-cols-2 gap-4 text-sm">`;
+                
+                if (collection.project) {
+                    metadataHtml += `
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Project:</span>
+                            <span class="ml-2 text-gray-900 dark:text-white">${collection.project}</span>
+                        </div>
+                    `;
+                }
+                
+                if (collection.owner) {
+                    metadataHtml += `
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Owner:</span>
+                            <span class="ml-2 text-gray-900 dark:text-white">${collection.owner}</span>
+                        </div>
+                    `;
+                }
+                
+                if (collection.region) {
+                    metadataHtml += `
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Region:</span>
+                            <span class="ml-2 text-gray-900 dark:text-white">${collection.region}</span>
+                        </div>
+                    `;
+                }
+                
+                if (collection.language) {
+                    metadataHtml += `
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Language:</span>
+                            <span class="ml-2 text-gray-900 dark:text-white">${collection.language}</span>
+                        </div>
+                    `;
+                }
+                
+                metadataHtml += `
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400">Created:</span>
+                        <span class="ml-2 text-gray-900 dark:text-white">${collection.dateCreated}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 dark:text-gray-400">Assets:</span>
+                        <span class="ml-2 text-gray-900 dark:text-white">${collection.assets.length}</span>
+                    </div>
+                </div>`;
+                
+                metadataDiv.innerHTML = metadataHtml;
+                content.appendChild(metadataDiv);
+                
+                // Collection assets
+                const assetsDiv = document.createElement('div');
+                assetsDiv.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+                
+                collection.assets.forEach(asset => {
+                    const assetCard = document.createElement('div');
+                    assetCard.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700 flex';
+                    
+                    assetCard.innerHTML = `
+                        <div class="w-1/3">
+                            <img src="${asset.thumbnail}" alt="${asset.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-3 w-2/3">
+                            <h3 class="font-medium text-gray-900 dark:text-white text-sm truncate" title="${asset.name}">${asset.name}</h3>
+                            <div class="flex space-x-2 mt-2">
+                                <button class="copy-url-btn text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" data-url="${asset.url}">
+                                    <i class="fas fa-link mr-1"></i>Copy URL
+                                </button>
+                                <button class="view-asset-btn text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" data-url="${asset.url}">
+                                    <i class="fas fa-eye mr-1"></i>View
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    assetsDiv.appendChild(assetCard);
+                    
+                    // Add event listeners
+                    const copyUrlBtn = assetCard.querySelector('.copy-url-btn');
+                    copyUrlBtn.addEventListener('click', () => {
+                        copyToClipboard(asset.url);
+                        showToast('URL copied to clipboard');
+                    });
+                    
+                    const viewAssetBtn = assetCard.querySelector('.view-asset-btn');
+                    viewAssetBtn.addEventListener('click', () => {
+                        openAssetPreview(asset);
+                    });
+                });
+                
+                content.appendChild(assetsDiv);
+                
+                // Event handlers for modal buttons
+                elements.shareCollection.onclick = () => shareCollection(collection);
+                elements.zipCollection.onclick = () => downloadCollectionAsZip(collection);
+                elements.deleteCollection.onclick = () => deleteCollection(collection);
+                
+                // Show modal
+                elements.collectionModal.classList.remove('hidden');
+            }
+
+            // Close modal
+            function closeModal() {
+                elements.collectionModal.classList.add('hidden');
+            }
+
+            // Share collection
+            function shareCollection(collection) {
+                // In a real implementation, this would generate a unique shareable URL
+                // For demo purposes, we'll generate a mock URL
+                const shareUrl = `https://campaign-assets.example.com/collections/${collection.id}`;
+                copyToClipboard(shareUrl);
+                showToast('Collection share URL copied to clipboard');
+            }
+
+            // Download collection as ZIP
+            function downloadCollectionAsZip(collection) {
+                // Since file downloads aren't supported in the Canvas environment,
+                // we'll show a message to the user about how to save the assets
+                
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50';
+                
+                modal.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Save Collection Assets</h3>
+                            <button class="close-zip-modal text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-gray-700 dark:text-gray-300 mb-3">To save these assets, please follow these steps:</p>
+                            <ol class="text-gray-700 dark:text-gray-300 list-decimal pl-5 space-y-2">
+                                <li>View each asset by clicking the 'View' button</li>
+                                <li>Right-click on the image and select "Save Image As..."</li>
+                                <li>Choose a location on your device to save the image</li>
+                            </ol>
+                        </div>
+                        <div class="flex justify-end">
+                            <button class="close-zip-modal bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-md transition-colors">
+                                Got it
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Add event listener to close button
+                const closeButtons = modal.querySelectorAll('.close-zip-modal');
+                closeButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        modal.remove();
+                    });
+                });
+            }
+
+            // Delete collection
+            function deleteCollection(collection) {
+                const index = appState.collections.findIndex(c => c.id === collection.id);
+                if (index !== -1) {
+                    appState.collections.splice(index, 1);
+                    elements.collectionsCount.textContent = appState.collections.length;
+                    closeModal();
+                    loadCollections();
+                    showToast(`Collection "${collection.name}" deleted`, 'error');
+                }
+            }
+
+            // Copy to clipboard function
+            function copyToClipboard(text) {
+                // Using the Clipboard API (write only in the iframe)
+                navigator.clipboard.writeText(text).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    
+                    // Fallback method if clipboard API fails
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    try {
+                        document.execCommand('copy');
+                    } catch (err) {
+                        console.error('Fallback: Unable to copy', err);
+                    }
+                    
+                    document.body.removeChild(textArea);
+                });
+            }
+
+            // Open asset preview
+            function openAssetPreview(asset) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+                
+                modal.innerHTML = `
+                    <div class="max-w-4xl max-h-[90vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+                        <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">${asset.name}</h3>
+                            <button class="close-preview text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="p-4 overflow-auto">
+                            <img src="${asset.url}" alt="${asset.name}" class="max-w-full">
+                        </div>
+                        <div class="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                To save: Right-click on image and select "Save Image As..."
+                            </div>
+                            <button class="copy-url-btn bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-md transition-colors" data-url="${asset.url}">
+                                <i class="fas fa-link mr-2"></i>Copy URL
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Add event listeners
+                const closeBtn = modal.querySelector('.close-preview');
+                closeBtn.addEventListener('click', () => {
+                    modal.remove();
+                });
+                
+                const copyUrlBtn = modal.querySelector('.copy-url-btn');
+                copyUrlBtn.addEventListener('click', () => {
+                    copyToClipboard(asset.url);
+                    showToast('URL copied to clipboard');
+                });
+                
+                // Close on background click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            }
+
+            // Event Listeners
+            
+            // Tab switching
+            elements.browseTab.addEventListener('click', () => switchTab('browse'));
+            elements.basketTab.addEventListener('click', () => switchTab('basket'));
+            elements.collectionsTab.addEventListener('click', () => switchTab('collections'));
+            
+            // Source selection
+            elements.sourceSelector.addEventListener('change', () => {
+                appState.currentSource = elements.sourceSelector.value;
+                appState.currentPage = 1;
+                loadAssets();
+            });
+            
+            // Refresh button
+            elements.refreshBtn.addEventListener('click', () => {
+                loadAssets();
+            });
+            
+            // Search assets
+            elements.searchAssets.addEventListener('input', () => {
+                appState.searchQuery = elements.searchAssets.value;
+                appState.currentPage = 1;
+                loadAssets();
+            });
+            
+            // Pagination
+            elements.prevPage.addEventListener('click', () => {
+                if (appState.currentPage > 1) {
+                    appState.currentPage--;
+                    loadAssets();
+                }
+            });
+            
+            elements.nextPage.addEventListener('click', () => {
+                if (appState.currentPage < appState.totalPages) {
+                    appState.currentPage++;
+                    loadAssets();
+                }
+            });
+            
+            // Clear basket
+            elements.clearBasket.addEventListener('click', () => {
+                if (appState.basket.length > 0) {
+                    appState.basket = [];
+                    updateBasketCount();
+                    updateBasketDisplay();
+                    showToast('Basket cleared', 'error');
+                }
+            });
+            
+            // Save collection
+            elements.saveCollectionBtn.addEventListener('click', saveAsCollection);
+            
+            // Search collections
+            elements.searchCollections.addEventListener('input', loadCollections);
+            
+            // Modal close button
+            elements.closeModal.addEventListener('click', closeModal);
+            
+            // Initialize app
+            switchTab('browse');
+            updateBasketCount();
+        </script>
+    </div>
+</body>
+</html>
