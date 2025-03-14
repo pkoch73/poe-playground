@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Manager with Metadata</title>
+    <title>Product Asset Broker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/marked@4.2.2/marked.min.js"></script>
     <script>
@@ -12,14 +12,40 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#5D5CDE',
+                        primary: '#FA0F00', // Adobe signature red
+                        adobe: {
+                            red: '#FA0F00',
+                            blue: '#1473E6',
+                            gray: {
+                                50: '#F5F5F5',
+                                100: '#EBEBEB',
+                                200: '#E1E1E1',
+                                300: '#CACACA',
+                                400: '#B3B3B3',
+                                500: '#909090',
+                                600: '#6E6E6E',
+                                700: '#4B4B4B',
+                                800: '#2C2C2C',
+                                900: '#191919',
+                            }
+                        }
                     },
+                    fontFamily: {
+                        sans: ['Adobe Clean', 'Segoe UI', 'system-ui', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'adobe': '0 2px 10px rgba(0, 0, 0, 0.1)',
+                        'adobe-hover': '0 4px 18px rgba(0, 0, 0, 0.15)'
+                    },
+                    borderRadius: {
+                        'adobe': '4px'
+                    }
                 },
             },
         };
     </script>
     <style>
-        /* Simple Side-by-Side Comparison Styles */
+        /* Side-by-Side Comparison Styles */
         .side-by-side-comparison {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -30,7 +56,7 @@
         .comparison-item {
             display: flex;
             flex-direction: column;
-            border-radius: 8px;
+            border-radius: 4px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             background-color: #f5f5f5;
@@ -82,9 +108,68 @@
             height: 100%;
             padding-bottom: 0;
         }
+
+        /* Adobe-inspired styles */
+        .adobe-card {
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s ease;
+        }
+        
+        .adobe-card:hover {
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+        }
+        
+        .adobe-button {
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .adobe-button-primary {
+            background-color: #FA0F00;
+            color: white;
+        }
+        
+        .adobe-button-primary:hover {
+            background-color: #e50d00;
+        }
+        
+        .adobe-button-secondary {
+            background-color: #1473E6;
+            color: white;
+        }
+        
+        .adobe-button-secondary:hover {
+            background-color: #0d66d0;
+        }
+        
+        .adobe-input {
+            border-radius: 4px;
+            border: 1px solid #CACACA;
+            padding: 0.5rem 0.75rem;
+            transition: border 0.2s ease;
+        }
+        
+        .adobe-input:focus {
+            border-color: #1473E6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(20, 115, 230, 0.2);
+        }
+        
+        /* Adobe typography styles */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        body {
+            font-family: 'Adobe Clean', 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.5;
+        }
     </style>
 </head>
-<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen transition-colors duration-200">
+<body class="bg-white dark:bg-adobe-gray-900 text-adobe-gray-900 dark:text-white min-h-screen transition-colors duration-200">
     <!-- Check for dark mode -->
     <script>
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -99,23 +184,23 @@
         });
     </script>
 
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
         <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-center text-primary">File Manager</h1>
+            <h1 class="text-3xl font-bold text-center text-primary">Product Asset Broker</h1>
             <div class="flex gap-2">
-                <button id="apiHelpBtn" class="flex items-center bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 rounded-lg px-3 py-2 text-sm transition-colors duration-200 text-blue-800 dark:text-blue-100">
+                <button id="apiHelpBtn" class="flex items-center bg-adobe-blue text-white hover:bg-blue-700 rounded-adobe px-3 py-2 text-sm transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     API Help
                 </button>
-                <button id="diagnosticsBtn" class="flex items-center bg-yellow-100 dark:bg-yellow-800 hover:bg-yellow-200 dark:hover:bg-yellow-700 rounded-lg px-3 py-2 text-sm transition-colors duration-200 text-yellow-800 dark:text-yellow-100">
+                <button id="diagnosticsBtn" class="flex items-center bg-adobe-gray-200 dark:bg-adobe-gray-700 text-adobe-gray-800 dark:text-adobe-gray-100 hover:bg-adobe-gray-300 dark:hover:bg-adobe-gray-600 rounded-adobe px-3 py-2 text-sm transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     Diagnostics
                 </button>
-                <button id="settingsBtn" class="flex items-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg px-3 py-2 text-sm transition-colors duration-200">
+                <button id="settingsBtn" class="flex items-center bg-adobe-gray-100 dark:bg-adobe-gray-700 hover:bg-adobe-gray-200 dark:hover:bg-adobe-gray-600 rounded-adobe px-3 py-2 text-sm transition-colors duration-200">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -143,16 +228,15 @@
         
         <!-- Main Content -->
         <!-- Search by SKU Section -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <div class="adobe-card bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-adobe p-6 mb-6">
             <h2 class="text-xl font-semibold mb-4">Search by SKU</h2>
             <div class="flex gap-2">
                 <input type="text" id="searchSkuInput" 
-                    class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                    bg-white dark:bg-gray-700 text-base" 
+                    class="adobe-input flex-1 px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                    bg-white dark:bg-adobe-gray-700 text-base" 
                     placeholder="Enter product SKU" />
                 <button id="searchSkuBtn" 
-                    class="bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 
-                    rounded-md transition-colors duration-200">
+                    class="adobe-button adobe-button-primary py-2 px-4 rounded-adobe">
                     Search
                 </button>
             </div>
@@ -164,8 +248,8 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Upload Section -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold mb-4">Upload File</h2>
+            <div class="adobe-card bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-adobe p-6">
+                <h2 class="text-xl font-semibold mb-4">Upload Asset</h2>
                 
                 <form id="uploadForm" class="space-y-4">
                     <!-- File Input -->
@@ -175,8 +259,8 @@
                             <input type="file" id="fileInput" 
                                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
                                 required />
-                            <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center">
-                                <span id="fileNameDisplay" class="text-gray-500 dark:text-gray-400">
+                            <div class="border-2 border-dashed border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe p-4 text-center">
+                                <span id="fileNameDisplay" class="text-adobe-gray-500 dark:text-adobe-gray-400">
                                     Click or drag file here
                                 </span>
                             </div>
@@ -187,81 +271,80 @@
                     <div>
                         <label for="title" class="block text-sm font-medium mb-1">Title</label>
                         <input type="text" id="title" name="title" 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                            bg-white dark:bg-gray-700 text-base" 
-                            placeholder="File title" />
+                            class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                            bg-white dark:bg-adobe-gray-700 text-base" 
+                            placeholder="Asset title" />
                     </div>
                     
                     <div>
                         <label for="description" class="block text-sm font-medium mb-1">Description</label>
                         <textarea id="description" name="description" rows="2" 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                            bg-white dark:bg-gray-700 text-base" 
-                            placeholder="File description"></textarea>
+                            class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                            bg-white dark:bg-adobe-gray-700 text-base" 
+                            placeholder="Asset description"></textarea>
                     </div>
                     
                     <div>
                         <label for="sku" class="block text-sm font-medium mb-1">SKU</label>
                         <input type="text" id="sku" name="sku" 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                            bg-white dark:bg-gray-700 text-base" 
+                            class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                            bg-white dark:bg-adobe-gray-700 text-base" 
                             placeholder="Enter product SKU" />
                     </div>
                     
                     <div>
                         <label for="customerName" class="block text-sm font-medium mb-1">Customer Name</label>
                         <input type="text" id="customerName" name="customerName" 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                            bg-white dark:bg-gray-700 text-base" 
+                            class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                            bg-white dark:bg-adobe-gray-700 text-base" 
                             placeholder="Enter customer name" />
                     </div>
                     
                     <div>
                         <label for="tags" class="block text-sm font-medium mb-1">Tags (comma separated)</label>
                         <input type="text" id="tags" name="tags" 
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                            bg-white dark:bg-gray-700 text-base" 
+                            class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                            bg-white dark:bg-adobe-gray-700 text-base" 
                             placeholder="tag1, tag2, tag3" />
                     </div>
                     
                     <button type="submit" 
-                        class="w-full bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 
-                        rounded-md transition-colors duration-200">
-                        Upload File
+                        class="adobe-button adobe-button-primary w-full py-2 px-4 rounded-adobe">
+                        Upload Asset
                     </button>
                 </form>
             </div>
             
             <!-- Files List with Search -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold mb-4">Files</h2>
+            <div class="adobe-card bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-adobe p-6">
+                <h2 class="text-xl font-semibold mb-4">Assets</h2>
                 
                 <!-- Search Bar -->
                 <div class="mb-4">
                     <div class="relative">
                         <input type="text" id="searchInput" 
-                            class="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-md 
-                            bg-white dark:bg-gray-700 text-base" 
-                            placeholder="Search files..." />
+                            class="adobe-input w-full px-3 py-2 pl-10 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                            bg-white dark:bg-adobe-gray-700 text-base" 
+                            placeholder="Search assets..." />
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-adobe-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </div>
                         <button id="searchButton" 
-                            class="absolute inset-y-0 right-0 flex items-center px-3 rounded-r-md bg-primary text-white hover:bg-opacity-90">
+                            class="absolute inset-y-0 right-0 flex items-center px-3 rounded-r-adobe bg-primary text-white hover:bg-opacity-90">
                             Search
                         </button>
                     </div>
                 </div>
                 
                 <div class="flex items-center justify-between mb-3">
-                    <div class="text-sm text-gray-500 dark:text-gray-400" id="searchResultsInfo"></div>
+                    <div class="text-sm text-adobe-gray-500 dark:text-adobe-gray-400" id="searchResultsInfo"></div>
                     <div class="flex gap-2">
-                        <button id="clearSearchBtn" class="text-sm text-primary hover:underline hidden">
+                        <button id="clearSearchBtn" class="text-sm text-adobe-blue hover:underline hidden">
                             Clear Search
                         </button>
-                        <button id="refreshFilesBtn" class="text-sm text-primary hover:underline">
+                        <button id="refreshFilesBtn" class="text-sm text-adobe-blue hover:underline">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
@@ -271,8 +354,8 @@
                 </div>
                 
                 <div id="filesList" class="space-y-3 max-h-[55vh] overflow-y-auto">
-                    <div class="text-center text-gray-500 dark:text-gray-400 py-8">
-                        No files found
+                    <div class="text-center text-adobe-gray-500 dark:text-adobe-gray-400 py-8">
+                        No assets found
                     </div>
                 </div>
             </div>
@@ -280,11 +363,11 @@
         
         <!-- File Preview Modal -->
         <div id="filePreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 id="previewTitle" class="text-xl font-semibold"></h3>
-                        <button id="closePreviewBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <button id="closePreviewBtn" class="text-adobe-gray-500 hover:text-adobe-gray-700 dark:text-adobe-gray-400 dark:hover:text-adobe-gray-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -295,13 +378,13 @@
                         <!-- File content will be displayed here -->
                     </div>
                     
-                    <div id="previewMetadata" class="mb-4 border-t pt-4 dark:border-gray-700">
+                    <div id="previewMetadata" class="mb-4 border-t pt-4 dark:border-adobe-gray-700">
                         <!-- Metadata will be displayed here -->
                     </div>
                     
                     <div class="flex justify-end gap-2">
-                        <button id="downloadBtn" class="bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200">
-                            Save File
+                        <button id="downloadBtn" class="adobe-button adobe-button-primary py-2 px-4 rounded-adobe">
+                            Save Asset
                         </button>
                     </div>
                 </div>
@@ -310,11 +393,11 @@
 
         <!-- Transform Modal -->
         <div id="transformModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 id="transformTitle" class="text-xl font-semibold">Image Transformation</h3>
-                        <button id="closeTransformBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <button id="closeTransformBtn" class="text-adobe-gray-500 hover:text-adobe-gray-700 dark:text-adobe-gray-400 dark:hover:text-adobe-gray-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -324,21 +407,21 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- Left side - Transform controls -->
                         <div class="lg:col-span-1 space-y-4">
-                            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div class="p-4 bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe">
                                 <h4 class="font-medium mb-3">Transform Options</h4>
                                 
                                 <div class="space-y-3">
                                     <div>
                                         <label class="block text-sm font-medium mb-1">Width</label>
-                                        <input type="number" id="transform-width" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" placeholder="auto" min="1" max="5000">
+                                        <input type="number" id="transform-width" class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe bg-white dark:bg-adobe-gray-700 text-base" placeholder="auto" min="1" max="5000">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium mb-1">Height</label>
-                                        <input type="number" id="transform-height" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" placeholder="auto" min="1" max="5000">
+                                        <input type="number" id="transform-height" class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe bg-white dark:bg-adobe-gray-700 text-base" placeholder="auto" min="1" max="5000">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium mb-1">Format</label>
-                                        <select id="transform-format" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base">
+                                        <select id="transform-format" class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe bg-white dark:bg-adobe-gray-700 text-base">
                                             <option value="">Original</option>
                                             <option value="webp">WebP</option>
                                             <option value="avif">AVIF</option>
@@ -349,11 +432,11 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium mb-1">Quality (1-100)</label>
-                                        <input type="number" id="transform-quality" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" placeholder="80" min="1" max="100" value="80">
+                                        <input type="number" id="transform-quality" class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe bg-white dark:bg-adobe-gray-700 text-base" placeholder="80" min="1" max="100" value="80">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium mb-1">Fit</label>
-                                        <select id="transform-fit" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base">
+                                        <select id="transform-fit" class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe bg-white dark:bg-adobe-gray-700 text-base">
                                             <option value="">Auto</option>
                                             <option value="scale-down">Scale Down</option>
                                             <option value="contain">Contain</option>
@@ -364,7 +447,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium mb-1">Gravity</label>
-                                        <select id="transform-gravity" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base">
+                                        <select id="transform-gravity" class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe bg-white dark:bg-adobe-gray-700 text-base">
                                             <option value="">Auto</option>
                                             <option value="auto">Smart</option>
                                             <option value="top">Top</option>
@@ -375,12 +458,12 @@
                                         </select>
                                     </div>
                                     
-                                    <button type="button" id="transform-apply" class="w-full bg-primary text-white px-4 py-2 rounded-md text-base hover:bg-opacity-90 mt-4">
+                                    <button type="button" id="transform-apply" class="adobe-button adobe-button-primary w-full px-4 py-2 rounded-adobe mt-4">
                                         Apply Transformation
                                     </button>
                                 </div>
                                 
-                                <div class="mt-3 text-xs text-right text-gray-500 dark:text-gray-400">
+                                <div class="mt-3 text-xs text-right text-adobe-gray-500 dark:text-adobe-gray-400">
                                     Powered by Cloudflare Images
                                 </div>
                             </div>
@@ -388,7 +471,7 @@
                         
                         <!-- Right side - Preview -->
                         <div class="lg:col-span-2 space-y-4">
-                            <div id="transform-preview" class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div id="transform-preview" class="p-4 bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe">
                                 <div class="side-by-side-comparison">
                                     <div class="comparison-item">
                                         <div class="comparison-image-container">
@@ -405,7 +488,7 @@
                                 </div>
                                 
                                 <div class="mt-4">
-                                    <button id="transform-fullscreen" class="bg-gray-200 dark:bg-gray-600 px-3 py-2 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center mx-auto">
+                                    <button id="transform-fullscreen" class="bg-adobe-gray-200 dark:bg-adobe-gray-600 px-3 py-2 rounded-adobe text-sm hover:bg-adobe-gray-300 dark:hover:bg-adobe-gray-500 flex items-center mx-auto">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                                         </svg>
@@ -414,17 +497,17 @@
                                 </div>
                             </div>
                             
-                            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div class="p-4 bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe">
                                 <div class="flex justify-between items-center mb-2">
                                     <h4 class="font-medium">Transformed URL</h4>
-                                    <button id="transform-copy-url" class="text-primary hover:text-primary-dark flex items-center text-sm">
+                                    <button id="transform-copy-url" class="text-adobe-blue hover:text-primary flex items-center text-sm">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                         </svg>
                                         Copy URL
                                     </button>
                                 </div>
-                                <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto relative">
+                                <div class="bg-adobe-gray-100 dark:bg-adobe-gray-800 p-3 rounded-adobe overflow-x-auto relative">
                                     <pre id="transform-url" class="text-sm font-mono whitespace-pre-wrap break-all"></pre>
                                     <span id="transform-copy-feedback" class="absolute right-2 top-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full opacity-0 transition-opacity duration-300">Copied!</span>
                                 </div>
@@ -437,11 +520,11 @@
         
         <!-- Settings Modal -->
         <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div class="bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-xl max-w-md w-full">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-semibold">API Settings</h3>
-                        <button id="closeSettingsBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <button id="closeSettingsBtn" class="text-adobe-gray-500 hover:text-adobe-gray-700 dark:text-adobe-gray-400 dark:hover:text-adobe-gray-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -452,30 +535,29 @@
                         <div>
                             <label for="apiUrl" class="block text-sm font-medium mb-1">API URL</label>
                             <input type="url" id="apiUrl" name="apiUrl" 
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                                bg-white dark:bg-gray-700 text-base" 
+                                class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                                bg-white dark:bg-adobe-gray-700 text-base" 
                                 placeholder="https://image-uploader.miphi.io" />
                         </div>
                         
                         <div>
                             <label for="username" class="block text-sm font-medium mb-1">Username</label>
                             <input type="text" id="username" name="username" 
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                                bg-white dark:bg-gray-700 text-base" 
+                                class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                                bg-white dark:bg-adobe-gray-700 text-base" 
                                 placeholder="admin" />
                         </div>
                         
                         <div>
                             <label for="password" class="block text-sm font-medium mb-1">Password</label>
                             <input type="password" id="password" name="password" 
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                                bg-white dark:bg-gray-700 text-base" 
+                                class="adobe-input w-full px-3 py-2 border border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe 
+                                bg-white dark:bg-adobe-gray-700 text-base" 
                                 placeholder="your-secure-password" />
                         </div>
                         
                         <button type="submit" 
-                            class="w-full bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 
-                            rounded-md transition-colors duration-200">
+                            class="adobe-button adobe-button-primary w-full py-2 px-4 rounded-adobe">
                             Save Settings
                         </button>
                     </form>
@@ -485,11 +567,11 @@
         
         <!-- Diagnostics Modal -->
         <div id="diagnosticsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full">
+            <div class="bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-xl max-w-3xl w-full">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-semibold">Connection Diagnostics</h3>
-                        <button id="closeDiagnosticsBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <button id="closeDiagnosticsBtn" class="text-adobe-gray-500 hover:text-adobe-gray-700 dark:text-adobe-gray-400 dark:hover:text-adobe-gray-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -497,22 +579,22 @@
                     </div>
                     
                     <div class="mb-4">
-                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                        <p class="text-sm text-adobe-gray-600 dark:text-adobe-gray-300 mb-4">
                             This tool helps diagnose connection issues with your Cloudflare Worker. Run the tests to identify potential problems.
                         </p>
                         
                         <div class="flex gap-2 mb-6">
-                            <button id="runDiagnosticsBtn" class="bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200">
+                            <button id="runDiagnosticsBtn" class="adobe-button adobe-button-primary py-2 px-4 rounded-adobe">
                                 Run Diagnostics
                             </button>
-                            <button id="testAlternativesBtn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-2 px-4 rounded-md transition-colors duration-200">
+                            <button id="testAlternativesBtn" class="bg-adobe-gray-200 dark:bg-adobe-gray-700 hover:bg-adobe-gray-300 dark:hover:bg-adobe-gray-600 text-adobe-gray-800 dark:text-adobe-gray-200 font-medium py-2 px-4 rounded-adobe transition-colors duration-200">
                                 Try Alternative Upload
                             </button>
                         </div>
                         
                         <div id="diagnosticsResults" class="space-y-4 max-h-[60vh] overflow-y-auto">
                             <!-- Diagnostics results will appear here -->
-                            <div class="text-center text-gray-500 dark:text-gray-400">
+                            <div class="text-center text-adobe-gray-500 dark:text-adobe-gray-400">
                                 Click "Run Diagnostics" to start testing your connection
                             </div>
                         </div>
@@ -523,32 +605,32 @@
         
         <!-- API Help Modal -->
         <div id="apiHelpModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full">
+            <div class="bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-xl max-w-4xl w-full">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-semibold">API Usage Examples with cURL</h3>
-                        <button id="closeApiHelpBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <button id="closeApiHelpBtn" class="text-adobe-gray-500 hover:text-adobe-gray-700 dark:text-adobe-gray-400 dark:hover:text-adobe-gray-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
                     
-                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    <p class="text-sm text-adobe-gray-600 dark:text-adobe-gray-300 mb-4">
                         Below are examples of how to interact with the Cloudflare Worker API using cURL commands for uploading, downloading, and searching files.
                     </p>
                     
                     <div class="space-y-6 max-h-[70vh] overflow-y-auto">
                         <!-- Upload File Example -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <h4 class="font-medium text-lg mb-2">Upload File</h4>
+                        <div class="bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe p-4">
+                            <h4 class="font-medium text-lg mb-2">Upload Asset</h4>
                             <p class="text-sm mb-2">This example shows how to upload a file with metadata using cURL:</p>
-                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
+                            <div class="bg-adobe-gray-100 dark:bg-adobe-gray-800 p-3 rounded-adobe overflow-x-auto text-sm">
                                 <pre><code class="language-bash">curl -X POST "https://image-uploader.miphi.io/upload" \
     -u "username:password" \
     -F "file=@/path/to/your/file.jpg" \
-    -F "title=My File Title" \
-    -F "description=This is a description of my file" \
+    -F "title=My Asset Title" \
+    -F "description=This is a description of my asset" \
     -F "sku=PROD12345" \
     -F "customerName=ACME Corp" \
     -F "tags=tag1,tag2,tag3"</code></pre>
@@ -559,10 +641,10 @@
                         </div>
                         
                         <!-- Download File Example -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <h4 class="font-medium text-lg mb-2">Download File</h4>
+                        <div class="bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe p-4">
+                            <h4 class="font-medium text-lg mb-2">Download Asset</h4>
                             <p class="text-sm mb-2">To download a file using its filename:</p>
-                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
+                            <div class="bg-adobe-gray-100 dark:bg-adobe-gray-800 p-3 rounded-adobe overflow-x-auto text-sm">
                                 <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/images/filename.jpg" \
     -u "username:password" \
     --output downloaded_file.jpg</code></pre>
@@ -573,10 +655,10 @@
                         </div>
                         
                         <!-- Fetch File Metadata Example -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <h4 class="font-medium text-lg mb-2">Fetch File Metadata</h4>
+                        <div class="bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe p-4">
+                            <h4 class="font-medium text-lg mb-2">Fetch Asset Metadata</h4>
                             <p class="text-sm mb-2">To get only the metadata for a file:</p>
-                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
+                            <div class="bg-adobe-gray-100 dark:bg-adobe-gray-800 p-3 rounded-adobe overflow-x-auto text-sm">
                                 <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/images/filename.jpg?metadata=true" \
     -u "username:password"</code></pre>
                             </div>
@@ -586,10 +668,10 @@
                         </div>
                         
                         <!-- Search Files Example -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <h4 class="font-medium text-lg mb-2">Search Files</h4>
+                        <div class="bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe p-4">
+                            <h4 class="font-medium text-lg mb-2">Search Assets</h4>
                             <p class="text-sm mb-2">To search for files by keyword or metadata:</p>
-                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
+                            <div class="bg-adobe-gray-100 dark:bg-adobe-gray-800 p-3 rounded-adobe overflow-x-auto text-sm">
                                 <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/search?q=searchterm" \
     -u "username:password"</code></pre>
                             </div>
@@ -599,10 +681,10 @@
                         </div>
                         
                         <!-- Search by Customer Example -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe p-4">
                             <h4 class="font-medium text-lg mb-2">Search by Customer</h4>
                             <p class="text-sm mb-2">To search for files associated with a specific customer:</p>
-                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
+                            <div class="bg-adobe-gray-100 dark:bg-adobe-gray-800 p-3 rounded-adobe overflow-x-auto text-sm">
                                 <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/search?q=customerName:ACME%20Corp" \
     -u "username:password"</code></pre>
                             </div>
@@ -612,10 +694,10 @@
                         </div>
                         
                         <!-- Download by SKU Example -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe p-4">
                             <h4 class="font-medium text-lg mb-2">Download by SKU</h4>
                             <p class="text-sm mb-2">To download all files associated with a specific SKU:</p>
-                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm">
+                            <div class="bg-adobe-gray-100 dark:bg-adobe-gray-800 p-3 rounded-adobe overflow-x-auto text-sm">
                                 <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/downloadBySKU?sku=PROD12345" \
     -u "username:password" \
     --output products_PROD12345.zip</code></pre>
@@ -627,13 +709,13 @@
                         </div>
                         
                         <!-- Authentication Tips -->
-                        <div class="bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500 p-4 rounded-r-md">
+                        <div class="bg-blue-50 dark:bg-blue-900 border-l-4 border-adobe-blue p-4 rounded-r-md">
                             <h4 class="font-medium text-lg mb-2">Authentication Notes</h4>
                             <p class="text-sm">
                                 The API uses Basic Authentication. The <code>-u "username:password"</code> parameter in the examples above sends your credentials. 
                                 Alternatively, you can use a Basic Auth header:
                             </p>
-                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto text-sm mt-2">
+                            <div class="bg-adobe-gray-100 dark:bg-adobe-gray-800 p-3 rounded-adobe overflow-x-auto text-sm mt-2">
                                 <pre><code class="language-bash">curl -X GET "https://image-uploader.miphi.io/images/file.jpg" \
     -H "Authorization: Basic $(echo -n 'username:password' | base64)"</code></pre>
                             </div>
@@ -645,11 +727,11 @@
         
         <!-- Comparison Modal -->
         <div id="comparisonModal" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 id="comparisonTitle" class="text-xl font-semibold">Image Comparison</h3>
-                        <button id="closeComparisonBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <button id="closeComparisonBtn" class="text-adobe-gray-500 hover:text-adobe-gray-700 dark:text-adobe-gray-400 dark:hover:text-adobe-gray-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -677,17 +759,17 @@
                     </div>
                     
                     <!-- Transformation Details -->
-                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <div class="border-t border-adobe-gray-200 dark:border-adobe-gray-700 pt-4">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="font-medium text-lg">Transformation URL</h4>
-                            <button id="copyUrlModal" class="text-primary hover:text-primary-dark flex items-center text-sm">
+                            <button id="copyUrlModal" class="text-adobe-blue hover:text-primary flex items-center text-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                 </svg>
                                 Copy URL
                             </button>
                         </div>
-                        <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto relative">
+                        <div class="bg-adobe-gray-100 dark:bg-adobe-gray-800 p-3 rounded-adobe overflow-x-auto relative">
                             <pre id="comparisonUrl" class="text-sm font-mono whitespace-pre-wrap break-all"></pre>
                             <span id="copyFeedbackModal" class="absolute right-2 top-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full opacity-0 transition-opacity duration-300">Copied!</span>
                         </div>
@@ -698,18 +780,18 @@
         
         <!-- Alternative Upload Modal -->
         <div id="altUploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div class="bg-white dark:bg-adobe-gray-800 rounded-adobe shadow-xl max-w-md w-full">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-semibold">Alternative Upload Method</h3>
-                        <button id="closeAltUploadBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <button id="closeAltUploadBtn" class="text-adobe-gray-500 hover:text-adobe-gray-700 dark:text-adobe-gray-400 dark:hover:text-adobe-gray-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
                     
-                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    <p class="text-sm text-adobe-gray-600 dark:text-adobe-gray-300 mb-4">
                         Try this simpler upload method with no metadata to see if the issue is with the file upload process itself.
                     </p>
                     
@@ -720,8 +802,8 @@
                                 <input type="file" id="altFileInput" 
                                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
                                     required />
-                                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center">
-                                    <span id="altFileNameDisplay" class="text-gray-500 dark:text-gray-400">
+                                <div class="border-2 border-dashed border-adobe-gray-300 dark:border-adobe-gray-600 rounded-adobe p-4 text-center">
+                                    <span id="altFileNameDisplay" class="text-adobe-gray-500 dark:text-adobe-gray-400">
                                         Click or drag file here
                                     </span>
                                 </div>
@@ -731,8 +813,7 @@
                         <div id="altUploadStatus" class="text-sm"></div>
                         
                         <button type="submit" 
-                            class="w-full bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 
-                            rounded-md transition-colors duration-200">
+                            class="adobe-button adobe-button-primary w-full py-2 px-4 rounded-adobe">
                             Upload File (Simple Mode)
                         </button>
                     </form>
@@ -952,16 +1033,11 @@
                 return;
             }
             
-            // Check if settings are configured
-            if (!checkSettings()) {
-                return;
-            }
-            
             // Show loading state
             skuSearchStatus.innerHTML = `
-                <div class="flex items-center text-gray-600 dark:text-gray-300">
+                <div class="flex items-center text-adobe-gray-600 dark:text-adobe-gray-300">
                     <div class="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
-                    Searching files for SKU: ${sku}...
+                    Searching assets for SKU: ${sku}...
                 </div>
             `;
             skuSearchStatus.classList.remove('hidden');
@@ -970,15 +1046,17 @@
             try {
                 // Use the specific searchBySKU endpoint
                 const searchUrl = `${apiSettings.apiUrl}/searchBySKU?sku=${encodeURIComponent(sku)}`;
-                const response = await fetch(searchUrl, {
-                    headers: {
-                        'Authorization': 'Basic ' + btoa(`${apiSettings.username}:${apiSettings.password}`)
-                    }
-                });
+                
+                // Only add authentication headers if settings are configured
+                const headers = settingsConfigured ? 
+                    { 'Authorization': 'Basic ' + btoa(`${apiSettings.username}:${apiSettings.password}`) } : 
+                    {};
+                
+                const response = await fetch(searchUrl, { headers });
                 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        throw new Error('Authentication failed. Please check your username and password in settings.');
+                        throw new Error('Authentication failed. Please configure your settings in the Settings menu.');
                     } else {
                         const errorText = await response.text();
                         throw new Error(`HTTP error ${response.status}: ${errorText}`);
@@ -991,11 +1069,11 @@
                 // Show results
                 if (!fileData || Object.keys(fileData).length === 0) {
                     skuSearchStatus.innerHTML = `
-                        <div class="flex items-center text-gray-500 dark:text-gray-400">
+                        <div class="flex items-center text-adobe-gray-500 dark:text-adobe-gray-400">
                             <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                             </svg>
-                            No files found with SKU: ${sku}
+                            No assets found with SKU: ${sku}
                         </div>
                     `;
                     skuSearchResults.classList.add('hidden');
@@ -1006,7 +1084,7 @@
                             <svg class="h-5 w-5 mr-1 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
-                            Found file with SKU: ${sku}
+                            Found asset with SKU: ${sku}
                         </div>
                     `;
                     
@@ -1014,7 +1092,7 @@
                     skuSearchResults.innerHTML = '';
                     
                     const fileCard = document.createElement('div');
-                    fileCard.className = 'bg-white dark:bg-gray-700 shadow rounded-lg p-4';
+                    fileCard.className = 'adobe-card bg-white dark:bg-adobe-gray-700 shadow-adobe rounded-adobe p-4';
                     
                     // Get the title or fall back to filename
                     const title = fileData.title || fileData.filename;
@@ -1031,14 +1109,14 @@
                     // If it's an image, show a thumbnail
                     if (isImage) {
                         cardContent += `
-                            <div class="flex-shrink-0 w-20 h-20 bg-gray-100 dark:bg-gray-600 rounded-md overflow-hidden">
+                            <div class="flex-shrink-0 w-20 h-20 bg-adobe-gray-100 dark:bg-adobe-gray-600 rounded-adobe overflow-hidden">
                                 <img src="${imageUrl}" alt="${title}" class="w-full h-full object-cover" />
                             </div>
                         `;
                     } else {
                         // Show a file icon for non-images
                         cardContent += `
-                            <div class="flex-shrink-0 text-gray-500 dark:text-gray-400">
+                            <div class="flex-shrink-0 text-adobe-gray-500 dark:text-adobe-gray-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -1066,7 +1144,7 @@
                     cardContent += `
                             <div><span class="font-medium">Filename:</span> 
                                 <a href="${imageUrl}" target="_blank" 
-                                   class="text-primary hover:underline">
+                                   class="text-adobe-blue hover:underline">
                                     ${fileData.filename}
                                 </a>
                             </div>
@@ -1100,10 +1178,9 @@
                     // Add a transformation button only if it's an image
                     if (isImage) {
                         cardContent += `
-                                <div class="mt-4 pt-3 border-t dark:border-gray-600">
+                                <div class="mt-4 pt-3 border-t dark:border-adobe-gray-600">
                                     <button type="button" 
-                                            class="flex items-center justify-center w-full bg-primary text-white py-2 px-4 
-                                            rounded-md hover:bg-opacity-90 transition-colors duration-200"
+                                            class="adobe-button adobe-button-primary flex items-center justify-center w-full py-2 px-4"
                                             onclick="openTransformModal('${fileData.filename}', '${imageUrl}')">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -1119,7 +1196,7 @@
                                 <div class="mt-3 flex gap-3">
                                     <a href="${imageUrl}" 
                                        target="_blank"
-                                       class="text-primary hover:underline inline-flex items-center">
+                                       class="text-adobe-blue hover:underline inline-flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -1129,7 +1206,7 @@
                                     <a href="${imageUrl}" 
                                        target="_blank"
                                        download="${fileData.filename}"
-                                       class="text-primary hover:underline inline-flex items-center">
+                                       class="text-adobe-blue hover:underline inline-flex items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                         </svg>
@@ -1157,10 +1234,20 @@
                         </svg>
                         <div>
                             Search failed: ${error.message}
+                            ${!settingsConfigured ? `
+                            <div class="mt-2">
+                                <button id="configureSearchBtn" class="text-adobe-blue hover:underline">Configure API settings</button>
+                            </div>` : ''}
                         </div>
                     </div>
                 `;
                 skuSearchResults.classList.add('hidden');
+                
+                // Add event listener for the configure button if it exists
+                const configureBtn = document.getElementById('configureSearchBtn');
+                if (configureBtn) {
+                    configureBtn.addEventListener('click', openSettings);
+                }
             }
         }
         
@@ -1338,11 +1425,15 @@
             setTimeout(checkConnection, 500);
         }
         
-        // Check if settings are configured
-        function checkSettings() {
+        // Check if settings are configured - for upload operations that require authentication
+        function checkSettings(showPrompt = true) {
             if (!settingsConfigured) {
-                alert('Please configure your API settings first');
-                openSettings();
+                if (showPrompt) {
+                    alert('Please configure your API settings first');
+                    openSettings();
+                    return false;
+                }
+                // If we don't need to show the prompt, just return whether settings are configured
                 return false;
             }
             return true;
@@ -1352,8 +1443,8 @@
         async function handleUpload(e) {
             e.preventDefault();
             
-            // Check if settings are configured
-            if (!checkSettings()) {
+            // Check if settings are configured - uploads always need authentication
+            if (!checkSettings(true)) {
                 return;
             }
             
@@ -1481,7 +1572,7 @@ Troubleshooting steps:
                 resetUploadForm();
                 
                 // Show success message
-                alert('File uploaded successfully!');
+                alert('Asset uploaded successfully!');
             } catch (error) {
                 console.error('Upload error:', error);
                 alert(`Upload failed: ${error.message}`);
@@ -1503,8 +1594,8 @@ Troubleshooting steps:
         function renderFilesList() {
             if (uploadedFiles.length === 0) {
                 filesList.innerHTML = `
-                    <div class="text-center text-gray-500 dark:text-gray-400 py-8">
-                        No files uploaded yet
+                    <div class="text-center text-adobe-gray-500 dark:text-adobe-gray-400 py-8">
+                        No assets uploaded yet
                     </div>
                 `;
                 return;
@@ -1514,17 +1605,17 @@ Troubleshooting steps:
             
             uploadedFiles.forEach(file => {
                 const fileItem = document.createElement('div');
-                fileItem.className = 'bg-gray-50 dark:bg-gray-700 rounded-md p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200';
+                fileItem.className = 'adobe-card bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe p-3 cursor-pointer hover:bg-adobe-gray-100 dark:hover:bg-adobe-gray-600 transition-colors duration-200';
                 fileItem.innerHTML = `
                     <div class="flex items-center">
-                        <div class="flex-shrink-0 text-gray-500 dark:text-gray-400">
+                        <div class="flex-shrink-0 text-adobe-gray-500 dark:text-adobe-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>
                         <div class="ml-3 flex-1 overflow-hidden">
                             <div class="font-medium truncate">${file.metadata.title}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            <div class="text-sm text-adobe-gray-500 dark:text-adobe-gray-400 truncate">
                                 ${formatFileSize(file.size)} • ${new Date(file.uploadedAt).toLocaleString()}
                             </div>
                         </div>
@@ -1540,7 +1631,7 @@ Troubleshooting steps:
             filesList.innerHTML = `
                 <div class="text-center py-8">
                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                    <div class="mt-2 text-gray-500 dark:text-gray-400">Loading files...</div>
+                    <div class="mt-2 text-adobe-gray-500 dark:text-adobe-gray-400">Loading assets...</div>
                 </div>
             `;
             
@@ -1558,7 +1649,7 @@ Troubleshooting steps:
                 console.error('Error loading files:', error);
                 filesList.innerHTML = `
                     <div class="text-center text-red-500 dark:text-red-400 py-8">
-                        Error loading files: ${error.message}
+                        Error loading assets: ${error.message}
                     </div>
                 `;
             }
@@ -1573,30 +1664,26 @@ Troubleshooting steps:
                 return;
             }
             
-            // Check if settings are configured
-            if (!checkSettings()) {
-                return;
-            }
-            
             // Show loading state
             filesList.innerHTML = `
                 <div class="text-center py-8">
                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                    <div class="mt-2 text-gray-500 dark:text-gray-400">Searching...</div>
+                    <div class="mt-2 text-adobe-gray-500 dark:text-adobe-gray-400">Searching...</div>
                 </div>
             `;
             
             try {
                 // Make request to search endpoint
-                const response = await fetch(`${apiSettings.apiUrl}/search?q=${encodeURIComponent(query)}`, {
-                    headers: {
-                        'Authorization': 'Basic ' + btoa(`${apiSettings.username}:${apiSettings.password}`)
-                    }
-                });
+                // Only add authentication headers if settings are configured
+                const headers = settingsConfigured ? 
+                    { 'Authorization': 'Basic ' + btoa(`${apiSettings.username}:${apiSettings.password}`) } : 
+                    {};
+                
+                const response = await fetch(`${apiSettings.apiUrl}/search?q=${encodeURIComponent(query)}`, { headers });
                 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        throw new Error('Authentication failed. Please check your username and password in settings.');
+                        throw new Error('Authentication required. Please configure your settings in the Settings menu.');
                     } else {
                         const errorText = await response.text();
                         throw new Error(`HTTP error ${response.status}: ${errorText}`);
@@ -1609,8 +1696,8 @@ Troubleshooting steps:
                 // Update UI with search results
                 if (files.length === 0) {
                     filesList.innerHTML = `
-                        <div class="text-center text-gray-500 dark:text-gray-400 py-8">
-                            No files found matching "${query}"
+                        <div class="text-center text-adobe-gray-500 dark:text-adobe-gray-400 py-8">
+                            No assets found matching "${query}"
                         </div>
                     `;
                 } else {
@@ -1619,7 +1706,7 @@ Troubleshooting steps:
                     // Create a file item for each result
                     files.forEach(file => {
                         const fileItem = document.createElement('div');
-                        fileItem.className = 'bg-gray-50 dark:bg-gray-700 rounded-md p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200';
+                        fileItem.className = 'adobe-card bg-adobe-gray-50 dark:bg-adobe-gray-700 rounded-adobe p-3 cursor-pointer hover:bg-adobe-gray-100 dark:hover:bg-adobe-gray-600 transition-colors duration-200';
                         
                         // Get the title from metadata, or fall back to filename
                         const title = file.metadata.title || file.filename;
@@ -1635,14 +1722,14 @@ Troubleshooting steps:
                         
                         fileItem.innerHTML = `
                             <div class="flex items-center">
-                                <div class="flex-shrink-0 text-gray-500 dark:text-gray-400">
+                                <div class="flex-shrink-0 text-adobe-gray-500 dark:text-adobe-gray-400">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                 </div>
                                 <div class="ml-3 flex-1 overflow-hidden">
                                     <div class="font-medium truncate">${title}</div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                                    <div class="text-sm text-adobe-gray-500 dark:text-adobe-gray-400 truncate">
                                         ${fileSize} • ${uploadedDate}
                                     </div>
                                 </div>
@@ -1666,16 +1753,38 @@ Troubleshooting steps:
                 }
                 
                 // Update search results info
-                searchResultsInfo.textContent = `Found ${files.length} file${files.length !== 1 ? 's' : ''} matching "${query}"`;
+                searchResultsInfo.textContent = `Found ${files.length} asset${files.length !== 1 ? 's' : ''} matching "${query}"`;
                 clearSearchBtn.classList.remove('hidden');
                 
             } catch (error) {
                 console.error('Search error:', error);
-                filesList.innerHTML = `
+                
+                let errorMessage = `
                     <div class="text-center text-red-500 dark:text-red-400 py-8">
-                        Error searching files: ${error.message}
-                    </div>
+                        Error searching assets: ${error.message}
                 `;
+                
+                // If the error is authentication-related and settings aren't configured, add a configure button
+                if (!settingsConfigured && error.message.includes('Authentication')) {
+                    errorMessage += `
+                        <div class="mt-4">
+                            <button id="configureForSearchBtn" class="adobe-button adobe-button-primary px-4 py-2 rounded-adobe text-sm">
+                                Configure Settings
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                errorMessage += `</div>`;
+                
+                filesList.innerHTML = errorMessage;
+                
+                // Add event listener to the configure button if it exists
+                const configureBtn = document.getElementById('configureForSearchBtn');
+                if (configureBtn) {
+                    configureBtn.addEventListener('click', openSettings);
+                }
+                
                 searchResultsInfo.textContent = '';
             }
         }
@@ -1693,7 +1802,7 @@ Troubleshooting steps:
             previewContent.innerHTML = `
                 <div class="text-center py-8">
                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                    <div class="mt-2 text-gray-500 dark:text-gray-400">Loading content...</div>
+                    <div class="mt-2 text-adobe-gray-500 dark:text-adobe-gray-400">Loading content...</div>
                 </div>
             `;
             
@@ -1702,14 +1811,15 @@ Troubleshooting steps:
                 let fileMetadata = file.metadata;
                 let fileUrl;
                 
-                // If we don't have complete metadata or the file was just uploaded, fetch it
+                // If we don't have complete metadata or the file was just uploaded, try to fetch it
                 if (!file.serverMetadataFetched && settingsConfigured) {
                     try {
-                        const metadataResponse = await fetch(`${apiSettings.apiUrl}/images/${file.filename}?metadata=true`, {
-                            headers: {
-                                'Authorization': 'Basic ' + btoa(`${apiSettings.username}:${apiSettings.password}`)
-                            }
-                        });
+                        // Only add authentication headers if settings are configured
+                        const headers = settingsConfigured ? 
+                            { 'Authorization': 'Basic ' + btoa(`${apiSettings.username}:${apiSettings.password}`) } : 
+                            {};
+                            
+                        const metadataResponse = await fetch(`${apiSettings.apiUrl}/images/${file.filename}?metadata=true`, { headers });
                         
                         if (metadataResponse.ok) {
                             const metadataResult = await metadataResponse.json();
@@ -1729,11 +1839,11 @@ Troubleshooting steps:
                 if (file.type.startsWith('image/')) {
                     previewContent.innerHTML = `
                         <img src="${fileUrl}" alt="${fileMetadata.title || file.filename}" 
-                            class="max-w-full h-auto rounded-md" />
+                            class="max-w-full h-auto rounded-adobe" />
                     `;
                 } else if (file.type.startsWith('video/')) {
                     previewContent.innerHTML = `
-                        <video src="${fileUrl}" controls class="max-w-full h-auto rounded-md"></video>
+                        <video src="${fileUrl}" controls class="max-w-full h-auto rounded-adobe"></video>
                     `;
                 } else if (file.type.startsWith('audio/')) {
                     previewContent.innerHTML = `
@@ -1741,14 +1851,14 @@ Troubleshooting steps:
                     `;
                 } else {
                     previewContent.innerHTML = `
-                        <div class="bg-gray-100 dark:bg-gray-700 rounded-md p-4 text-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-500 dark:text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div class="bg-adobe-gray-100 dark:bg-adobe-gray-700 rounded-adobe p-4 text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-adobe-gray-500 dark:text-adobe-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             <div class="font-medium">${file.filename}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">${file.type}</div>
-                            <a href="${fileUrl}" target="_blank" class="mt-3 inline-block text-primary hover:underline">
-                                View or download file
+                            <div class="text-sm text-adobe-gray-500 dark:text-adobe-gray-400">${file.type}</div>
+                            <a href="${fileUrl}" target="_blank" class="mt-3 inline-block text-adobe-blue hover:underline">
+                                View or download asset
                             </a>
                         </div>
                     `;
@@ -1756,7 +1866,7 @@ Troubleshooting steps:
             
             // Display metadata
             let metadataHTML = `
-                <h4 class="font-medium mb-2">File Metadata</h4>
+                <h4 class="font-medium mb-2">Asset Metadata</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                     <div><span class="font-medium">Filename:</span> ${file.filename}</div>
                     <div><span class="font-medium">Size:</span> ${formatFileSize(file.size)}</div>
@@ -1807,7 +1917,7 @@ Troubleshooting steps:
             
             if (otherMetadata.length > 0) {
                 metadataHTML += `
-                    <div class="mt-3 pt-2 border-t dark:border-gray-700">
+                    <div class="mt-3 pt-2 border-t dark:border-adobe-gray-700">
                         <span class="font-medium">Additional Metadata:</span>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1 text-sm">
                             ${otherMetadata.map(([key, value]) => `
@@ -1829,7 +1939,7 @@ Troubleshooting steps:
                 console.error('Error loading preview:', error);
                 previewContent.innerHTML = `
                     <div class="text-center text-red-500 py-8">
-                        Error loading file: ${error.message}
+                        Error loading asset: ${error.message}
                     </div>
                 `;
             }
@@ -1853,7 +1963,7 @@ Troubleshooting steps:
             
             // Instruct user how to save
             setTimeout(() => {
-                alert("To save the file: After the file opens in a new tab, right-click and select 'Save as...' or press Ctrl+S/Cmd+S");
+                alert("To save the asset: After the file opens in a new tab, right-click and select 'Save as...' or press Ctrl+S/Cmd+S");
             }, 500);
         }
         
@@ -1882,7 +1992,7 @@ Troubleshooting steps:
         
         // Run connection diagnostics
         async function runDiagnostics() {
-            if (!checkSettings()) {
+            if (!checkSettings(true)) {
                 closeDiagnostics();
                 return;
             }
@@ -1891,7 +2001,7 @@ Troubleshooting steps:
             diagnosticsResults.innerHTML = `
                 <div class="text-center py-4">
                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                    <div class="mt-2 text-gray-500 dark:text-gray-400">Running diagnostics...</div>
+                    <div class="mt-2 text-adobe-gray-500 dark:text-adobe-gray-400">Running diagnostics...</div>
                 </div>
             `;
             
@@ -2076,14 +2186,14 @@ Troubleshooting steps:
                 `);
                 
                 resultsHTML += `
-                    <div class="bg-white dark:bg-gray-700 shadow rounded-lg p-4 mb-4">
+                    <div class="adobe-card bg-white dark:bg-adobe-gray-700 shadow-adobe rounded-adobe p-4 mb-4">
                         <div class="flex items-start">
                             <div class="flex-shrink-0 mt-0.5">
                                 ${statusIcon}
                             </div>
                             <div class="ml-3 w-full">
                                 <h3 class="text-sm font-medium">${result.name}</h3>
-                                <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">${result.message}</p>
+                                <p class="mt-1 text-sm text-adobe-gray-600 dark:text-adobe-gray-300">${result.message}</p>
                             </div>
                         </div>
                     </div>
@@ -2096,7 +2206,7 @@ Troubleshooting steps:
             // If there are errors, suggest trying the alternative upload
             if (errorCount > 0) {
                 diagnosticsResults.innerHTML += `
-                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                    <div class="bg-adobe-gray-50 dark:bg-adobe-gray-700 p-4 rounded-adobe border border-adobe-gray-200 dark:border-adobe-gray-600">
                         <h3 class="text-lg font-medium mb-2">Next Steps</h3>
                         <p class="mb-3">Since there are connectivity issues, you can try:</p>
                         <ol class="list-decimal list-inside space-y-1 mb-3">
@@ -2104,7 +2214,7 @@ Troubleshooting steps:
                             <li>Make sure your Cloudflare Worker is properly configured and running</li>
                             <li>Try the alternative upload method which uses a simpler approach</li>
                         </ol>
-                        <button id="diagAltUploadBtn" class="bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200">
+                        <button id="diagAltUploadBtn" class="adobe-button adobe-button-primary py-2 px-4 rounded-adobe">
                             Try Alternative Upload
                         </button>
                     </div>
@@ -2122,8 +2232,8 @@ Troubleshooting steps:
         
         // Open alternative upload modal
         function openAltUpload() {
-            // Check if settings are configured
-            if (!checkSettings()) {
+            // Check if settings are configured - uploads always require authentication
+            if (!checkSettings(true)) {
                 return;
             }
             
@@ -2162,7 +2272,7 @@ Troubleshooting steps:
             submitBtn.textContent = 'Uploading...';
             submitBtn.disabled = true;
             
-            altUploadStatus.className = 'text-sm text-gray-600 dark:text-gray-300 mt-2';
+            altUploadStatus.className = 'text-sm text-adobe-gray-600 dark:text-adobe-gray-300 mt-2';
             altUploadStatus.textContent = 'Uploading file...';
             
             try {
@@ -2205,7 +2315,7 @@ Troubleshooting steps:
                         <svg class="h-5 w-5 mr-1 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                         </svg>
-                        Upload successful! File ID: ${responseData.filename}
+                        Upload successful! Asset ID: ${responseData.filename}
                     </div>
                 `;
                 
@@ -2309,7 +2419,7 @@ Troubleshooting steps:
         function closeComparisonModal() {
             comparisonModal.classList.add('hidden');
         }
-        
+
         // Helper debounce function to avoid too many requests
         function debounce(func, wait) {
             let timeout;
