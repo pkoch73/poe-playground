@@ -451,6 +451,55 @@
             </div>
         </div>
         
+        <!-- Comparison Modal -->
+        <div id="comparisonModal" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="comparisonTitle" class="text-xl font-semibold">Image Comparison</h3>
+                        <button id="closeComparisonBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Image Comparison Container -->
+                    <div class="flex flex-col md:flex-row gap-6 mb-6">
+                        <div class="w-full md:w-1/2">
+                            <div class="text-base font-medium mb-2 text-center">Original Image</div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+                                <img id="originalImageFull" src="" alt="Original" class="w-full h-auto max-h-[60vh] object-contain mx-auto" />
+                            </div>
+                        </div>
+                        <div class="w-full md:w-1/2">
+                            <div class="text-base font-medium mb-2 text-center">Transformed Image</div>
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+                                <img id="transformedImageFull" src="" alt="Transformed" class="w-full h-auto max-h-[60vh] object-contain mx-auto" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Transformation Details -->
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-medium text-lg">Transformation URL</h4>
+                            <button id="copyUrlModal" class="text-primary hover:text-primary-dark flex items-center text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
+                                Copy URL
+                            </button>
+                        </div>
+                        <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto relative">
+                            <pre id="comparisonUrl" class="text-sm font-mono whitespace-pre-wrap break-all"></pre>
+                            <span id="copyFeedbackModal" class="absolute right-2 top-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full opacity-0 transition-opacity duration-300">Copied!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Alternative Upload Modal -->
         <div id="altUploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
@@ -774,7 +823,7 @@
                                         </div>
                                         
                                         <div class="flex justify-between items-center mb-2">
-                                            <button type="button" id="applyTransform-${fileData.filename}" class="bg-primary text-white px-3 py-1 rounded text-sm hover:bg-opacity-90">Preview Transformation</button>
+                                            <button type="button" id="applyTransform-${fileData.filename}" class="bg-primary text-white px-3 py-1 rounded text-sm hover:bg-opacity-90">Apply Transformation</button>
                                             <div class="text-xs text-gray-500 dark:text-gray-400">Powered by Cloudflare Images</div>
                                         </div>
                                         
@@ -783,16 +832,26 @@
                                                 <div class="w-full sm:w-1/2">
                                                     <div class="text-xs mb-1 text-center">Original</div>
                                                     <div class="bg-gray-100 dark:bg-gray-600 rounded overflow-hidden">
-                                                        <img src="${imageUrl}" alt="Original" class="w-full h-auto object-contain max-h-60">
+                                                        <img src="${imageUrl}" alt="Original" class="w-full h-auto object-contain max-h-40">
                                                     </div>
                                                 </div>
                                                 <div class="w-full sm:w-1/2">
                                                     <div class="text-xs mb-1 text-center">Transformed</div>
                                                     <div class="bg-gray-100 dark:bg-gray-600 rounded overflow-hidden">
-                                                        <img id="transformedImage-${fileData.filename}" src="${imageUrl}" alt="Transformed" class="w-full h-auto object-contain max-h-60">
+                                                        <img id="transformedImage-${fileData.filename}" src="${imageUrl}" alt="Transformed" class="w-full h-auto object-contain max-h-40">
                                                     </div>
                                                 </div>
                                             </div>
+                                            
+                                            <div class="flex mb-3">
+                                                <button type="button" onclick="openComparisonModal('${fileData.filename}', '${imageUrl}', document.getElementById('transformedUrl-${fileData.filename}').textContent)" class="bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center mx-auto">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                                    </svg>
+                                                    Compare in Fullscreen
+                                                </button>
+                                            </div>
+                                            
                                             <div class="flex justify-between items-center text-xs mb-2">
                                                 <span>Transformed URL:</span>
                                                 <button type="button" id="copyUrl-${fileData.filename}" class="text-primary hover:text-primary-dark flex items-center">
@@ -1947,6 +2006,74 @@ Troubleshooting steps:
             }
         }
         
+        // Comparison Modal elements
+        const comparisonModal = document.getElementById('comparisonModal');
+        const closeComparisonBtn = document.getElementById('closeComparisonBtn');
+        const comparisonTitle = document.getElementById('comparisonTitle');
+        const originalImageFull = document.getElementById('originalImageFull');
+        const transformedImageFull = document.getElementById('transformedImageFull');
+        const comparisonUrl = document.getElementById('comparisonUrl');
+        const copyUrlModal = document.getElementById('copyUrlModal');
+        const copyFeedbackModal = document.getElementById('copyFeedbackModal');
+        
+        // Comparison Modal event listeners
+        if (closeComparisonBtn) {
+            closeComparisonBtn.addEventListener('click', closeComparisonModal);
+        }
+        
+        if (comparisonModal) {
+            comparisonModal.addEventListener('click', (e) => {
+                if (e.target === comparisonModal) {
+                    closeComparisonModal();
+                }
+            });
+        }
+        
+        // Copy URL functionality in the comparison modal
+        if (copyUrlModal) {
+            copyUrlModal.addEventListener('click', () => {
+                if (comparisonUrl && comparisonUrl.textContent) {
+                    navigator.clipboard.writeText(comparisonUrl.textContent)
+                        .then(() => {
+                            // Show success feedback
+                            copyFeedbackModal.classList.remove('opacity-0');
+                            copyFeedbackModal.classList.add('opacity-100');
+                            
+                            // Hide feedback after 2 seconds
+                            setTimeout(() => {
+                                copyFeedbackModal.classList.remove('opacity-100');
+                                copyFeedbackModal.classList.add('opacity-0');
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy URL: ', err);
+                            alert('Failed to copy URL. Please try selecting and copying manually.');
+                        });
+                }
+            });
+        }
+        
+        // Function to open comparison modal
+        function openComparisonModal(filename, originalUrl, transformedUrl) {
+            // Set the title with the filename
+            comparisonTitle.textContent = `Image Comparison for ${filename}`;
+            
+            // Set the images
+            originalImageFull.src = originalUrl;
+            transformedImageFull.src = transformedUrl;
+            
+            // Set the URL in the code block
+            comparisonUrl.textContent = transformedUrl;
+            
+            // Show the modal
+            comparisonModal.classList.remove('hidden');
+        }
+        
+        // Function to close comparison modal
+        function closeComparisonModal() {
+            comparisonModal.classList.add('hidden');
+        }
+        
         // Function to set up Cloudflare image transformation functionality
         function setupImageTransformHandlers(filename) {
             // Add event listeners to toggle, apply transform buttons
@@ -1954,6 +2081,7 @@ Troubleshooting steps:
             const transformOptions = document.getElementById(`transformOptions-${filename}`);
             const applyBtn = document.getElementById(`applyTransform-${filename}`);
             const transformPreview = document.getElementById(`transformPreview-${filename}`);
+            const compareFullscreenBtn = document.getElementById(`compareFullscreen-${filename}`);
             
             if (!toggleBtn || !transformOptions || !applyBtn || !transformPreview) {
                 console.error(`Missing elements for image transform for ${filename}`);
@@ -1973,6 +2101,19 @@ Troubleshooting steps:
             applyBtn.addEventListener('click', () => {
                 applyImageTransformation(filename);
             });
+            
+            // Handle compare in fullscreen button
+            if (compareFullscreenBtn) {
+                compareFullscreenBtn.addEventListener('click', () => {
+                    const originalUrl = `${apiSettings.apiUrl}/images/${filename}`;
+                    const transformedUrlElement = document.getElementById(`transformedUrl-${filename}`);
+                    
+                    if (transformedUrlElement) {
+                        const transformedUrl = transformedUrlElement.textContent;
+                        openComparisonModal(filename, originalUrl, transformedUrl);
+                    }
+                });
+            }
             
             // Handle copy URL button
             const copyUrlBtn = document.getElementById(`copyUrl-${filename}`);
