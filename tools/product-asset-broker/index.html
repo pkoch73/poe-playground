@@ -307,6 +307,133 @@
                 </div>
             </div>
         </div>
+
+        <!-- Transform Modal -->
+        <div id="transformModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="transformTitle" class="text-xl font-semibold">Image Transformation</h3>
+                        <button id="closeTransformBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Left side - Transform controls -->
+                        <div class="lg:col-span-1 space-y-4">
+                            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <h4 class="font-medium mb-3">Transform Options</h4>
+                                
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Width</label>
+                                        <input type="number" id="transform-width" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" placeholder="auto" min="1" max="5000">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Height</label>
+                                        <input type="number" id="transform-height" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" placeholder="auto" min="1" max="5000">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Format</label>
+                                        <select id="transform-format" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base">
+                                            <option value="">Original</option>
+                                            <option value="webp">WebP</option>
+                                            <option value="avif">AVIF</option>
+                                            <option value="png">PNG</option>
+                                            <option value="jpeg">JPEG</option>
+                                            <option value="gif">GIF</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Quality (1-100)</label>
+                                        <input type="number" id="transform-quality" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" placeholder="80" min="1" max="100" value="80">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Fit</label>
+                                        <select id="transform-fit" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base">
+                                            <option value="">Auto</option>
+                                            <option value="scale-down">Scale Down</option>
+                                            <option value="contain">Contain</option>
+                                            <option value="cover">Cover</option>
+                                            <option value="crop">Crop</option>
+                                            <option value="pad">Pad</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Gravity</label>
+                                        <select id="transform-gravity" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base">
+                                            <option value="">Auto</option>
+                                            <option value="auto">Smart</option>
+                                            <option value="top">Top</option>
+                                            <option value="bottom">Bottom</option>
+                                            <option value="left">Left</option>
+                                            <option value="right">Right</option>
+                                            <option value="center">Center</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <button type="button" id="transform-apply" class="w-full bg-primary text-white px-4 py-2 rounded-md text-base hover:bg-opacity-90 mt-4">
+                                        Apply Transformation
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-3 text-xs text-right text-gray-500 dark:text-gray-400">
+                                    Powered by Cloudflare Images
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right side - Preview -->
+                        <div class="lg:col-span-2 space-y-4">
+                            <div id="transform-preview" class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <div class="side-by-side-comparison">
+                                    <div class="comparison-item">
+                                        <div class="comparison-image-container">
+                                            <img id="transform-original" src="" class="comparison-image" alt="Original">
+                                            <div class="comparison-label">Original</div>
+                                        </div>
+                                    </div>
+                                    <div class="comparison-item">
+                                        <div class="comparison-image-container">
+                                            <img id="transform-transformed" src="" class="comparison-image" alt="Transformed">
+                                            <div class="comparison-label">Transformed</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <button id="transform-fullscreen" class="bg-gray-200 dark:bg-gray-600 px-3 py-2 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center mx-auto">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                        </svg>
+                                        Compare in Fullscreen
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-medium">Transformed URL</h4>
+                                    <button id="transform-copy-url" class="text-primary hover:text-primary-dark flex items-center text-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                        </svg>
+                                        Copy URL
+                                    </button>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto relative">
+                                    <pre id="transform-url" class="text-sm font-mono whitespace-pre-wrap break-all"></pre>
+                                    <span id="transform-copy-feedback" class="absolute right-2 top-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full opacity-0 transition-opacity duration-300">Copied!</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Settings Modal -->
         <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -628,18 +755,10 @@
         let settingsConfigured = false;
         let altSelectedFile = null;
         
-        // Image comparison slider functionality
-        // Complete new image comparison implementation
-// We no longer need the slider initialization since we're using a side-by-side comparison
-        
-        // We no longer need any slider initialization
-        // since we're using a simple side-by-side comparison
-        
         // Initialize diagnostic banner (hidden by default)
         const diagnosticBanner = document.getElementById('diagnosticBanner');
         
         // Function to check connection and show diagnostic banner only if needed
-        // (We'll define this function now but use it after DOM elements are initialized)
         async function checkConnection() {
             // Only check if settings are configured
             if (!settingsConfigured) {
@@ -676,6 +795,18 @@
         const closePreviewBtn = document.getElementById('closePreviewBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         
+        // Transform Modal elements
+        const transformModal = document.getElementById('transformModal');
+        const transformTitle = document.getElementById('transformTitle');
+        const closeTransformBtn = document.getElementById('closeTransformBtn');
+        const transformOriginal = document.getElementById('transform-original');
+        const transformTransformed = document.getElementById('transform-transformed');
+        const transformUrl = document.getElementById('transform-url');
+        const transformApplyBtn = document.getElementById('transform-apply');
+        const transformFullscreenBtn = document.getElementById('transform-fullscreen');
+        const transformCopyUrlBtn = document.getElementById('transform-copy-url');
+        const transformCopyFeedback = document.getElementById('transform-copy-feedback');
+        
         // Search by SKU elements
         const searchSkuInput = document.getElementById('searchSkuInput');
         const searchSkuBtn = document.getElementById('searchSkuBtn');
@@ -684,6 +815,133 @@
         
         // Search by SKU event listener
         searchSkuBtn.addEventListener('click', handleSkuSearch);
+        
+        // Transform Modal event listeners
+        closeTransformBtn.addEventListener('click', closeTransformModal);
+        transformApplyBtn.addEventListener('click', applyTransformation);
+        transformFullscreenBtn.addEventListener('click', openTransformComparisonModal);
+        transformCopyUrlBtn.addEventListener('click', copyTransformUrl);
+        
+        // Close transform modal when clicking outside
+        transformModal.addEventListener('click', (e) => {
+            if (e.target === transformModal) {
+                closeTransformModal();
+            }
+        });
+        
+        // Add event listeners for real-time preview on transform inputs
+        const transformInputs = [
+            document.getElementById('transform-width'),
+            document.getElementById('transform-height'),
+            document.getElementById('transform-format'),
+            document.getElementById('transform-quality'),
+            document.getElementById('transform-fit'),
+            document.getElementById('transform-gravity')
+        ];
+        
+        transformInputs.forEach(elem => {
+            if (elem) {
+                elem.addEventListener('input', debounce(applyTransformation, 500));
+            }
+        });
+        
+        // Function to open transform modal
+        function openTransformModal(filename, imageUrl) {
+            // Set modal data attributes
+            transformModal.dataset.filename = filename;
+            transformModal.dataset.imageUrl = imageUrl;
+            
+            // Set title
+            transformTitle.textContent = `Transform: ${filename}`;
+            
+            // Set original image and reset transformed image
+            transformOriginal.src = imageUrl;
+            transformTransformed.src = imageUrl;
+            transformUrl.textContent = imageUrl;
+            
+            // Reset form values
+            document.getElementById('transform-width').value = '';
+            document.getElementById('transform-height').value = '';
+            document.getElementById('transform-format').value = '';
+            document.getElementById('transform-quality').value = '80';
+            document.getElementById('transform-fit').value = '';
+            document.getElementById('transform-gravity').value = '';
+            
+            // Show modal
+            transformModal.classList.remove('hidden');
+        }
+        
+        // Close transform modal
+        function closeTransformModal() {
+            transformModal.classList.add('hidden');
+        }
+        
+        // Apply transformation in the transform modal
+        function applyTransformation() {
+            const filename = transformModal.dataset.filename;
+            const originalUrl = transformModal.dataset.imageUrl;
+            
+            // Get form values
+            const width = document.getElementById('transform-width').value;
+            const height = document.getElementById('transform-height').value;
+            const format = document.getElementById('transform-format').value;
+            const quality = document.getElementById('transform-quality').value;
+            const fit = document.getElementById('transform-fit').value;
+            const gravity = document.getElementById('transform-gravity').value;
+            
+            // Build URL parameters
+            const params = [];
+            if (width) params.push(`width=${width}`);
+            if (height) params.push(`height=${height}`);
+            if (format) params.push(`format=${format}`);
+            if (quality) params.push(`quality=${quality}`);
+            if (fit) params.push(`fit=${fit}`);
+            if (gravity) params.push(`gravity=${gravity}`);
+            
+            // Build the complete URL with transformations
+            let transformedUrl = originalUrl;
+            
+            // Only add transformations if parameters exist
+            if (params.length > 0) {
+                transformedUrl = `${apiSettings.apiUrl}/cdn-cgi/image/${params.join(',')}/images/${filename}`;
+            }
+            
+            // Update the transformed image preview
+            transformTransformed.src = transformedUrl;
+            transformUrl.textContent = transformedUrl;
+        }
+        
+        // Open comparison modal from transform modal
+        function openTransformComparisonModal() {
+            const filename = transformModal.dataset.filename;
+            const originalUrl = transformModal.dataset.imageUrl;
+            const transformedUrl = transformUrl.textContent;
+            
+            // Open the comparison modal
+            openComparisonModal(filename, originalUrl, transformedUrl);
+        }
+        
+        // Copy transform URL
+        function copyTransformUrl() {
+            const urlText = transformUrl.textContent;
+            
+            navigator.clipboard.writeText(urlText)
+                .then(() => {
+                    // Show success feedback
+                    transformCopyFeedback.classList.remove('opacity-0');
+                    transformCopyFeedback.classList.add('opacity-100');
+                    
+                    // Hide feedback after 2 seconds
+                    setTimeout(() => {
+                        transformCopyFeedback.classList.remove('opacity-100');
+                        transformCopyFeedback.classList.add('opacity-0');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy URL: ', err);
+                    alert('Failed to copy URL. Please try selecting and copying manually.');
+                });
+        }
         
         // Handle search by SKU
         async function handleSkuSearch() {
@@ -839,112 +1097,19 @@
                                 </div>
                     `;
                     
-                    // Add image transformation options for Cloudflare if it's an image
+                    // Add a transformation button only if it's an image
                     if (isImage) {
                         cardContent += `
                                 <div class="mt-4 pt-3 border-t dark:border-gray-600">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <h4 class="font-medium">Cloudflare Image Transformations</h4>
-                                        <button type="button" id="toggleTransform-${fileData.filename}" class="text-xs text-primary hover:underline">Show/Hide Options</button>
-                                    </div>
-                                    
-                                    <div id="transformOptions-${fileData.filename}" class="hidden mb-4">
-                                        <div class="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
-                                            <div>
-                                                <label class="block text-xs mb-1">Width</label>
-                                                <input type="number" id="width-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700" placeholder="auto" min="1" max="5000">
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs mb-1">Height</label>
-                                                <input type="number" id="height-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700" placeholder="auto" min="1" max="5000">
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs mb-1">Format</label>
-                                                <select id="format-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700">
-                                                    <option value="">Original</option>
-                                                    <option value="webp">WebP</option>
-                                                    <option value="avif">AVIF</option>
-                                                    <option value="png">PNG</option>
-                                                    <option value="jpeg">JPEG</option>
-                                                    <option value="gif">GIF</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs mb-1">Quality (1-100)</label>
-                                                <input type="number" id="quality-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700" placeholder="80" min="1" max="100" value="80">
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs mb-1">Fit</label>
-                                                <select id="fit-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700">
-                                                    <option value="">Auto</option>
-                                                    <option value="scale-down">Scale Down</option>
-                                                    <option value="contain">Contain</option>
-                                                    <option value="cover">Cover</option>
-                                                    <option value="crop">Crop</option>
-                                                    <option value="pad">Pad</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="block text-xs mb-1">Gravity</label>
-                                                <select id="gravity-${fileData.filename}" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700">
-                                                    <option value="">Auto</option>
-                                                    <option value="auto">Smart</option>
-                                                    <option value="top">Top</option>
-                                                    <option value="bottom">Bottom</option>
-                                                    <option value="left">Left</option>
-                                                    <option value="right">Right</option>
-                                                    <option value="center">Center</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="flex justify-between items-center mb-2">
-                                            <button type="button" id="applyTransform-${fileData.filename}" class="bg-primary text-white px-3 py-1 rounded text-sm hover:bg-opacity-90">Apply Transformation</button>
-                                            <div class="text-xs text-gray-500 dark:text-gray-400">Powered by Cloudflare Images</div>
-                                        </div>
-                                        
-                                        <div id="transformPreview-${fileData.filename}" class="hidden mt-3">
-                                            <div class="mb-3">
-                                                <div class="side-by-side-comparison">
-                                                    <div class="comparison-item">
-                                                        <div class="comparison-image-container">
-                                                            <img src="${imageUrl}" class="comparison-image" alt="Original">
-                                                            <div class="comparison-label">Original</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="comparison-item">
-                                                        <div class="comparison-image-container">
-                                                            <img id="transformedImage-${fileData.filename}" src="${imageUrl}" class="comparison-image" alt="Transformed">
-                                                            <div class="comparison-label">Transformed</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="flex mb-3">
-                                                <button type="button" onclick="openComparisonModal('${fileData.filename}', '${imageUrl}', document.getElementById('transformedUrl-${fileData.filename}').textContent)" class="bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center mx-auto">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                                                    </svg>
-                                                    Compare in Fullscreen
-                                                </button>
-                                            </div>
-                                            
-                                            <div class="flex justify-between items-center text-xs mb-2">
-                                                <span>Transformed URL:</span>
-                                                <button type="button" id="copyUrl-${fileData.filename}" class="text-primary hover:text-primary-dark flex items-center">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                                    </svg>
-                                                    Copy URL
-                                                </button>
-                                            </div>
-                                            <div class="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs font-mono overflow-x-auto whitespace-nowrap mb-2 relative">
-                                                <span id="transformedUrl-${fileData.filename}">${imageUrl}</span>
-                                                <span id="copyFeedback-${fileData.filename}" class="absolute right-2 top-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full opacity-0 transition-opacity duration-300">Copied!</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <button type="button" 
+                                            class="flex items-center justify-center w-full bg-primary text-white py-2 px-4 
+                                            rounded-md hover:bg-opacity-90 transition-colors duration-200"
+                                            onclick="openTransformModal('${fileData.filename}', '${imageUrl}')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                        Cloudflare Image Transformations
+                                    </button>
                                 </div>
                         `;
                     }
@@ -2095,41 +2260,34 @@ Troubleshooting steps:
         const copyFeedbackModal = document.getElementById('copyFeedbackModal');
         
         // Comparison Modal event listeners
-        if (closeComparisonBtn) {
-            closeComparisonBtn.addEventListener('click', closeComparisonModal);
-        }
-        
-        if (comparisonModal) {
-            comparisonModal.addEventListener('click', (e) => {
-                if (e.target === comparisonModal) {
-                    closeComparisonModal();
-                }
-            });
-        }
+        closeComparisonBtn.addEventListener('click', closeComparisonModal);
+        comparisonModal.addEventListener('click', (e) => {
+            if (e.target === comparisonModal) {
+                closeComparisonModal();
+            }
+        });
         
         // Copy URL functionality in the comparison modal
-        if (copyUrlModal) {
-            copyUrlModal.addEventListener('click', () => {
-                if (comparisonUrl && comparisonUrl.textContent) {
-                    navigator.clipboard.writeText(comparisonUrl.textContent)
-                        .then(() => {
-                            // Show success feedback
-                            copyFeedbackModal.classList.remove('opacity-0');
-                            copyFeedbackModal.classList.add('opacity-100');
-                            
-                            // Hide feedback after 2 seconds
-                            setTimeout(() => {
-                                copyFeedbackModal.classList.remove('opacity-100');
-                                copyFeedbackModal.classList.add('opacity-0');
-                            }, 2000);
-                        })
-                        .catch(err => {
-                            console.error('Failed to copy URL: ', err);
-                            alert('Failed to copy URL. Please try selecting and copying manually.');
-                        });
-                }
-            });
-        }
+        copyUrlModal.addEventListener('click', () => {
+            if (comparisonUrl && comparisonUrl.textContent) {
+                navigator.clipboard.writeText(comparisonUrl.textContent)
+                    .then(() => {
+                        // Show success feedback
+                        copyFeedbackModal.classList.remove('opacity-0');
+                        copyFeedbackModal.classList.add('opacity-100');
+                        
+                        // Hide feedback after 2 seconds
+                        setTimeout(() => {
+                            copyFeedbackModal.classList.remove('opacity-100');
+                            copyFeedbackModal.classList.add('opacity-0');
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy URL: ', err);
+                        alert('Failed to copy URL. Please try selecting and copying manually.');
+                    });
+            }
+        });
         
         // Function to open comparison modal
         function openComparisonModal(filename, originalUrl, transformedUrl) {
@@ -2145,8 +2303,6 @@ Troubleshooting steps:
             
             // Show the modal
             comparisonModal.classList.remove('hidden');
-            
-            // No need to initialize a slider anymore
         }
         
         // Function to close comparison modal
@@ -2154,181 +2310,19 @@ Troubleshooting steps:
             comparisonModal.classList.add('hidden');
         }
         
-        // Function to set up Cloudflare image transformation functionality
-        function setupImageTransformHandlers(filename) {
-            // Add event listeners to toggle, apply transform buttons
-            const toggleBtn = document.getElementById(`toggleTransform-${filename}`);
-            const transformOptions = document.getElementById(`transformOptions-${filename}`);
-            const applyBtn = document.getElementById(`applyTransform-${filename}`);
-            const transformPreview = document.getElementById(`transformPreview-${filename}`);
-            const compareFullscreenBtn = document.getElementById(`compareFullscreen-${filename}`);
-            
-            if (!toggleBtn || !transformOptions || !applyBtn || !transformPreview) {
-                console.error(`Missing elements for image transform for ${filename}`);
-                return;
-            }
-            
-            // Toggle display of transform options
-            toggleBtn.addEventListener('click', () => {
-                if (transformOptions.classList.contains('hidden')) {
-                    transformOptions.classList.remove('hidden');
-                } else {
-                    transformOptions.classList.add('hidden');
-                }
-            });
-            
-            // Handle apply transform button
-            applyBtn.addEventListener('click', () => {
-                applyImageTransformation(filename);
-            });
-            
-            // Handle compare in fullscreen button
-            if (compareFullscreenBtn) {
-                compareFullscreenBtn.addEventListener('click', () => {
-                    const originalUrl = `${apiSettings.apiUrl}/images/${filename}`;
-                    const transformedUrlElement = document.getElementById(`transformedUrl-${filename}`);
-                    
-                    if (transformedUrlElement) {
-                        const transformedUrl = transformedUrlElement.textContent;
-                        openComparisonModal(filename, originalUrl, transformedUrl);
-                    }
-                });
-            }
-            
-            // Handle copy URL button
-            const copyUrlBtn = document.getElementById(`copyUrl-${filename}`);
-            const copyFeedback = document.getElementById(`copyFeedback-${filename}`);
-            
-            if (copyUrlBtn && copyFeedback) {
-                copyUrlBtn.addEventListener('click', () => {
-                    const urlText = document.getElementById(`transformedUrl-${filename}`);
-                    if (urlText) {
-                        // Copy to clipboard
-                        navigator.clipboard.writeText(urlText.textContent)
-                            .then(() => {
-                                // Show success feedback
-                                copyFeedback.classList.remove('opacity-0');
-                                copyFeedback.classList.add('opacity-100');
-                                
-                                // Hide feedback after 2 seconds
-                                setTimeout(() => {
-                                    copyFeedback.classList.remove('opacity-100');
-                                    copyFeedback.classList.add('opacity-0');
-                                }, 2000);
-                            })
-                            .catch(err => {
-                                console.error('Failed to copy URL: ', err);
-                                alert('Failed to copy URL. Please try selecting and copying manually.');
-                            });
-                    }
-                });
-            }
-            
-            // Handle real-time preview on form changes
-            const formElements = [
-                document.getElementById(`width-${filename}`),
-                document.getElementById(`height-${filename}`),
-                document.getElementById(`format-${filename}`),
-                document.getElementById(`quality-${filename}`),
-                document.getElementById(`fit-${filename}`),
-                document.getElementById(`gravity-${filename}`)
-            ];
-            
-            formElements.forEach(elem => {
-                if (elem) {
-                    elem.addEventListener('change', () => {
-                        // Preview immediately when options change
-                        applyImageTransformation(filename);
-                    });
-                }
-            });
+        // Helper debounce function to avoid too many requests
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
         }
-        
-        // Function to apply image transformations and update preview
-        function applyImageTransformation(filename) {
-            // Get all form values
-            const width = document.getElementById(`width-${filename}`).value;
-            const height = document.getElementById(`height-${filename}`).value;
-            const format = document.getElementById(`format-${filename}`).value;
-            const quality = document.getElementById(`quality-${filename}`).value;
-            const fit = document.getElementById(`fit-${filename}`).value;
-            const gravity = document.getElementById(`gravity-${filename}`).value;
-            
-            // Build the Cloudflare transformation URL parameters
-            const params = [];
-            if (width) params.push(`width=${width}`);
-            if (height) params.push(`height=${height}`);
-            if (format) params.push(`format=${format}`);
-            if (quality) params.push(`quality=${quality}`);
-            if (fit) params.push(`fit=${fit}`);
-            if (gravity) params.push(`gravity=${gravity}`);
-            
-            // Set default quality to 50 if format is specified but no quality
-            if (format && !quality) {
-                params.push('quality=50');
-            }
-            
-            // Build the complete URL with transformations
-            const originalUrl = `${apiSettings.apiUrl}/images/${filename}`;
-            let transformedUrl = originalUrl;
-            
-            // Only add transformations if parameters exist
-            if (params.length > 0) {
-                // Correct URL format with /images/ path segment
-                transformedUrl = `${apiSettings.apiUrl}/cdn-cgi/image/${params.join(',')}/images/${filename}`;
-            }
-            
-            // Update the transformed image preview
-            const transformedImage = document.getElementById(`transformedImage-${filename}`);
-            const transformedUrlText = document.getElementById(`transformedUrl-${filename}`);
-            const transformPreview = document.getElementById(`transformPreview-${filename}`);
-            
-            if (transformedImage && transformedUrlText) {
-                transformedImage.src = transformedUrl;
-                transformedUrlText.textContent = transformedUrl;
-                transformPreview.classList.remove('hidden');
-                
-                // Initialize sliders after updating image
-                // Giving a bit more time for the image to load
-                setTimeout(() => {
-                    const slider = document.getElementById(`comparisonSlider-${filename}`);
-                    if (slider) {
-                        // Make sure the transform container is visible
-                        transformPreview.style.display = 'block';
-                        
-                        // Ensure proper initialization by forcing layout calculation
-                        window.requestAnimationFrame(() => {
-                            initImageSliders();
-                            console.log(`Initialized slider for ${filename}`);
-                        });
-                    }
-                }, 250);
-            }
-        }
-        
-        // Observer to handle dynamically added SKU search results
-        const skuSearchResultsObserver = new MutationObserver((mutations) => {
-            mutations.forEach(mutation => {
-                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    // Check if any of the added nodes contain transform buttons
-                    mutation.addedNodes.forEach(node => {
-                        if (node.nodeType === 1) { // Element node
-                            // Look for transform toggle buttons
-                            const toggleBtns = node.querySelectorAll('[id^="toggleTransform-"]');
-                            
-                            toggleBtns.forEach(btn => {
-                                // Extract filename from button ID
-                                const filename = btn.id.replace('toggleTransform-', '');
-                                setupImageTransformHandlers(filename);
-                            });
-                        }
-                    });
-                }
-            });
-        });
-        
-        // Start observing SKU search results
-        skuSearchResultsObserver.observe(skuSearchResults, { childList: true });
+
+        // Make openTransformModal available globally
+        window.openTransformModal = openTransformModal;
         
         // Initialize the UI
         loadFiles();
@@ -2343,19 +2337,6 @@ Troubleshooting steps:
                 closePreview();
             }
         });
-        
-        // Add a refresh button
-        const filesHeader = document.querySelector('.bg-white.dark\\:bg-gray-800 h2');
-        const refreshButton = document.createElement('button');
-        refreshButton.className = 'ml-2 text-sm text-primary hover:text-primary-dark';
-        refreshButton.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh
-        `;
-        refreshButton.addEventListener('click', loadFiles);
-        filesHeader.appendChild(refreshButton);
     </script>
 </body>
 </html>
