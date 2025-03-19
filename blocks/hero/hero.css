@@ -6,7 +6,7 @@
 .hero {
   position: relative;
   padding: 40px 24px;
-  min-height: 300px;
+  min-height: 250px;
 }
 
 .hero h1 {
@@ -27,7 +27,7 @@
 .hero img {
   object-fit: cover;
   width: 100%;
-  height: 80%;
+  height: 100%;
 }
 
 @media (width >= 900px) {
