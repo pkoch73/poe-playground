@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Organization Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <!-- Dark mode detection -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <h1 class="text-3xl font-bold mb-8 text-primary">Asset Organization Tool</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Filters Panel -->
+            <div class="lg:col-span-3 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Filters</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="project" class="block text-sm font-medium mb-1">Project</label>
+                        <select id="project" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                            <option value="">All Projects</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="channel" class="block text-sm font-medium mb-1">Channel</label>
+                        <select id="channel" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                            <option value="">All Channels</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="country" class="block text-sm font-medium mb-1">Country</label>
+                        <select id="country" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                            <option value="">All Countries</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="language" class="block text-sm font-medium mb-1">Language</label>
+                        <select id="language" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                            <option value="">All Languages</option>
+                        </select>
+                    </div>
+
+                    <button id="apply-filters" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-4 rounded transition">
+                        Apply Filters
+                    </button>
+                    
+                    <button id="clear-filters" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Assets Panel -->
+            <div class="lg:col-span-5 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Matching Assets</h2>
+                <div id="assets-count" class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    Showing 0 assets
+                </div>
+                
+                <div id="assets-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto p-1">
+                    <!-- Assets will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Folder Structure Panel -->
+            <div class="lg:col-span-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4">Folder Structure Preview</h2>
+                
+                <div id="folder-structure" class="text-sm bg-gray-50 dark:bg-gray-700 p-4 rounded-md max-h-[430px] overflow-y-auto font-mono">
+                    <!-- Folder structure will be populated here -->
+                </div>
+                
+                <div class="mt-4">
+                    <button id="export-btn" class="bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-4 rounded transition w-full">
+                        Export to SharePoint
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Success!</h3>
+            <p class="mb-6">The assets have been organized according to the specified structure and are ready for export to SharePoint.</p>
+            <div class="flex justify-end">
+                <button id="close-modal" class="bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-4 rounded transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulated content hub data
+        const contentHubAssets = [
+            { id: 1, name: "Brand Guidelines.pdf", type: "document", project: "Rebrand 2023", channel: "Digital", country: "Global", language: "English" },
+            { id: 2, name: "Q1 Campaign Assets.zip", type: "archive", project: "Q1 Campaign", channel: "Social Media", country: "United States", language: "English" },
+            { id: 3, name: "Product Photo 1.jpg", type: "image", project: "Product Launch", channel: "E-commerce", country: "Germany", language: "German" },
+            { id: 4, name: "Product Photo 2.jpg", type: "image", project: "Product Launch", channel: "E-commerce", country: "Germany", language: "German" },
+            { id: 5, name: "Product Video.mp4", type: "video", project: "Product Launch", channel: "E-commerce", country: "France", language: "French" },
+            { id: 6, name: "TV Commercial.mp4", type: "video", project: "Q1 Campaign", channel: "TV", country: "United Kingdom", language: "English" },
+            { id: 7, name: "Podcast Ad.mp3", type: "audio", project: "Q1 Campaign", channel: "Audio", country: "United States", language: "English" },
+            { id: 8, name: "Logo Dark.png", type: "image", project: "Rebrand 2023", channel: "Digital", country: "Global", language: "English" },
+            { id: 9, name: "Logo Light.png", type: "image", project: "Rebrand 2023", channel: "Digital", country: "Global", language: "English" },
+            { id: 10, name: "Social Post Template.psd", type: "design", project: "Q1 Campaign", channel: "Social Media", country: "Japan", language: "Japanese" },
+            { id: 11, name: "Email Template.html", type: "code", project: "Q1 Campaign", channel: "Email", country: "Brazil", language: "Portuguese" },
+            { id: 12, name: "Product Brochure FR.pdf", type: "document", project: "Product Launch", channel: "Print", country: "France", language: "French" },
+            { id: 13, name: "Product Brochure DE.pdf", type: "document", project: "Product Launch", channel: "Print", country: "Germany", language: "German" },
+            { id: 14, name: "Digital Banner 300x250.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "Spain", language: "Spanish" },
+            { id: 15, name: "Digital Banner 728x90.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "Spain", language: "Spanish" },
+            { id: 16, name: "Digital Banner 300x250.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "Mexico", language: "Spanish" },
+            { id: 17, name: "Digital Banner 728x90.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "Mexico", language: "Spanish" },
+            { id: 18, name: "Website Copy.docx", type: "document", project: "Product Launch", channel: "Website", country: "Canada", language: "English" },
+            { id: 19, name: "Website Copy FR.docx", type: "document", project: "Product Launch", channel: "Website", country: "Canada", language: "French" },
+            { id: 20, name: "PR Release.docx", type: "document", project: "Product Launch", channel: "PR", country: "United States", language: "English" },
+        ];
+
+        // Define file type icons
+        const fileTypeIcons = {
+            document: "📄",
+            archive: "🗄️",
+            image: "🖼️",
+            video: "🎬",
+            audio: "🔊",
+            design: "🎨",
+            code: "💻"
+        };
+
+        // Extract unique values for filter dropdowns
+        function populateFilterDropdowns() {
+            const filters = {
+                project: new Set(),
+                channel: new Set(),
+                country: new Set(),
+                language: new Set()
+            };
+            
+            contentHubAssets.forEach(asset => {
+                filters.project.add(asset.project);
+                filters.channel.add(asset.channel);
+                filters.country.add(asset.country);
+                filters.language.add(asset.language);
+            });
+            
+            // Populate project dropdown
+            const projectSelect = document.getElementById('project');
+            Array.from(filters.project).sort().forEach(project => {
+                const option = document.createElement('option');
+                option.value = project;
+                option.textContent = project;
+                projectSelect.appendChild(option);
+            });
+            
+            // Populate channel dropdown
+            const channelSelect = document.getElementById('channel');
+            Array.from(filters.channel).sort().forEach(channel => {
+                const option = document.createElement('option');
+                option.value = channel;
+                option.textContent = channel;
+                channelSelect.appendChild(option);
+            });
+            
+            // Populate country dropdown
+            const countrySelect = document.getElementById('country');
+            Array.from(filters.country).sort().forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+            
+            // Populate language dropdown
+            const languageSelect = document.getElementById('language');
+            Array.from(filters.language).sort().forEach(language => {
+                const option = document.createElement('option');
+                option.value = language;
+                option.textContent = language;
+                languageSelect.appendChild(option);
+            });
+        }
+
+        // Filter assets based on selected criteria
+        function filterAssets() {
+            const project = document.getElementById('project').value;
+            const channel = document.getElementById('channel').value;
+            const country = document.getElementById('country').value;
+            const language = document.getElementById('language').value;
+            
+            return contentHubAssets.filter(asset => {
+                return (project === '' || asset.project === project) &&
+                       (channel === '' || asset.channel === channel) &&
+                       (country === '' || asset.country === country) &&
+                       (language === '' || asset.language === language);
+            });
+        }
+
+        // Display assets in the assets container
+        function displayAssets(assets) {
+            const assetsContainer = document.getElementById('assets-container');
+            const assetsCount = document.getElementById('assets-count');
+            
+            assetsContainer.innerHTML = '';
+            assetsCount.textContent = `Showing ${assets.length} assets`;
+            
+            if (assets.length === 0) {
+                assetsContainer.innerHTML = '<div class="col-span-full text-center py-4 text-gray-500 dark:text-gray-400">No assets match the selected filters</div>';
+                return;
+            }
+            
+            assets.forEach(asset => {
+                const assetCard = document.createElement('div');
+                assetCard.className = 'bg-gray-50 dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600 flex items-center';
+                
+                const icon = fileTypeIcons[asset.type] || '📁';
+                
+                assetCard.innerHTML = `
+                    <div class="text-2xl mr-3">${icon}</div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="font-medium truncate" title="${asset.name}">${asset.name}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${asset.project} · ${asset.channel}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${asset.country} · ${asset.language}</div>
+                    </div>
+                `;
+                
+                assetsContainer.appendChild(assetCard);
+            });
+        }
+
+        // Generate folder structure based on filtered assets
+        function generateFolderStructure(assets) {
+            const folderStructureContainer = document.getElementById('folder-structure');
+            
+            if (assets.length === 0) {
+                folderStructureContainer.innerHTML = '<div class="text-gray-500 dark:text-gray-400">No assets to organize</div>';
+                return;
+            }
+            
+            // Group assets by project, channel, country, and language
+            const structure = {};
+            
+            assets.forEach(asset => {
+                const { project, channel, country, language, name } = asset;
+                
+                if (!structure[project]) structure[project] = {};
+                if (!structure[project][channel]) structure[project][channel] = {};
+                if (!structure[project][channel][country]) structure[project][channel][country] = {};
+                if (!structure[project][channel][country][language]) structure[project][channel][country][language] = [];
+                
+                structure[project][channel][country][language].push(name);
+            });
+            
+            // Generate HTML representation of the folder structure
+            let html = '';
+            
+            // Loop through each level of the structure
+            Object.entries(structure).sort().forEach(([project, channels]) => {
+                html += `<div class="mb-1">📁 <span class="font-semibold">${project}</span></div>`;
+                
+                Object.entries(channels).sort().forEach(([channel, countries]) => {
+                    html += `<div class="ml-4 mb-1">📁 <span class="font-semibold">${channel}</span></div>`;
+                    
+                    Object.entries(countries).sort().forEach(([country, languages]) => {
+                        html += `<div class="ml-8 mb-1">📁 <span class="font-semibold">${country}</span></div>`;
+                        
+                        Object.entries(languages).sort().forEach(([language, assetNames]) => {
+                            html += `<div class="ml-12 mb-1">📁 <span class="font-semibold">${language}</span></div>`;
+                            
+                            assetNames.sort().forEach(name => {
+                                const icon = fileTypeIcons[getFileType(name)] || '📄';
+                                html += `<div class="ml-16 mb-1">${icon} ${name}</div>`;
+                            });
+                        });
+                    });
+                });
+            });
+            
+            folderStructureContainer.innerHTML = html;
+        }
+
+        // Get file type based on file extension
+        function getFileType(filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            
+            const typeMap = {
+                'pdf': 'document',
+                'docx': 'document',
+                'doc': 'document',
+                'txt': 'document',
+                'zip': 'archive',
+                'rar': 'archive',
+                'jpg': 'image',
+                'jpeg': 'image',
+                'png': 'image',
+                'gif': 'image',
+                'mp4': 'video',
+                'mov': 'video',
+                'avi': 'video',
+                'mp3': 'audio',
+                'wav': 'audio',
+                'psd': 'design',
+                'ai': 'design',
+                'xd': 'design',
+                'html': 'code',
+                'css': 'code',
+                'js': 'code'
+            };
+            
+            return typeMap[extension] || 'document';
+        }
+
+        // Update the UI based on the current filters
+        function updateUI() {
+            const filteredAssets = filterAssets();
+            displayAssets(filteredAssets);
+            generateFolderStructure(filteredAssets);
+        }
+
+        // Initialize the application
+        function init() {
+            populateFilterDropdowns();
+            updateUI();
+            
+            // Set up event listeners
+            document.getElementById('apply-filters').addEventListener('click', updateUI);
+            
+            document.getElementById('clear-filters').addEventListener('click', () => {
+                document.getElementById('project').value = '';
+                document.getElementById('channel').value = '';
+                document.getElementById('country').value = '';
+                document.getElementById('language').value = '';
+                updateUI();
+            });
+            
+            document.getElementById('export-btn').addEventListener('click', () => {
+                const filteredAssets = filterAssets();
+                if (filteredAssets.length > 0) {
+                    document.getElementById('success-modal').classList.remove('hidden');
+                }
+            });
+            
+            document.getElementById('close-modal').addEventListener('click', () => {
+                document.getElementById('success-modal').classList.add('hidden');
+            });
+        }
+        
+        // Run initialization when DOM is ready
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
