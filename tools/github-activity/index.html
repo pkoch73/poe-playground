@@ -56,6 +56,15 @@
                 </div>
                 
                 <div>
+                    <label for="github-url" class="block text-sm font-medium mb-1">GitHub URL</label>
+                    <input type="text" id="github-url" 
+                        class="w-full px-4 py-2 text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" 
+                        placeholder="Enter GitHub URL (e.g., https://github.com or https://git.corp.adobe.com)" 
+                        value="https://github.com" />
+                    <p class="text-xs mt-1 text-gray-500 dark:text-gray-400">For GitHub Enterprise, use your company's GitHub URL</p>
+                </div>
+                
+                <div>
                     <label for="github-token" class="block text-sm font-medium mb-1">Personal Access Token (Optional)</label>
                     <div class="relative">
                         <input type="password" id="github-token" 
@@ -65,7 +74,7 @@
                             <i class="fas fa-eye-slash"></i>
                         </button>
                     </div>
-                    <p class="text-xs mt-1 text-gray-500 dark:text-gray-400">Required to access private repositories. Needs 'repo' and 'user' scopes.</p>
+                    <p class="text-xs mt-1 text-gray-500 dark:text-gray-400">Required for GitHub Enterprise and to access private repositories. Needs 'repo' and 'user' scopes.</p>
                 </div>
                 
                 <div id="user-list" class="flex flex-wrap gap-2"></div>
@@ -341,6 +350,25 @@
                     throw new Error('GitHub GraphQL API requires a Personal Access Token. Please provide a token to fetch activities.');
                 }
                 
+                // Get the GitHub URL
+                const githubUrl = document.getElementById('github-url').value.trim();
+                if (!githubUrl) {
+                    throw new Error('Please provide a valid GitHub URL');
+                }
+                
+                // Determine if this is GitHub Enterprise
+                const isEnterprise = !githubUrl.includes('github.com');
+                
+                // GraphQL endpoint is different for GitHub.com vs GitHub Enterprise
+                let graphqlEndpoint;
+                if (isEnterprise) {
+                    // GitHub Enterprise endpoint includes /api/graphql
+                    graphqlEndpoint = `${githubUrl.replace(/\/$/, '')}/api/graphql`;
+                } else {
+                    // GitHub.com endpoint
+                    graphqlEndpoint = 'https://api.github.com/graphql';
+                }
+                
                 // Format dates for GraphQL query
                 const fromDate = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
                 const toDate = endDate.toISOString().split('T')[0];     // YYYY-MM-DD
@@ -396,7 +424,7 @@
                 }`;
                 
                 // Make GraphQL API request
-                const response = await fetch('https://api.github.com/graphql', {
+                const response = await fetch(graphqlEndpoint, {
                     method: 'POST',
                     headers: {
                         'Authorization': `bearer ${token}`,
@@ -528,7 +556,26 @@
         // Get the currently authenticated user
         async function getCurrentUser(token) {
             try {
-                const response = await fetch('https://api.github.com/user', {
+                // Get the GitHub URL
+                const githubUrl = document.getElementById('github-url').value.trim();
+                if (!githubUrl) {
+                    throw new Error('Please provide a valid GitHub URL');
+                }
+                
+                // Determine if this is GitHub Enterprise
+                const isEnterprise = !githubUrl.includes('github.com');
+                
+                // REST API endpoint is different for GitHub.com vs GitHub Enterprise
+                let apiEndpoint;
+                if (isEnterprise) {
+                    // GitHub Enterprise endpoint
+                    apiEndpoint = `${githubUrl.replace(/\/$/, '')}/api/v3/user`;
+                } else {
+                    // GitHub.com endpoint
+                    apiEndpoint = 'https://api.github.com/user';
+                }
+                
+                const response = await fetch(apiEndpoint, {
                     headers: {
                         'Accept': 'application/vnd.github.v3+json',
                         'Authorization': `token ${token}`
@@ -591,6 +638,9 @@
         function displayActivityTable(activities) {
             activityTable.innerHTML = '';
             
+            // Get the GitHub URL for repository links
+            const githubUrl = document.getElementById('github-url').value.trim().replace(/\/$/, '');
+            
             // Group by type
             const dailyActivities = activities.filter(a => a.date !== null);
             const repoActivities = activities.filter(a => a.date === null);
@@ -618,7 +668,7 @@
                         <div class="flex items-center">
                             ${activity.repo === 'Multiple Repositories' ? 
                                 activity.repo : 
-                                `<a href="https://github.com/${activity.repo}" target="_blank" 
+                                `<a href="${githubUrl}/${activity.repo}" target="_blank" 
                                    class="text-primary hover:underline mr-1">${activity.repo}</a>`
                             }
                             ${activity.isPrivate ? '<span class="ml-1 px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-xs rounded-md">private</span>' : ''}
@@ -657,7 +707,7 @@
                     <td class="p-3">${activity.type}</td>
                     <td class="p-3">
                         <div class="flex items-center">
-                            <a href="https://github.com/${activity.repo}" target="_blank" 
+                            <a href="${githubUrl}/${activity.repo}" target="_blank" 
                                class="text-primary hover:underline mr-1">${activity.repo}</a>
                             ${activity.isPrivate ? '<span class="ml-1 px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-xs rounded-md">private</span>' : ''}
                         </div>
