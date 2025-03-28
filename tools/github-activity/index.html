@@ -65,6 +65,14 @@
                 </div>
                 
                 <div>
+                    <label for="cors-proxy" class="block text-sm font-medium mb-1">CORS Proxy URL (for GitHub Enterprise)</label>
+                    <input type="text" id="cors-proxy" 
+                        class="w-full px-4 py-2 text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" 
+                        placeholder="Enter CORS proxy URL (e.g., https://corsproxy.io/?)" />
+                    <p class="text-xs mt-1 text-gray-500 dark:text-gray-400">Required for GitHub Enterprise due to CORS restrictions. Try <a href="https://corsproxy.io/" target="_blank" class="underline">corsproxy.io</a> or your organization's proxy.</p>
+                </div>
+                
+                <div>
                     <label for="github-token" class="block text-sm font-medium mb-1">Personal Access Token (Optional)</label>
                     <div class="relative">
                         <input type="password" id="github-token" 
@@ -364,6 +372,29 @@
                 if (isEnterprise) {
                     // GitHub Enterprise endpoint includes /api/graphql
                     graphqlEndpoint = `${githubUrl.replace(/\/$/, '')}/api/graphql`;
+                    
+                    // For Enterprise instances, check if a CORS proxy is provided
+                    const corsProxy = document.getElementById('cors-proxy').value.trim();
+                    if (!corsProxy) {
+                        throw new Error('GitHub Enterprise requires a CORS proxy URL. Please enter a CORS proxy URL.');
+                    }
+                    
+                    // Prepend the CORS proxy to the endpoint with the correct format
+                    // Check if the proxy URL ends with a ? or contains ?apiurl=
+                    if (corsProxy.endsWith('?')) {
+                        graphqlEndpoint = `${corsProxy}${encodeURIComponent(graphqlEndpoint)}`;
+                    } else if (corsProxy.includes('?')) {
+                        // Assume the proxy needs an additional parameter like ?apiurl=
+                        if (!corsProxy.endsWith('=')) {
+                            // Add = if it's not already there
+                            graphqlEndpoint = `${corsProxy}=${encodeURIComponent(graphqlEndpoint)}`;
+                        } else {
+                            graphqlEndpoint = `${corsProxy}${encodeURIComponent(graphqlEndpoint)}`;
+                        }
+                    } else {
+                        // No ? in proxy URL, add ?apiurl=
+                        graphqlEndpoint = `${corsProxy}?apiurl=${encodeURIComponent(graphqlEndpoint)}`;
+                    }
                 } else {
                     // GitHub.com endpoint
                     graphqlEndpoint = 'https://api.github.com/graphql';
@@ -570,6 +601,29 @@
                 if (isEnterprise) {
                     // GitHub Enterprise endpoint
                     apiEndpoint = `${githubUrl.replace(/\/$/, '')}/api/v3/user`;
+                    
+                    // For Enterprise instances, check if a CORS proxy is provided
+                    const corsProxy = document.getElementById('cors-proxy').value.trim();
+                    if (!corsProxy) {
+                        throw new Error('GitHub Enterprise requires a CORS proxy URL. Please enter a CORS proxy URL.');
+                    }
+                    
+                    // Prepend the CORS proxy to the endpoint with the correct format
+                    // Check if the proxy URL ends with a ? or contains ?apiurl=
+                    if (corsProxy.endsWith('?')) {
+                        apiEndpoint = `${corsProxy}${encodeURIComponent(apiEndpoint)}`;
+                    } else if (corsProxy.includes('?')) {
+                        // Assume the proxy needs an additional parameter like ?apiurl=
+                        if (!corsProxy.endsWith('=')) {
+                            // Add = if it's not already there
+                            apiEndpoint = `${corsProxy}=${encodeURIComponent(apiEndpoint)}`;
+                        } else {
+                            apiEndpoint = `${corsProxy}${encodeURIComponent(apiEndpoint)}`;
+                        }
+                    } else {
+                        // No ? in proxy URL, add ?apiurl=
+                        apiEndpoint = `${corsProxy}?apiurl=${encodeURIComponent(apiEndpoint)}`;
+                    }
                 } else {
                     // GitHub.com endpoint
                     apiEndpoint = 'https://api.github.com/user';
