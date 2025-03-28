@@ -65,11 +65,11 @@
                 </div>
                 
                 <div>
-                    <label for="cors-proxy" class="block text-sm font-medium mb-1">CORS Proxy URL (for GitHub Enterprise)</label>
+                    <label for="cors-proxy" class="block text-sm font-medium mb-1">CORS Proxy URL (Optional)</label>
                     <input type="text" id="cors-proxy" 
                         class="w-full px-4 py-2 text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary" 
-                        placeholder="Enter CORS proxy URL (e.g., https://corsproxy.io/?)" />
-                    <p class="text-xs mt-1 text-gray-500 dark:text-gray-400">Required for GitHub Enterprise due to CORS restrictions. Try <a href="https://corsproxy.io/" target="_blank" class="underline">corsproxy.io</a> or your organization's proxy.</p>
+                        placeholder="Enter CORS proxy URL (e.g., https://corsproxy.io/?apiurl)" />
+                    <p class="text-xs mt-1 text-gray-500 dark:text-gray-400">May be needed for GitHub Enterprise due to CORS restrictions. Example: <code>https://corsproxy.io/?apiurl</code></p>
                 </div>
                 
                 <div>
@@ -131,6 +131,30 @@
                 </div>
             </div>
             
+            <div id="summary-section" class="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="summary-header" class="text-xl font-bold">Contribution Summary</h2>
+                    <button id="export-csv-btn" class="flex items-center bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-opacity-90 text-sm">
+                        <i class="fas fa-download mr-2"></i>
+                        Export CSV
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table id="summary-table" class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-200 dark:bg-gray-700">
+                                <th class="p-3 text-left">User</th>
+                                <th class="p-3 text-right">Total Contributions</th>
+                                <th class="p-3 text-right">Daily Average</th>
+                                <th class="p-3 text-right">Max on Single Day</th>
+                                <th class="p-3 text-right">Active Days</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-300 dark:divide-gray-600"></tbody>
+                    </table>
+                </div>
+            </div>
+            
             <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 shadow-md">
                 <h2 class="text-xl font-bold mb-4">Activity Details</h2>
                 <div class="overflow-x-auto">
@@ -150,6 +174,39 @@
                 <div id="no-data" class="hidden text-center py-4 italic text-gray-500 dark:text-gray-400">
                     No activities found for the selected users and time period.
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CSV Export Modal -->
+    <div id="csv-modal" class="fixed inset-0 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium">CSV Export</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 flex-1 overflow-y-auto">
+                <p class="mb-3">Your CSV data is ready. Copy the text below and save it as a .csv file:</p>
+                <div class="flex justify-between mb-2">
+                    <button id="copy-csv" class="bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-opacity-90 text-sm">
+                        <i class="fas fa-copy mr-2"></i> Copy to Clipboard
+                    </button>
+                    <span id="copy-feedback" class="text-sm text-green-600 opacity-0 transition-opacity">Copied to clipboard!</span>
+                </div>
+                <pre id="csv-content" class="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg border border-gray-300 dark:border-gray-700 overflow-x-auto text-sm font-mono h-64"></pre>
+            </div>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i> To save this as a CSV file:
+                    <ol class="list-decimal list-inside mt-2 ml-2">
+                        <li>Copy the text above</li>
+                        <li>Open a text editor (like Notepad or TextEdit)</li>
+                        <li>Paste the content</li>
+                        <li>Save the file with a .csv extension (e.g., "github_contributions.csv")</li>
+                    </ol>
+                </p>
             </div>
         </div>
     </div>
@@ -364,6 +421,9 @@
                     throw new Error('Please provide a valid GitHub URL');
                 }
                 
+                // Debug the request path we're taking
+                console.log(`Fetching activities for user: ${username} using ${githubUrl}`);
+                
                 // Determine if this is GitHub Enterprise
                 const isEnterprise = !githubUrl.includes('github.com');
                 
@@ -375,25 +435,30 @@
                     
                     // For Enterprise instances, check if a CORS proxy is provided
                     const corsProxy = document.getElementById('cors-proxy').value.trim();
-                    if (!corsProxy) {
-                        throw new Error('GitHub Enterprise requires a CORS proxy URL. Please enter a CORS proxy URL.');
-                    }
                     
-                    // Prepend the CORS proxy to the endpoint with the correct format
-                    // Check if the proxy URL ends with a ? or contains ?apiurl=
-                    if (corsProxy.endsWith('?')) {
-                        graphqlEndpoint = `${corsProxy}${encodeURIComponent(graphqlEndpoint)}`;
-                    } else if (corsProxy.includes('?')) {
-                        // Assume the proxy needs an additional parameter like ?apiurl=
-                        if (!corsProxy.endsWith('=')) {
-                            // Add = if it's not already there
-                            graphqlEndpoint = `${corsProxy}=${encodeURIComponent(graphqlEndpoint)}`;
-                        } else {
+                    // If proxy is provided, use it
+                    if (corsProxy) {
+                        // Prepend the CORS proxy to the endpoint with the correct format
+                        // Check if the proxy URL ends with a ? or contains ?apiurl=
+                        if (corsProxy.endsWith('?')) {
                             graphqlEndpoint = `${corsProxy}${encodeURIComponent(graphqlEndpoint)}`;
+                        } else if (corsProxy.includes('?')) {
+                            // Assume the proxy needs an additional parameter like ?apiurl=
+                            if (!corsProxy.endsWith('=')) {
+                                // Add = if it's not already there
+                                graphqlEndpoint = `${corsProxy}=${encodeURIComponent(graphqlEndpoint)}`;
+                            } else {
+                                graphqlEndpoint = `${corsProxy}${encodeURIComponent(graphqlEndpoint)}`;
+                            }
+                        } else {
+                            // No ? in proxy URL, add ?apiurl=
+                            graphqlEndpoint = `${corsProxy}?apiurl=${encodeURIComponent(graphqlEndpoint)}`;
                         }
+                        
+                        console.log(`Using CORS proxy: ${graphqlEndpoint}`);
                     } else {
-                        // No ? in proxy URL, add ?apiurl=
-                        graphqlEndpoint = `${corsProxy}?apiurl=${encodeURIComponent(graphqlEndpoint)}`;
+                        // No proxy provided, attempt direct connection (may fail due to CORS)
+                        console.warn('No CORS proxy provided for GitHub Enterprise. Direct requests may fail due to CORS restrictions.');
                     }
                 } else {
                     // GitHub.com endpoint
@@ -584,9 +649,112 @@
             }
         }
         
+        // CSV Export functionality
+        // Store the current summary data for export
+        let currentSummaryData = [];
+        
+        // Initialize the CSV export button and modal
+        document.addEventListener('DOMContentLoaded', () => {
+            const exportBtn = document.getElementById('export-csv-btn');
+            const csvModal = document.getElementById('csv-modal');
+            const closeModal = document.getElementById('close-modal');
+            const copyBtn = document.getElementById('copy-csv');
+            const copyFeedback = document.getElementById('copy-feedback');
+            
+            // Show modal when export button is clicked
+            exportBtn.addEventListener('click', () => {
+                generateCSV();
+                csvModal.classList.remove('hidden');
+            });
+            
+            // Close modal
+            closeModal.addEventListener('click', () => {
+                csvModal.classList.add('hidden');
+            });
+            
+            // Close modal when clicking outside
+            csvModal.addEventListener('click', (e) => {
+                if (e.target === csvModal) {
+                    csvModal.classList.add('hidden');
+                }
+            });
+            
+            // Copy to clipboard functionality
+            copyBtn.addEventListener('click', () => {
+                const csvContent = document.getElementById('csv-content');
+                
+                // Select the text
+                const range = document.createRange();
+                range.selectNode(csvContent);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                
+                // Copy to clipboard
+                try {
+                    document.execCommand('copy');
+                    window.getSelection().removeAllRanges();
+                    
+                    // Show feedback
+                    copyFeedback.style.opacity = '1';
+                    setTimeout(() => {
+                        copyFeedback.style.opacity = '0';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy: ', err);
+                    alert('Failed to copy to clipboard. Please select and copy manually.');
+                }
+            });
+        });
+        
+        // Generate CSV content from the summary data
+        function generateCSV() {
+            // Get date range from summary header
+            const dateRange = document.getElementById('summary-header').textContent
+                .replace('Contribution Summary', '').trim();
+                
+            // Get table headers
+            const headers = Array.from(document.querySelectorAll('#summary-table thead th'))
+                .map(th => th.textContent.trim());
+                
+            // Get table rows (excluding any rows with no activity)
+            const rows = [];
+            document.querySelectorAll('#summary-table tbody tr').forEach(tr => {
+                const rowData = Array.from(tr.querySelectorAll('td')).map((td, index) => {
+                    // For the username column, extract just the text (not the color indicator)
+                    if (index === 0) {
+                        return td.textContent.trim();
+                    }
+                    // For other columns, use the text content
+                    return td.textContent.trim();
+                });
+                
+                // Only add rows that have actual data (not empty rows)
+                if (rowData.length > 0 && !rowData[0].includes('No activity data found')) {
+                    rows.push(rowData);
+                }
+            });
+            
+            // Create CSV content with the date range as a header comment
+            let csvContent = `# GitHub Contribution Summary ${dateRange}\n`;
+            csvContent += `# Generated on ${new Date().toLocaleString()}\n\n`;
+            
+            // Add headers
+            csvContent += headers.join(',') + '\n';
+            
+            // Add data rows
+            rows.forEach(row => {
+                csvContent += row.join(',') + '\n';
+            });
+            
+            // Set the content to the pre element
+            document.getElementById('csv-content').textContent = csvContent;
+        }
+        
         // Get the currently authenticated user
         async function getCurrentUser(token) {
             try {
+                if (!token) return null;
+                
                 // Get the GitHub URL
                 const githubUrl = document.getElementById('github-url').value.trim();
                 if (!githubUrl) {
@@ -604,25 +772,30 @@
                     
                     // For Enterprise instances, check if a CORS proxy is provided
                     const corsProxy = document.getElementById('cors-proxy').value.trim();
-                    if (!corsProxy) {
-                        throw new Error('GitHub Enterprise requires a CORS proxy URL. Please enter a CORS proxy URL.');
-                    }
                     
-                    // Prepend the CORS proxy to the endpoint with the correct format
-                    // Check if the proxy URL ends with a ? or contains ?apiurl=
-                    if (corsProxy.endsWith('?')) {
-                        apiEndpoint = `${corsProxy}${encodeURIComponent(apiEndpoint)}`;
-                    } else if (corsProxy.includes('?')) {
-                        // Assume the proxy needs an additional parameter like ?apiurl=
-                        if (!corsProxy.endsWith('=')) {
-                            // Add = if it's not already there
-                            apiEndpoint = `${corsProxy}=${encodeURIComponent(apiEndpoint)}`;
-                        } else {
+                    // If proxy is provided, use it
+                    if (corsProxy) {
+                        // Prepend the CORS proxy to the endpoint with the correct format
+                        // Check if the proxy URL ends with a ? or contains ?apiurl=
+                        if (corsProxy.endsWith('?')) {
                             apiEndpoint = `${corsProxy}${encodeURIComponent(apiEndpoint)}`;
+                        } else if (corsProxy.includes('?')) {
+                            // Assume the proxy needs an additional parameter like ?apiurl=
+                            if (!corsProxy.endsWith('=')) {
+                                // Add = if it's not already there
+                                apiEndpoint = `${corsProxy}=${encodeURIComponent(apiEndpoint)}`;
+                            } else {
+                                apiEndpoint = `${corsProxy}${encodeURIComponent(apiEndpoint)}`;
+                            }
+                        } else {
+                            // No ? in proxy URL, add ?apiurl=
+                            apiEndpoint = `${corsProxy}?apiurl=${encodeURIComponent(apiEndpoint)}`;
                         }
+                        
+                        console.log(`Using CORS proxy for user info: ${apiEndpoint}`);
                     } else {
-                        // No ? in proxy URL, add ?apiurl=
-                        apiEndpoint = `${corsProxy}?apiurl=${encodeURIComponent(apiEndpoint)}`;
+                        // No proxy provided, attempt direct connection (may fail due to CORS)
+                        console.warn('No CORS proxy provided for GitHub Enterprise. Direct requests may fail due to CORS restrictions.');
                     }
                 } else {
                     // GitHub.com endpoint
@@ -686,6 +859,125 @@
             
             // Display in chart
             displayActivityChart(activities, startDate, endDate);
+            
+            // Generate and display contribution summary
+            displayContributionSummary(activities, startDate, endDate);
+        }
+        
+        // Generate and display contribution summary
+        function displayContributionSummary(activities, startDate, endDate) {
+            // Get the summary section and make it visible
+            const summarySection = document.getElementById('summary-section');
+            summarySection.classList.remove('hidden');
+            
+            // Get the table body reference
+            const summaryTable = document.querySelector('#summary-table tbody');
+            summaryTable.innerHTML = '';
+            
+            // Get all dates in the range
+            const allDates = getDatesInRange(startDate, endDate);
+            const totalDays = allDates.length;
+            
+            // Add header text with date range
+            const summaryHeader = document.getElementById('summary-header');
+            const dateFormat = { year: 'numeric', month: 'short', day: 'numeric' };
+            const formattedStartDate = startDate.toLocaleDateString(undefined, dateFormat);
+            const formattedEndDate = endDate.toLocaleDateString(undefined, dateFormat);
+            summaryHeader.textContent = `Contribution Summary (${formattedStartDate} to ${formattedEndDate})`;
+            
+            // Filter only daily activities (with dates)
+            const dailyActivities = activities.filter(a => a.date !== null);
+            
+            // Group activities by user and date
+            const userStats = {};
+            
+            // Initialize user stats objects
+            Array.from(addedUsers).forEach(username => {
+                userStats[username] = {
+                    totalContributions: 0,
+                    maxContributions: 0,
+                    activeDays: 0,
+                    contributions: {}
+                };
+                
+                // Initialize with zero values for all dates
+                allDates.forEach(date => {
+                    userStats[username].contributions[date] = 0;
+                });
+            });
+            
+            // Process daily contributions
+            dailyActivities.forEach(activity => {
+                if (activity.date) {
+                    const dateKey = activity.date.toISOString().split('T')[0];
+                    const username = activity.username;
+                    const count = activity.count || 1;
+                    
+                    // Add to daily count
+                    userStats[username].contributions[dateKey] += count;
+                    
+                    // Update total count
+                    userStats[username].totalContributions += count;
+                    
+                    // Update max contributions for a single day
+                    if (userStats[username].contributions[dateKey] > userStats[username].maxContributions) {
+                        userStats[username].maxContributions = userStats[username].contributions[dateKey];
+                    }
+                }
+            });
+            
+            console.log("Generating summary for users:", Object.keys(userStats));
+            
+            // Calculate additional stats and sort users by total contributions (descending)
+            const sortedUsers = Object.keys(userStats).sort((a, b) => 
+                userStats[b].totalContributions - userStats[a].totalContributions
+            );
+            
+            // Counter for striping rows
+            let rowCount = 0;
+            
+            sortedUsers.forEach(username => {
+                const stats = userStats[username];
+                
+                // Count active days (days with at least one contribution)
+                stats.activeDays = Object.values(stats.contributions).filter(count => count > 0).length;
+                
+                // Calculate daily average
+                stats.dailyAverage = stats.totalContributions / totalDays;
+                
+                // Add row to summary table with alternating background for better readability
+                const row = document.createElement('tr');
+                row.className = rowCount % 2 === 0 
+                    ? 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700' 
+                    : 'hover:bg-gray-200 dark:hover:bg-gray-700';
+                rowCount++;
+                
+                row.innerHTML = `
+                    <td class="p-3 pl-4">
+                        <div class="flex items-center">
+                            <span class="w-4 h-4 rounded-full mr-2" style="background-color: ${userColors[username]}"></span>
+                            <span class="font-medium">${username}</span>
+                        </div>
+                    </td>
+                    <td class="p-3 text-right font-semibold text-primary">${stats.totalContributions.toLocaleString()}</td>
+                    <td class="p-3 text-right">${stats.dailyAverage.toFixed(1)}</td>
+                    <td class="p-3 text-right">${stats.maxContributions}</td>
+                    <td class="p-3 text-right">${stats.activeDays}/${totalDays} (${Math.round(stats.activeDays/totalDays*100)}%)</td>
+                `;
+                
+                summaryTable.appendChild(row);
+            });
+            
+            // If no users had data, show a message
+            if (sortedUsers.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `
+                    <td colspan="5" class="p-4 text-center text-gray-500 italic">
+                        No activity data found for the selected users and time period.
+                    </td>
+                `;
+                summaryTable.appendChild(emptyRow);
+            }
         }
         
         // Display activities in table
@@ -977,8 +1269,13 @@
                 activityChart = null;
             }
             
+            // Clear all tables
             activityTable.innerHTML = '';
+            document.querySelector('#summary-table tbody').innerHTML = '';
+            
+            // Hide sections
             document.getElementById('no-data').classList.add('hidden');
+            document.getElementById('summary-section').classList.add('hidden');
             resultsElement.classList.add('hidden');
         }
     </script>
