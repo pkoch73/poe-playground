@@ -70,6 +70,13 @@
                         </select>
                     </div>
 
+                    <div>
+                        <label for="variation" class="block text-sm font-medium mb-1">Variation</label>
+                        <select id="variation" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                            <option value="">All Variations</option>
+                        </select>
+                    </div>
+
                     <button id="apply-filters" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-4 rounded transition">
                         Apply Filters
                     </button>
@@ -125,26 +132,26 @@
     <script>
         // Simulated content hub data
         const contentHubAssets = [
-            { id: 1, name: "Brand Guidelines.pdf", type: "document", project: "Rebrand 2023", channel: "Digital", country: "Global", language: "English" },
-            { id: 2, name: "Q1 Campaign Assets.zip", type: "archive", project: "Q1 Campaign", channel: "Social Media", country: "United States", language: "English" },
-            { id: 3, name: "Product Photo 1.jpg", type: "image", project: "Product Launch", channel: "E-commerce", country: "Germany", language: "German" },
-            { id: 4, name: "Product Photo 2.jpg", type: "image", project: "Product Launch", channel: "E-commerce", country: "Germany", language: "German" },
-            { id: 5, name: "Product Video.mp4", type: "video", project: "Product Launch", channel: "E-commerce", country: "France", language: "French" },
-            { id: 6, name: "TV Commercial.mp4", type: "video", project: "Q1 Campaign", channel: "TV", country: "United Kingdom", language: "English" },
-            { id: 7, name: "Podcast Ad.mp3", type: "audio", project: "Q1 Campaign", channel: "Audio", country: "United States", language: "English" },
-            { id: 8, name: "Logo Dark.png", type: "image", project: "Rebrand 2023", channel: "Digital", country: "Global", language: "English" },
-            { id: 9, name: "Logo Light.png", type: "image", project: "Rebrand 2023", channel: "Digital", country: "Global", language: "English" },
-            { id: 10, name: "Social Post Template.psd", type: "design", project: "Q1 Campaign", channel: "Social Media", country: "Japan", language: "Japanese" },
-            { id: 11, name: "Email Template.html", type: "code", project: "Q1 Campaign", channel: "Email", country: "Brazil", language: "Portuguese" },
-            { id: 12, name: "Product Brochure FR.pdf", type: "document", project: "Product Launch", channel: "Print", country: "France", language: "French" },
-            { id: 13, name: "Product Brochure DE.pdf", type: "document", project: "Product Launch", channel: "Print", country: "Germany", language: "German" },
-            { id: 14, name: "Digital Banner 300x250.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "Spain", language: "Spanish" },
-            { id: 15, name: "Digital Banner 728x90.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "Spain", language: "Spanish" },
-            { id: 16, name: "Digital Banner 300x250.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "Mexico", language: "Spanish" },
-            { id: 17, name: "Digital Banner 728x90.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "Mexico", language: "Spanish" },
-            { id: 18, name: "Website Copy.docx", type: "document", project: "Product Launch", channel: "Website", country: "Canada", language: "English" },
-            { id: 19, name: "Website Copy FR.docx", type: "document", project: "Product Launch", channel: "Website", country: "Canada", language: "French" },
-            { id: 20, name: "PR Release.docx", type: "document", project: "Product Launch", channel: "PR", country: "United States", language: "English" },
+            { id: 1, name: "Brand Guidelines.pdf", type: "document", project: "Rebrand 2023", channel: "Digital", country: "gl", language: "en", countryLanguage: "gl-en", variation: "Standard" },
+            { id: 2, name: "Q1 Campaign Assets.zip", type: "archive", project: "Q1 Campaign", channel: "Social Media", country: "us", language: "en", countryLanguage: "us-en", variation: "Standard" },
+            { id: 3, name: "Product Photo 1.jpg", type: "image", project: "Product Launch", channel: "E-commerce", country: "de", language: "de", countryLanguage: "de-de", variation: "Product A" },
+            { id: 4, name: "Product Photo 2.jpg", type: "image", project: "Product Launch", channel: "E-commerce", country: "de", language: "de", countryLanguage: "de-de", variation: "Product B" },
+            { id: 5, name: "Product Video.mp4", type: "video", project: "Product Launch", channel: "E-commerce", country: "fr", language: "fr", countryLanguage: "fr-fr", variation: "Standard" },
+            { id: 6, name: "TV Commercial.mp4", type: "video", project: "Q1 Campaign", channel: "TV", country: "gb", language: "en", countryLanguage: "gb-en", variation: "30s" },
+            { id: 7, name: "Podcast Ad.mp3", type: "audio", project: "Q1 Campaign", channel: "Audio", country: "us", language: "en", countryLanguage: "us-en", variation: "60s" },
+            { id: 8, name: "Logo Dark.png", type: "image", project: "Rebrand 2023", channel: "Digital", country: "gl", language: "en", countryLanguage: "gl-en", variation: "Dark" },
+            { id: 9, name: "Logo Light.png", type: "image", project: "Rebrand 2023", channel: "Digital", country: "gl", language: "en", countryLanguage: "gl-en", variation: "Light" },
+            { id: 10, name: "Social Post Template.psd", type: "design", project: "Q1 Campaign", channel: "Social Media", country: "jp", language: "ja", countryLanguage: "jp-ja", variation: "Instagram" },
+            { id: 11, name: "Email Template.html", type: "code", project: "Q1 Campaign", channel: "Email", country: "br", language: "pt", countryLanguage: "br-pt", variation: "Newsletter" },
+            { id: 12, name: "Product Brochure FR.pdf", type: "document", project: "Product Launch", channel: "Print", country: "fr", language: "fr", countryLanguage: "fr-fr", variation: "Brochure" },
+            { id: 13, name: "Product Brochure DE.pdf", type: "document", project: "Product Launch", channel: "Print", country: "de", language: "de", countryLanguage: "de-de", variation: "Brochure" },
+            { id: 14, name: "Digital Banner 300x250.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "es", language: "es", countryLanguage: "es-es", variation: "Small" },
+            { id: 15, name: "Digital Banner 728x90.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "es", language: "es", countryLanguage: "es-es", variation: "Large" },
+            { id: 16, name: "Digital Banner 300x250.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "mx", language: "es", countryLanguage: "mx-es", variation: "Small" },
+            { id: 17, name: "Digital Banner 728x90.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "mx", language: "es", countryLanguage: "mx-es", variation: "Large" },
+            { id: 18, name: "Website Copy.docx", type: "document", project: "Product Launch", channel: "Website", country: "ca", language: "en", countryLanguage: "ca-en", variation: "Homepage" },
+            { id: 19, name: "Website Copy FR.docx", type: "document", project: "Product Launch", channel: "Website", country: "ca", language: "fr", countryLanguage: "ca-fr", variation: "Homepage" },
+            { id: 20, name: "PR Release.docx", type: "document", project: "Product Launch", channel: "PR", country: "us", language: "en", countryLanguage: "us-en", variation: "Press Kit" },
         ];
 
         // Define file type icons
@@ -164,7 +171,8 @@
                 project: new Set(),
                 channel: new Set(),
                 country: new Set(),
-                language: new Set()
+                language: new Set(),
+                variation: new Set()
             };
             
             contentHubAssets.forEach(asset => {
@@ -172,6 +180,7 @@
                 filters.channel.add(asset.channel);
                 filters.country.add(asset.country);
                 filters.language.add(asset.language);
+                filters.variation.add(asset.variation);
             });
             
             // Populate project dropdown
@@ -209,6 +218,15 @@
                 option.textContent = language;
                 languageSelect.appendChild(option);
             });
+            
+            // Populate variation dropdown
+            const variationSelect = document.getElementById('variation');
+            Array.from(filters.variation).sort().forEach(variation => {
+                const option = document.createElement('option');
+                option.value = variation;
+                option.textContent = variation;
+                variationSelect.appendChild(option);
+            });
         }
 
         // Filter assets based on selected criteria
@@ -217,12 +235,14 @@
             const channel = document.getElementById('channel').value;
             const country = document.getElementById('country').value;
             const language = document.getElementById('language').value;
+            const variation = document.getElementById('variation').value;
             
             return contentHubAssets.filter(asset => {
                 return (project === '' || asset.project === project) &&
                        (channel === '' || asset.channel === channel) &&
                        (country === '' || asset.country === country) &&
-                       (language === '' || asset.language === language);
+                       (language === '' || asset.language === language) &&
+                       (variation === '' || asset.variation === variation);
             });
         }
 
@@ -250,7 +270,7 @@
                     <div class="flex-1 overflow-hidden">
                         <div class="font-medium truncate" title="${asset.name}">${asset.name}</div>
                         <div class="text-xs text-gray-500 dark:text-gray-400">${asset.project} · ${asset.channel}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">${asset.country} · ${asset.language}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${asset.countryLanguage} · ${asset.variation}</div>
                     </div>
                 `;
                 
@@ -267,18 +287,18 @@
                 return;
             }
             
-            // Group assets by project, channel, country, and language
+            // Group assets by project, channel, countryLanguage, and variation
             const structure = {};
             
             assets.forEach(asset => {
-                const { project, channel, country, language, name } = asset;
+                const { project, channel, countryLanguage, variation, name } = asset;
                 
                 if (!structure[project]) structure[project] = {};
                 if (!structure[project][channel]) structure[project][channel] = {};
-                if (!structure[project][channel][country]) structure[project][channel][country] = {};
-                if (!structure[project][channel][country][language]) structure[project][channel][country][language] = [];
+                if (!structure[project][channel][countryLanguage]) structure[project][channel][countryLanguage] = {};
+                if (!structure[project][channel][countryLanguage][variation]) structure[project][channel][countryLanguage][variation] = [];
                 
-                structure[project][channel][country][language].push(name);
+                structure[project][channel][countryLanguage][variation].push(name);
             });
             
             // Generate HTML representation of the folder structure
@@ -288,14 +308,14 @@
             Object.entries(structure).sort().forEach(([project, channels]) => {
                 html += `<div class="mb-1">📁 <span class="font-semibold">${project}</span></div>`;
                 
-                Object.entries(channels).sort().forEach(([channel, countries]) => {
+                Object.entries(channels).sort().forEach(([channel, countryLanguages]) => {
                     html += `<div class="ml-4 mb-1">📁 <span class="font-semibold">${channel}</span></div>`;
                     
-                    Object.entries(countries).sort().forEach(([country, languages]) => {
-                        html += `<div class="ml-8 mb-1">📁 <span class="font-semibold">${country}</span></div>`;
+                    Object.entries(countryLanguages).sort().forEach(([countryLanguage, variations]) => {
+                        html += `<div class="ml-8 mb-1">📁 <span class="font-semibold">${countryLanguage}</span></div>`;
                         
-                        Object.entries(languages).sort().forEach(([language, assetNames]) => {
-                            html += `<div class="ml-12 mb-1">📁 <span class="font-semibold">${language}</span></div>`;
+                        Object.entries(variations).sort().forEach(([variation, assetNames]) => {
+                            html += `<div class="ml-12 mb-1">📁 <span class="font-semibold">${variation}</span></div>`;
                             
                             assetNames.sort().forEach(name => {
                                 const icon = fileTypeIcons[getFileType(name)] || '📄';
@@ -360,6 +380,7 @@
                 document.getElementById('channel').value = '';
                 document.getElementById('country').value = '';
                 document.getElementById('language').value = '';
+                document.getElementById('variation').value = '';
                 updateUI();
             });
             
