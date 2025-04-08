@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel SKU Splitter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .dark {
+            color-scheme: dark;
+        }
+        .dark .dark\:shadow-dark {
+            box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.05), 0 2px 4px -1px rgba(255, 255, 255, 0.03);
+        }
+        .dark .dark\:border-gray-700 {
+            border-color: rgba(55, 65, 81, 1);
+        }
+        .file-drop-area.drag-over {
+            background-color: rgba(93, 92, 222, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-[#181818] text-gray-800 dark:text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-primary mb-2">Excel SKU Splitter</h1>
+            <p class="text-gray-600 dark:text-gray-400">Split multiple SKUs in one cell into separate columns</p>
+        </header>
+
+        <div class="steps-container mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div class="step-indicator flex space-x-1 mb-4 md:mb-0">
+                    <div id="step1-indicator" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold">1</div>
+                    <div class="w-16 h-[2px] mt-4 bg-gray-300 dark:bg-gray-700"></div>
+                    <div id="step2-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center font-bold">2</div>
+                    <div class="w-16 h-[2px] mt-4 bg-gray-300 dark:bg-gray-700"></div>
+                    <div id="step3-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center font-bold">3</div>
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    <span id="step-title">Step 1: Upload Excel File</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="step1" class="step-content">
+            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md dark:shadow-dark mb-6">
+                <div id="file-drop-area" class="file-drop-area border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                    <div class="mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                    </div>
+                    <p class="mb-2 text-sm text-gray-700 dark:text-gray-300">Click to browse or drag and drop</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Excel files only (.xlsx, .xls)</p>
+                    <input id="file-input" type="file" class="hidden" accept=".xlsx, .xls">
+                </div>
+                <div id="file-info" class="mt-4 hidden">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        <span id="file-name" class="text-sm text-gray-700 dark:text-gray-300"></span>
+                    </div>
+                </div>
+                <div class="mt-6 text-right">
+                    <button id="process-btn" class="bg-primary text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Process File
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="step2" class="step-content hidden">
+            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md dark:shadow-dark mb-6">
+                <div id="processing" class="text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+                    <p class="mb-3 text-gray-700 dark:text-gray-300">Processing file...</p>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 max-w-md mx-auto overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-primary rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="mt-2 text-sm text-gray-600 dark:text-gray-400">0%</p>
+                </div>
+                <div id="processing-complete" class="hidden text-center py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p class="mt-4 text-gray-700 dark:text-gray-300">Processing complete!</p>
+                    <div id="skus-split-info" class="mt-2 text-sm text-gray-600 dark:text-gray-400"></div>
+                </div>
+                <div id="processing-error" class="hidden text-center py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="mt-4 text-gray-700 dark:text-gray-300">Error processing file:</p>
+                    <p id="error-message" class="mt-2 text-sm text-red-500"></p>
+                </div>
+                <div class="mt-6 text-right">
+                    <button id="back-to-upload" class="text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg mr-2">
+                        Back
+                    </button>
+                    <button id="view-results-btn" class="hidden bg-primary text-white px-4 py-2 rounded-lg">
+                        View Results
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="step3" class="step-content hidden">
+            <div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md dark:shadow-dark mb-6">
+                <h2 class="text-xl font-bold mb-4">Processed Results</h2>
+                <div class="overflow-x-auto mb-6">
+                    <table id="results-table" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-800">
+                            <tr id="table-header" class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <!-- Headers will be added dynamically -->
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Rows will be added dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
+                    <h3 class="font-bold text-blue-800 dark:text-blue-300 mb-2">Download Instructions</h3>
+                    <p class="text-sm text-blue-700 dark:text-blue-400">Click the button below to download the processed Excel file.</p>
+                </div>
+                <div class="mt-6 flex justify-between">
+                    <button id="back-to-process" class="text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg">
+                        Back
+                    </button>
+                    <button id="download-btn" class="bg-primary text-white px-4 py-2 rounded-lg">
+                        Download Excel File
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // State
+        let originalData = null;
+        let processedData = null;
+        let workbook = null;
+        let sheetNames = [];
+        let worksheet = null;
+        
+        // DOM Elements
+        const fileDropArea = document.getElementById('file-drop-area');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const processBtn = document.getElementById('process-btn');
+        const viewResultsBtn = document.getElementById('view-results-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const backToUpload = document.getElementById('back-to-upload');
+        const backToProcess = document.getElementById('back-to-process');
+        const tableHeader = document.getElementById('table-header');
+        const tableBody = document.getElementById('table-body');
+        const skusSplitInfo = document.getElementById('skus-split-info');
+        
+        // Steps
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+        const step1Indicator = document.getElementById('step1-indicator');
+        const step2Indicator = document.getElementById('step2-indicator');
+        const step3Indicator = document.getElementById('step3-indicator');
+        const stepTitle = document.getElementById('step-title');
+        
+        // Processing elements
+        const processing = document.getElementById('processing');
+        const processingComplete = document.getElementById('processing-complete');
+        const processingError = document.getElementById('processing-error');
+        const errorMessage = document.getElementById('error-message');
+        
+        // Event Listeners for file upload
+        fileDropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileDropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileDropArea.classList.add('drag-over');
+        });
+        
+        fileDropArea.addEventListener('dragleave', () => {
+            fileDropArea.classList.remove('drag-over');
+        });
+        
+        fileDropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropArea.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelection(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelection(e.target.files[0]);
+            }
+        });
+        
+        function handleFileSelection(file) {
+            // Check file type
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (fileExtension !== 'xlsx' && fileExtension !== 'xls') {
+                alert('Please upload an Excel file (.xlsx or .xls)');
+                return;
+            }
+            
+            fileName.textContent = file.name;
+            fileInfo.classList.remove('hidden');
+            processBtn.disabled = false;
+            
+            // Read file
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    workbook = XLSX.read(data, { type: 'array' });
+                    sheetNames = workbook.SheetNames;
+                    
+                    // Use first sheet if available
+                    if (sheetNames.length > 0) {
+                        worksheet = workbook.Sheets[sheetNames[0]];
+                        originalData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    } else {
+                        throw new Error('No sheets found in the Excel file');
+                    }
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    showError('Invalid Excel file format. Please try another file.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // Button event listeners
+        processBtn.addEventListener('click', () => {
+            if (!workbook || !worksheet) {
+                showError('Please upload a valid Excel file');
+                return;
+            }
+            
+            // Show step 2 and update indicators
+            showStep(2);
+            
+            // Process in the next tick to allow UI to update
+            setTimeout(() => {
+                try {
+                    processExcelFile();
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                    showError(error.message || 'Error processing file');
+                }
+            }, 100);
+        });
+        
+        viewResultsBtn.addEventListener('click', () => {
+            showStep(3);
+            displayResults();
+        });
+        
+        backToUpload.addEventListener('click', () => {
+            showStep(1);
+        });
+        
+        backToProcess.addEventListener('click', () => {
+            showStep(2);
+        });
+        
+        downloadBtn.addEventListener('click', () => {
+            if (!processedData || processedData.length === 0) {
+                alert('No data to download');
+                return;
+            }
+            
+            try {
+                // Create a new workbook with the processed data
+                const newWorkbook = XLSX.utils.book_new();
+                const newWorksheet = XLSX.utils.aoa_to_sheet(processedData);
+                XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, 'Processed Data');
+                
+                // Use the XLSX.writeFile method which handles the conversion and download
+                XLSX.writeFile(newWorkbook, 'processed_sku_data.xlsx');
+            } catch (error) {
+                console.error('Error creating download:', error);
+                alert('Error creating download: ' + error.message);
+            }
+        });
+        
+        function showStep(stepNumber) {
+            step1.classList.add('hidden');
+            step2.classList.add('hidden');
+            step3.classList.add('hidden');
+            
+            step1Indicator.classList.remove('bg-primary', 'text-white');
+            step2Indicator.classList.remove('bg-primary', 'text-white');
+            step3Indicator.classList.remove('bg-primary', 'text-white');
+            
+            step1Indicator.classList.add('bg-gray-300', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-400');
+            step2Indicator.classList.add('bg-gray-300', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-400');
+            step3Indicator.classList.add('bg-gray-300', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-400');
+            
+            if (stepNumber === 1) {
+                step1.classList.remove('hidden');
+                step1Indicator.classList.remove('bg-gray-300', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-400');
+                step1Indicator.classList.add('bg-primary', 'text-white');
+                stepTitle.textContent = 'Step 1: Upload Excel File';
+            } else if (stepNumber === 2) {
+                step2.classList.remove('hidden');
+                step2Indicator.classList.remove('bg-gray-300', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-400');
+                step2Indicator.classList.add('bg-primary', 'text-white');
+                stepTitle.textContent = 'Step 2: Processing File';
+                
+                // Reset processing UI
+                processing.classList.remove('hidden');
+                processingComplete.classList.add('hidden');
+                processingError.classList.add('hidden');
+                viewResultsBtn.classList.add('hidden');
+            } else if (stepNumber === 3) {
+                step3.classList.remove('hidden');
+                step3Indicator.classList.remove('bg-gray-300', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-400');
+                step3Indicator.classList.add('bg-primary', 'text-white');
+                stepTitle.textContent = 'Step 3: Download Results';
+            }
+        }
+        
+        function showError(message) {
+            processing.classList.add('hidden');
+            processingComplete.classList.add('hidden');
+            processingError.classList.remove('hidden');
+            errorMessage.textContent = message;
+        }
+        
+        // Reference progress elements
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        
+        // Update progress bar
+        function updateProgress(current, total) {
+            const percentage = Math.round((current / total) * 100);
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `${percentage}% (${current}/${total} rows)`;
+        }
+        
+        function processExcelFile() {
+            if (!originalData || originalData.length === 0) {
+                throw new Error('No data found in the Excel file');
+            }
+            
+            // Find the SECONDARY SKU column index
+            const headerRow = originalData[0];
+            const secondarySkuIndex = headerRow.findIndex(header => 
+                header && typeof header === 'string' && header.toUpperCase() === 'SECONDARY SKU'
+            );
+            
+            if (secondarySkuIndex === -1) {
+                throw new Error("Column 'SECONDARY SKU' not found in the Excel file");
+            }
+            
+            // First pass: Find the maximum number of SKUs in any cell
+            let maxSkuCount = 1;
+            let rowsWithMultipleSKUs = 0;
+            let totalSKUsSplit = 0;
+            
+            // Pre-scan to determine how many SKU columns we'll need
+            originalData.slice(1).forEach(row => {
+                if (!row || row.length === 0) return;
+                
+                const secondarySku = row[secondarySkuIndex];
+                if (!secondarySku || typeof secondarySku !== 'string' || !secondarySku.includes('|')) return;
+                
+                const skus = secondarySku.split('|').map(sku => sku.trim()).filter(sku => sku);
+                if (skus.length > 1) {
+                    rowsWithMultipleSKUs++;
+                    totalSKUsSplit += skus.length;
+                    maxSkuCount = Math.max(maxSkuCount, skus.length);
+                }
+            });
+            
+            // Create new header row with additional SKU columns
+            const newHeaderRow = [...headerRow];
+            for (let i = 1; i < maxSkuCount; i++) {
+                newHeaderRow.push(`SECONDARY SKU ${i+1}`);
+            }
+            
+            // Initialize processed data with new header
+            processedData = [newHeaderRow];
+            
+            // Count valid rows for progress calculation (exclude empty rows)
+            const validRows = originalData.filter((row, index) => index > 0 && row && row.length > 0);
+            const totalRows = validRows.length;
+            
+            // Initialize progress
+            updateProgress(0, totalRows);
+            
+            // Process each data row (skip header)
+            // Using setTimeout and chunks to prevent UI freezing with large files
+            const chunkSize = 100; // Process 100 rows at a time
+            let currentRow = 0;
+            
+            function processChunk() {
+                const limit = Math.min(currentRow + chunkSize, totalRows);
+                
+                for (let i = currentRow; i < limit; i++) {
+                    const rowIndex = i + 1; // +1 because we skip header (index 0)
+                    const row = originalData[rowIndex];
+                    
+                    // Skip empty rows
+                    if (!row || row.length === 0) {
+                        continue;
+                    }
+                    
+                    // Get the SECONDARY SKU value
+                    const secondarySku = row[secondarySkuIndex];
+                    
+                    // Create a new row with the original data
+                    const newRow = [...row];
+                    
+                    // Extend the row to accommodate the maximum number of SKUs
+                    while (newRow.length < newHeaderRow.length) {
+                        newRow.push('');
+                    }
+                    
+                    // If we have multiple SKUs, split them into separate columns
+                    if (secondarySku && typeof secondarySku === 'string' && secondarySku.includes('|')) {
+                        const skus = secondarySku.split('|').map(sku => sku.trim()).filter(sku => sku);
+                        
+                        // Keep the first SKU in the original column
+                        if (skus.length > 0) {
+                            newRow[secondarySkuIndex] = skus[0];
+                            
+                            // Add additional SKUs to the new columns
+                            for (let j = 1; j < skus.length; j++) {
+                                newRow[headerRow.length + j - 1] = skus[j];
+                            }
+                        }
+                    }
+                    
+                    // Add the processed row to the result
+                    processedData.push(newRow);
+                }
+                
+                // Update progress
+                updateProgress(limit, totalRows);
+                currentRow = limit;
+                
+                if (currentRow < totalRows) {
+                    setTimeout(processChunk, 0); // Continue with next chunk
+                } else {
+                    // Processing complete, show completion UI
+                    setTimeout(() => {
+                        processing.classList.add('hidden');
+                        processingComplete.classList.remove('hidden');
+                        viewResultsBtn.classList.remove('hidden');
+                        
+                        // Update stats
+                        skusSplitInfo.textContent = `Found ${rowsWithMultipleSKUs} rows with multiple SKUs. Added ${maxSkuCount - 1} new columns.`;
+                    }, 500); // Small delay for better UX
+                }
+            }
+            
+            // Start processing
+            setTimeout(processChunk, 0);
+        }
+        
+        function displayResults() {
+            if (!processedData || processedData.length === 0) {
+                return;
+            }
+            
+            // Clear existing table
+            tableHeader.innerHTML = '';
+            tableBody.innerHTML = '';
+            
+            // Add headers
+            const headerRow = processedData[0];
+            headerRow.forEach(header => {
+                const th = document.createElement('th');
+                th.className = 'px-6 py-3';
+                th.textContent = header;
+                tableHeader.appendChild(th);
+            });
+            
+            // Add rows (limit to 50 for performance)
+            const maxRows = Math.min(processedData.length, 51); // header + 50 data rows
+            for (let i = 1; i < maxRows; i++) {
+                const row = processedData[i];
+                const tr = document.createElement('tr');
+                
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.className = 'px-6 py-4 text-sm text-gray-500 dark:text-gray-400';
+                    td.textContent = cell !== null && cell !== undefined ? cell : '';
+                    tr.appendChild(td);
+                });
+                
+                tableBody.appendChild(tr);
+            }
+            
+            // Add message if there are more rows
+            if (processedData.length > 51) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.className = 'px-6 py-4 text-sm text-gray-500 dark:text-gray-400 text-center italic';
+                td.textContent = `... and ${processedData.length - 51} more rows (showing first 50 only)`;
+                td.colSpan = headerRow.length;
+                tr.appendChild(td);
+                tableBody.appendChild(tr);
+            }
+        }
+    </script>
+</body>
+</html>
