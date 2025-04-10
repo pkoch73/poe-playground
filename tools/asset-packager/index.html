@@ -967,6 +967,9 @@
                 });
                 
                 if (!response.ok) {
+                    // Log detailed error information, including the response body if available.
+                    const errorText = await response.text();
+                    console.error(`API request failed with status ${response.status}: ${errorText}`);
                     throw new Error(`API request failed with status ${response.status}`);
                 }
                 
