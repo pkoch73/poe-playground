@@ -901,6 +901,12 @@
                     throw new Error("Authentication required. Please sign in with Adobe.");
                 }
                 
+                // Ensure token is properly formatted with Bearer prefix
+                const formattedToken = imsToken.startsWith('Bearer ') ? imsToken : `Bearer ${imsToken}`;
+                
+                // Get the API key - stored in hidden input field
+                const apiKey = document.getElementById('apiKey').value || 'demo-key-1234'; // Fallback to demo key if not set
+                
                 // Prepare the search payload
                 const searchPayload = {
                     "requests": [
@@ -941,12 +947,14 @@
                     ]
                 };
                 
-                // Make the API request with authentication token
+                // Make the API request with all required headers
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': imsToken // Include the IMS token for authentication
+                        'X-Adobe-Accept-Experimental': '1',
+                        'Authorization': formattedToken,
+                        'X-Api-Key': apiKey
                     },
                     body: JSON.stringify(searchPayload)
                 });
