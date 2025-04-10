@@ -994,7 +994,8 @@
                         'Content-Type': 'application/json',
                         'X-Adobe-Accept-Experimental': '1',
                         'Authorization': formattedToken,
-                        'X-Api-Key': apiKey
+                        'X-Api-Key': apiKey,
+                        'X-Ch-Request': 'search'  // Add channel request header
                     },
                     body: JSON.stringify(searchPayload)
                 });
