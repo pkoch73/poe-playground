@@ -68,11 +68,37 @@
                     <input id="file-input" type="file" class="hidden" accept=".xlsx, .xls">
                 </div>
                 <div id="file-info" class="mt-4 hidden">
-                    <div class="flex items-center">
+                    <div class="flex items-center mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                         </svg>
                         <span id="file-name" class="text-sm text-gray-700 dark:text-gray-300"></span>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <label for="column-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Column to process:
+                        </label>
+                        <div class="flex items-center">
+                            <input type="text" id="column-name" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary" value="SECONDARY SKU" placeholder="Enter column name">
+                            <div class="ml-2 relative group">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 rounded-lg bg-gray-800 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                                    The name of the column that contains multiple SKUs separated by '|' characters.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="headers-preview" class="mt-4 hidden">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Available columns:
+                        </label>
+                        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2 overflow-x-auto max-h-20 text-xs">
+                            <div id="headers-list" class="whitespace-nowrap"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="mt-6 text-right">
@@ -252,6 +278,11 @@
                     if (sheetNames.length > 0) {
                         worksheet = workbook.Sheets[sheetNames[0]];
                         originalData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        // Display headers for user reference
+                        if (originalData && originalData.length > 0) {
+                            displayHeadersPreview(originalData[0]);
+                        }
                     } else {
                         throw new Error('No sheets found in the Excel file');
                     }
@@ -261,6 +292,34 @@
                 }
             };
             reader.readAsArrayBuffer(file);
+            
+            // Function to display available headers
+            function displayHeadersPreview(headers) {
+                const headersPreview = document.getElementById('headers-preview');
+                const headersList = document.getElementById('headers-list');
+                
+                if (headers && headers.length > 0) {
+                    // Show the headers preview section
+                    headersPreview.classList.remove('hidden');
+                    
+                    // Create clickable badges for each header
+                    headersList.innerHTML = '';
+                    headers.forEach(header => {
+                        if (header && typeof header === 'string') {
+                            const badge = document.createElement('span');
+                            badge.className = 'inline-block bg-gray-200 dark:bg-gray-700 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 dark:text-gray-300 mr-2 mb-2 cursor-pointer';
+                            badge.textContent = header;
+                            
+                            // Click to set as the column to process
+                            badge.addEventListener('click', () => {
+                                document.getElementById('column-name').value = header;
+                            });
+                            
+                            headersList.appendChild(badge);
+                        }
+                    });
+                }
+            }
         }
         
         // Button event listeners
@@ -377,14 +436,20 @@
                 throw new Error('No data found in the Excel file');
             }
             
-            // Find the SECONDARY SKU column index
+            // Get the user-specified column name
+            const columnToProcess = document.getElementById('column-name').value.trim();
+            if (!columnToProcess) {
+                throw new Error('Please enter a column name to process');
+            }
+            
+            // Find the column index case-insensitively
             const headerRow = originalData[0];
-            const secondarySkuIndex = headerRow.findIndex(header => 
-                header && typeof header === 'string' && header.toUpperCase() === 'SECONDARY SKU'
+            const columnIndex = headerRow.findIndex(header => 
+                header && typeof header === 'string' && header.toUpperCase() === columnToProcess.toUpperCase()
             );
             
-            if (secondarySkuIndex === -1) {
-                throw new Error("Column 'SECONDARY SKU' not found in the Excel file");
+            if (columnIndex === -1) {
+                throw new Error(`Column '${columnToProcess}' not found in the Excel file. Please check the column name and try again.`);
             }
             
             // First pass: Find the maximum number of SKUs in any cell
@@ -396,10 +461,10 @@
             originalData.slice(1).forEach(row => {
                 if (!row || row.length === 0) return;
                 
-                const secondarySku = row[secondarySkuIndex];
-                if (!secondarySku || typeof secondarySku !== 'string' || !secondarySku.includes('|')) return;
+                const cellValue = row[columnIndex];
+                if (!cellValue || typeof cellValue !== 'string' || !cellValue.includes('|')) return;
                 
-                const skus = secondarySku.split('|').map(sku => sku.trim()).filter(sku => sku);
+                const skus = cellValue.split('|').map(sku => sku.trim()).filter(sku => sku);
                 if (skus.length > 1) {
                     rowsWithMultipleSKUs++;
                     totalSKUsSplit += skus.length;
@@ -410,7 +475,7 @@
             // Create new header row with additional SKU columns
             const newHeaderRow = [...headerRow];
             for (let i = 1; i < maxSkuCount; i++) {
-                newHeaderRow.push(`SECONDARY SKU ${i+1}`);
+                newHeaderRow.push(`${columnToProcess} ${i+1}`);
             }
             
             // Initialize processed data with new header
@@ -440,8 +505,8 @@
                         continue;
                     }
                     
-                    // Get the SECONDARY SKU value
-                    const secondarySku = row[secondarySkuIndex];
+                    // Get the cell value to process
+                    const cellValue = row[columnIndex];
                     
                     // Create a new row with the original data
                     const newRow = [...row];
@@ -452,12 +517,12 @@
                     }
                     
                     // If we have multiple SKUs, split them into separate columns
-                    if (secondarySku && typeof secondarySku === 'string' && secondarySku.includes('|')) {
-                        const skus = secondarySku.split('|').map(sku => sku.trim()).filter(sku => sku);
+                    if (cellValue && typeof cellValue === 'string' && cellValue.includes('|')) {
+                        const skus = cellValue.split('|').map(sku => sku.trim()).filter(sku => sku);
                         
                         // Keep the first SKU in the original column
                         if (skus.length > 0) {
-                            newRow[secondarySkuIndex] = skus[0];
+                            newRow[columnIndex] = skus[0];
                             
                             // Add additional SKUs to the new columns
                             for (let j = 1; j < skus.length; j++) {
