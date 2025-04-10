@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Organization Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#4F4EBD'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <!-- Dark mode detection -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-primary">Asset Organization Tool</h1>
+            <div class="flex items-center space-x-4">
+                <span id="mode-indicator" class="px-3 py-1 text-sm font-medium rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                    Demo Mode
+                </span>
+                <button id="signInBtn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition flex items-center">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Sign In with Adobe
+                </button>
+                <button id="config-btn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
+                    <i class="fas fa-cog mr-2"></i>Settings
+                </button>
+            </div>
+        </div>
+        
+        <!-- Collection search screen - shown initially -->
+        <div id="welcome-container" class="flex flex-col items-center justify-center my-12">
+            <div class="text-center mb-10">
+                <i class="fas fa-folder-open text-6xl text-primary mb-4"></i>
+                <h2 class="text-2xl font-bold mb-2">Welcome to the Asset Organization Tool</h2>
+                <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
+                    Search for a collection below to get started. Once selected, you can apply filters to organize your assets.
+                </p>
+            </div>
+            
+            <!-- Collections Search Panel -->
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-3xl">
+                <h2 class="text-xl font-semibold mb-4">Find a Collection</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="collection-search" class="sr-only">Search Collections</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <input id="collection-search-welcome" class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-gray-50 dark:bg-gray-700 text-base placeholder-gray-500 focus:outline-none focus:ring-primary focus:border-primary" type="search" placeholder="Search collections by name or description...">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-md p-2 h-72 overflow-y-auto">
+                        <ul id="collections-list-welcome" class="space-y-1">
+                            <!-- Collections will be populated here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main workspace - initially hidden, shown after collection selection -->
+        <div id="workspace-container" class="hidden">
+            <!-- Breadcrumb navigation -->
+            <div class="flex items-center mb-6 text-sm">
+                <button id="back-to-collections-btn" class="text-primary hover:text-secondary flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Collections
+                </button>
+                <span class="mx-2 text-gray-500 dark:text-gray-400">/</span>
+                <span id="breadcrumb-collection" class="font-medium"></span>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left Panel: Search and Filters -->
+                <div class="lg:col-span-3 space-y-6">
+                    <!-- Authentication Status Panel -->
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4">Authentication</h2>
+                        
+                        <div class="space-y-4">
+                            <div id="authStatus" class="text-sm">
+                                <span class="text-red-500 dark:text-red-400 flex items-center">
+                                    <i class="fas fa-circle text-xs mr-2"></i>Not signed in
+                                </span>
+                            </div>
+                            
+                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                Sign in with your Adobe ID to access assets from Adobe Experience Manager.
+                            </div>
+                            
+                            <!-- Hidden IMS token field -->
+                            <div class="hidden">
+                                <input type="text" id="imsToken" class="w-full">
+                            </div>
+                            
+                            <!-- For demo/testing, add API endpoint fields -->
+                            <div class="hidden">
+                                <input type="text" id="apiEndpoint" value="https://experience.adobe.com/api/assets" class="w-full">
+                                <input type="text" id="apiKey" value="demo-key-1234" class="w-full">
+                                <input type="text" id="limitResults" value="100" class="w-full">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Collection Panel -->
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4">Active Collection</h2>
+                        
+                        <div id="active-collection-details" class="space-y-4">
+                            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                                <div class="font-medium mb-1" id="collection-title"></div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400" id="collection-description"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filters Panel -->
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold">Apply Filters</h2>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="channel" class="block text-sm font-medium mb-1">Channel</label>
+                                <select id="channel" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                                    <option value="">All Channels</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="country" class="block text-sm font-medium mb-1">Country</label>
+                                <select id="country" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                                    <option value="">All Countries</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="language" class="block text-sm font-medium mb-1">Language</label>
+                                <select id="language" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                                    <option value="">All Languages</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="variation" class="block text-sm font-medium mb-1">Variation</label>
+                                <select id="variation" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                                    <option value="">All Variations</option>
+                                </select>
+                            </div>
+
+                            <button id="apply-filters" class="w-full bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
+                                Apply Filters
+                            </button>
+                            
+                            <button id="clear-filters" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
+                                Reset Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Assets Panel -->
+                <div class="lg:col-span-5 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4">Matching Assets</h2>
+                    <div id="assets-count" class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Showing 0 assets
+                    </div>
+                    
+                    <div id="assets-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto p-1">
+                        <!-- Assets will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Folder Structure Panel -->
+                <div class="lg:col-span-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4">Folder Structure Preview</h2>
+                    
+                    <div id="folder-structure" class="text-sm bg-gray-50 dark:bg-gray-700 p-4 rounded-md max-h-[430px] overflow-y-auto font-mono">
+                        <!-- Folder structure will be populated here -->
+                    </div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <button id="export-btn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition w-full">
+                            Export to Cloudflare
+                        </button>
+                        
+                        <button id="share-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition w-full hidden">
+                            <span class="flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                                </svg>
+                                Share Folder Structure
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="fixed bottom-5 right-5 max-w-sm bg-white dark:bg-gray-800 shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 scale-0 opacity-0">
+        <div class="p-4">
+            <div class="flex items-start">
+                <div id="notification-icon" class="flex-shrink-0 mr-3">
+                    <!-- Icon will be inserted by JS -->
+                </div>
+                <div class="flex-1 pt-0.5">
+                    <p id="notification-message" class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <!-- Message content will be inserted by JS -->
+                    </p>
+                </div>
+                <div class="ml-4 flex-shrink-0 flex">
+                    <button id="close-notification" class="bg-white dark:bg-gray-800 rounded-md inline-flex text-gray-400 hover:text-gray-500">
+                        <span class="sr-only">Close</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="share-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-xl w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Share Folder Structure</h3>
+                <button id="close-share-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="share-format" class="block text-sm font-medium mb-1">Format</label>
+                    <select id="share-format" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                        <option value="text">Plain Text</option>
+                        <option value="markdown">Markdown</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="share-content" class="block text-sm font-medium mb-1">Folder Structure</label>
+                    <textarea id="share-content" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base h-64 font-mono" readonly></textarea>
+                </div>
+
+                <div class="flex justify-between">
+                    <button id="copy-share-btn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
+                        <span class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                            </svg>
+                            Copy to Clipboard
+                        </span>
+                    </button>
+                    
+                    <button id="close-share-btn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="config-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-xl w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Settings</h3>
+                <button id="close-config-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Tabs -->
+                <div class="border-b border-gray-200 dark:border-gray-700">
+                    <nav class="-mb-px flex space-x-8">
+                        <button id="tab-btn-cloudflare" class="tab-btn border-primary text-primary border-b-2 whitespace-nowrap py-2 px-1 font-medium">
+                            Cloudflare
+                        </button>
+                        <button id="tab-btn-adobe" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 font-medium">
+                            Adobe Experience Manager
+                        </button>
+                    </nav>
+                </div>
+                
+                <!-- Tab content -->
+                <div id="tab-content-cloudflare" class="tab-content space-y-4">
+                    <div>
+                        <label for="api-url" class="block text-sm font-medium mb-1">API URL</label>
+                        <input type="text" id="api-url" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base" placeholder="https://your-worker.workers.dev">
+                    </div>
+                    
+                    <div>
+                        <label for="api-key" class="block text-sm font-medium mb-1">API Key</label>
+                        <input type="password" id="api-key" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base" placeholder="Your API key">
+                    </div>
+                    
+                    <div>
+                        <label for="base-folder" class="block text-sm font-medium mb-1">Base Folder Path</label>
+                        <input type="text" id="base-folder" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base" placeholder="gmo-assets/">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Note: Folder paths should end with a forward slash (/).</p>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 mt-4">
+                        <input type="checkbox" id="remember-config" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                        <label for="remember-config" class="text-sm font-medium">Remember configuration (stored locally)</label>
+                    </div>
+                    
+                    <div class="flex justify-between pt-4">
+                        <button id="test-connection-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition">
+                            Test Connection
+                        </button>
+                        <div>
+                            <button id="clear-config-btn" class="mr-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
+                                Clear
+                            </button>
+                            <button id="save-config-btn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab-content-adobe" class="tab-content space-y-4 hidden">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 mb-4">
+                        <h4 class="font-bold mb-2">Adobe Authentication Status</h4>
+                        <p class="mb-2" id="adobe-auth-status">Not authenticated. Use the "Sign in with Adobe" button to connect.</p>
+                        
+                        <div id="adobe-user-info" class="hidden">
+                            <div class="text-sm space-y-1 mt-3">
+                                <p><strong>User:</strong> <span id="adobe-username">-</span></p>
+                                <p><strong>Organization:</strong> <span id="adobe-org">-</span></p>
+                                <p><strong>Token Expires:</strong> <span id="adobe-token-expires">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="aem-endpoint" class="block text-sm font-medium mb-1">AEM Assets Endpoint</label>
+                        <input type="text" id="aem-endpoint" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base" placeholder="https://author-pXXXXX-eXXXXX.adobeaemcloud.com">
+                    </div>
+                    
+                    <div>
+                        <label for="aem-path" class="block text-sm font-medium mb-1">Base Path</label>
+                        <input type="text" id="aem-path" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base" value="/content/dam/assets" placeholder="/content/dam/assets">
+                    </div>
+
+                    <div class="flex justify-end pt-4">
+                        <button id="save-adobe-config-btn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="connection-status" class="mt-4 hidden">
+                <div class="p-3 rounded-md"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Progress Modal -->
+    <div id="export-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Exporting to Cloudflare</h3>
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span>Progress:</span>
+                    <span id="export-percentage">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                    <div id="export-progress-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+            <div id="export-status" class="text-sm mb-4 h-16 overflow-y-auto">
+                Preparing to export assets...
+            </div>
+            <div class="flex justify-end">
+                <button id="cancel-export-btn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Success!</h3>
+            <p class="mb-6" id="success-message">The assets have been organized and exported to Cloudflare.</p>
+            <div class="flex justify-between">
+                <button id="share-after-export-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition">
+                    <span class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                        </svg>
+                        Share Structure
+                    </span>
+                </button>
+                <button id="close-success-modal" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4 text-red-600 dark:text-red-400">Error</h3>
+            <p class="mb-6" id="error-message">An error occurred during the operation.</p>
+            <div class="flex justify-end">
+                <button id="close-error-modal" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulated content hub data
+        const contentHubAssets = [
+            { id: 1, name: "Brand Guidelines.pdf", type: "document", project: "Rebrand 2023", channel: "Digital", country: "gl", language: "en", countryLanguage: "gl-en", variation: "Standard" },
+            { id: 2, name: "Q1 Campaign Assets.zip", type: "archive", project: "Q1 Campaign", channel: "Social Media", country: "us", language: "en", countryLanguage: "us-en", variation: "Standard" },
+            { id: 3, name: "Product Photo 1.jpg", type: "image", project: "Product Launch", channel: "E-commerce", country: "de", language: "de", countryLanguage: "de-de", variation: "Product A" },
+            { id: 4, name: "Product Photo 2.jpg", type: "image", project: "Product Launch", channel: "E-commerce", country: "de", language: "de", countryLanguage: "de-de", variation: "Product B" },
+            { id: 5, name: "Product Video.mp4", type: "video", project: "Product Launch", channel: "E-commerce", country: "fr", language: "fr", countryLanguage: "fr-fr", variation: "Standard" },
+            { id: 6, name: "TV Commercial.mp4", type: "video", project: "Q1 Campaign", channel: "TV", country: "gb", language: "en", countryLanguage: "gb-en", variation: "30s" },
+            { id: 7, name: "Podcast Ad.mp3", type: "audio", project: "Q1 Campaign", channel: "Audio", country: "us", language: "en", countryLanguage: "us-en", variation: "60s" },
+            { id: 8, name: "Logo Dark.png", type: "image", project: "Rebrand 2023", channel: "Digital", country: "gl", language: "en", countryLanguage: "gl-en", variation: "Dark" },
+            { id: 9, name: "Logo Light.png", type: "image", project: "Rebrand 2023", channel: "Digital", country: "gl", language: "en", countryLanguage: "gl-en", variation: "Light" },
+            { id: 10, name: "Social Post Template.psd", type: "design", project: "Q1 Campaign", channel: "Social Media", country: "jp", language: "ja", countryLanguage: "jp-ja", variation: "Instagram" },
+            { id: 11, name: "Email Template.html", type: "code", project: "Q1 Campaign", channel: "Email", country: "br", language: "pt", countryLanguage: "br-pt", variation: "Newsletter" },
+            { id: 12, name: "Product Brochure FR.pdf", type: "document", project: "Product Launch", channel: "Print", country: "fr", language: "fr", countryLanguage: "fr-fr", variation: "Brochure" },
+            { id: 13, name: "Product Brochure DE.pdf", type: "document", project: "Product Launch", channel: "Print", country: "de", language: "de", countryLanguage: "de-de", variation: "Brochure" },
+            { id: 14, name: "Digital Banner 300x250.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "es", language: "es", countryLanguage: "es-es", variation: "Small" },
+            { id: 15, name: "Digital Banner 728x90.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "es", language: "es", countryLanguage: "es-es", variation: "Large" },
+            { id: 16, name: "Digital Banner 300x250.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "mx", language: "es", countryLanguage: "mx-es", variation: "Small" },
+            { id: 17, name: "Digital Banner 728x90.jpg", type: "image", project: "Q1 Campaign", channel: "Display", country: "mx", language: "es", countryLanguage: "mx-es", variation: "Large" },
+            { id: 18, name: "Website Copy.docx", type: "document", project: "Product Launch", channel: "Website", country: "ca", language: "en", countryLanguage: "ca-en", variation: "Homepage" },
+            { id: 19, name: "Website Copy FR.docx", type: "document", project: "Product Launch", channel: "Website", country: "ca", language: "fr", countryLanguage: "ca-fr", variation: "Homepage" },
+            { id: 20, name: "PR Release.docx", type: "document", project: "Product Launch", channel: "PR", country: "us", language: "en", countryLanguage: "us-en", variation: "Press Kit" },
+        ];
+
+        // Sample collections data
+        const sampleCollections = [
+            {
+                id: 1,
+                name: "Global Brand Assets",
+                description: "All global brand assets from the rebrand",
+                filters: {
+                    project: "Rebrand 2023",
+                    channel: "Digital",
+                    country: "gl",
+                    language: "en",
+                    variation: ""
+                }
+            },
+            {
+                id: 2,
+                name: "Q1 Campaign - US",
+                description: "All Q1 Campaign assets for the US market",
+                filters: {
+                    project: "Q1 Campaign",
+                    channel: "",
+                    country: "us",
+                    language: "en",
+                    variation: ""
+                }
+            },
+            {
+                id: 3,
+                name: "Product Launch - Germany",
+                description: "Product launch assets for the German market",
+                filters: {
+                    project: "Product Launch",
+                    channel: "",
+                    country: "de",
+                    language: "de",
+                    variation: ""
+                }
+            },
+            {
+                id: 4,
+                name: "Digital Banners - All Markets",
+                description: "Digital banner ads for all markets",
+                filters: {
+                    project: "Q1 Campaign",
+                    channel: "Display",
+                    country: "",
+                    language: "",
+                    variation: ""
+                }
+            }
+        ];
+
+        // Define file type icons
+        const fileTypeIcons = {
+            document: "📄",
+            archive: "🗄️",
+            image: "🖼️",
+            video: "🎬",
+            audio: "🔊",
+            design: "🎨",
+            code: "💻"
+        };
+
+        // Current folder structure for sharing
+        let currentFolderStructure = null;
+
+        // Adobe IMS Configuration
+        const imsConfig = {
+            clientId: 'aemcs-poe-assetselector', // AEM CS Assets Selector client ID
+            redirectUri: window.location.href, // Use current URL as redirect
+            scope: 'AdobeID,openid,read_organizations,additional_info.projectedProductContext',
+            responseType: 'token' // Using implicit grant flow for client-side apps
+        };
+
+        // Function to display notifications
+        function showNotification(message, type = 'info', duration = 5000) {
+            const notification = document.getElementById('notification');
+            const messageElement = document.getElementById('notification-message');
+            const iconElement = document.getElementById('notification-icon');
+            
+            // Set message
+            messageElement.textContent = message;
+            
+            // Set icon based on type
+            let iconHtml = '';
+            let notificationClasses = '';
+            
+            switch(type) {
+                case 'success':
+                    iconHtml = '<svg class="h-6 w-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+                    notificationClasses = 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200';
+                    break;
+                case 'error':
+                    iconHtml = '<svg class="h-6 w-6 text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>';
+                    notificationClasses = 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200';
+                    break;
+                case 'warning':
+                    iconHtml = '<svg class="h-6 w-6 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>';
+                    notificationClasses = 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200';
+                    break;
+                default: // info
+                    iconHtml = '<svg class="h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+                    notificationClasses = 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200';
+            }
+            
+            iconElement.innerHTML = iconHtml;
+            notification.className = notification.className.replace(/bg-\w+-\d+ dark:bg-\w+-\d+\/\d+ text-\w+-\d+ dark:text-\w+-\d+/g, '');
+            notification.classList.add(...notificationClasses.split(' '));
+            
+            // Show notification
+            notification.classList.remove('scale-0', 'opacity-0');
+            notification.classList.add('scale-100', 'opacity-100');
+            
+            // Close after duration
+            const timeoutId = setTimeout(() => {
+                notification.classList.remove('scale-100', 'opacity-100');
+                notification.classList.add('scale-0', 'opacity-0');
+            }, duration);
+            
+            // Set up close button
+            const closeBtn = document.getElementById('close-notification');
+            const closeFn = () => {
+                clearTimeout(timeoutId);
+                notification.classList.remove('scale-100', 'opacity-100');
+                notification.classList.add('scale-0', 'opacity-0');
+                closeBtn.removeEventListener('click', closeFn);
+            };
+            
+            closeBtn.addEventListener('click', closeFn);
+        }
+
+        /**
+         * CloudflareService - Interface for interacting with the Cloudflare Worker API
+         */
+        class CloudflareService {
+            constructor(config) {
+                this.config = config;
+                this.baseUrl = config.url;
+                this.apiKey = config.apiKey;
+                this.baseFolder = config.folder;
+                
+                // Ensure base folder ends with a slash
+                if (this.baseFolder && !this.baseFolder.endsWith('/')) {
+                    this.baseFolder += '/';
+                }
+            }
+            
+            /**
+             * Get headers for API requests
+             * @returns {Object} Headers with API key
+             */
+            getHeaders() {
+                return {
+                    'x-api-key': this.apiKey,
+                    'Content-Type': 'application/json'
+                };
+            }
+            
+            /**
+             * Test connection to the Cloudflare Worker
+             * @returns {Promise<Object>} Result of the connection test
+             */
+            async testConnection() {
+                try {
+                    // Try to list files in the base folder to test connection
+                    const response = await fetch(`${this.baseUrl}?key=${this.baseFolder || ''}`, {
+                        method: 'LIST',
+                        headers: this.getHeaders()
+                    });
+                    
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(`API error: ${text}`);
+                    }
+                    
+                    return { 
+                        success: true, 
+                        message: "Connection successful! API is accessible." 
+                    };
+                } catch (error) {
+                    console.error('Cloudflare connection test failed:', error);
+                    return { 
+                        success: false, 
+                        message: error.message 
+                    };
+                }
+            }
+            
+            /**
+             * Create a folder in the Cloudflare R2 storage
+             * @param {string} path Folder path to create
+             * @returns {Promise<Object>} Result of the folder creation
+             */
+            async createFolder(path) {
+                try {
+                    // Ensure path ends with a slash
+                    if (!path.endsWith('/')) {
+                        path += '/';
+                    }
+                    
+                    const response = await fetch(`${this.baseUrl}?key=${encodeURIComponent(path)}`, {
+                        method: 'POST',
+                        headers: this.getHeaders()
+                    });
+                    
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(`Failed to create folder: ${text}`);
+                    }
+                    
+                    return { success: true, path };
+                } catch (error) {
+                    console.error(`Error creating folder '${path}':`, error);
+                    throw new Error(`Failed to create folder '${path}': ${error.message}`);
+                }
+            }
+            
+            /**
+             * Upload a file to Cloudflare R2 storage
+             * @param {string} path Path where the file should be stored
+             * @param {string} fileName Name of the file
+             * @param {ArrayBuffer|Blob} content Content of the file
+             * @returns {Promise<Object>} Result of the file upload
+             */
+            async uploadFile(path, fileName, content) {
+                try {
+                    const fullPath = `${path}${fileName}`;
+                    
+                    const response = await fetch(`${this.baseUrl}?key=${encodeURIComponent(fullPath)}`, {
+                        method: 'PUT',
+                        headers: {
+                            'x-api-key': this.apiKey
+                            // Content-Type is determined by the Worker
+                        },
+                        body: content
+                    });
+                    
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(`Failed to upload file: ${text}`);
+                    }
+                    
+                    return { success: true, path: fullPath };
+                } catch (error) {
+                    console.error(`Error uploading file '${fileName}':`, error);
+                    throw new Error(`Failed to upload file '${fileName}': ${error.message}`);
+                }
+            }
+            
+            /**
+             * Export assets to Cloudflare R2 with the folder structure
+             * @param {Array} assets Array of assets to export
+             * @param {Function} progressCallback Callback for progress updates
+             * @returns {Promise<Object>} Export result
+             */
+            async exportAssets(assets, progressCallback) {
+                if (!this.config) {
+                    throw new Error("Cloudflare configuration not set");
+                }
+                
+                // Group assets by project, channel, countryLanguage, and variation
+                const structure = {};
+                
+                assets.forEach(asset => {
+                    const { project, channel, countryLanguage, variation } = asset;
+                    
+                    if (!structure[project]) structure[project] = {};
+                    if (!structure[project][channel]) structure[project][channel] = {};
+                    if (!structure[project][channel][countryLanguage]) structure[project][channel][countryLanguage] = {};
+                    if (!structure[project][channel][countryLanguage][variation]) structure[project][channel][countryLanguage][variation] = [];
+                    
+                    structure[project][channel][countryLanguage][variation].push(asset);
+                });
+                
+                // Store the structure for sharing
+                currentFolderStructure = structure;
+                
+                // Total number of operations to perform (folders + files)
+                const totalOperations = assets.length + this.countFolders(structure) + 1; // +1 for base folder
+                let completedOperations = 0;
+                
+                try {
+                    // Create the base folder if specified
+                    const basePath = this.baseFolder || '';
+                    
+                    if (basePath) {
+                        progressCallback(0, 'Creating base folder structure...');
+                        await this.createFolder(basePath);
+                        completedOperations++;
+                        progressCallback(completedOperations / totalOperations * 100, `Created base folder: ${basePath}`);
+                    }
+                    
+                    // Process each level of the structure
+                    for (const [project, channels] of Object.entries(structure)) {
+                        const projectPath = `${basePath}${project}/`;
+                        await this.createFolder(projectPath);
+                        completedOperations++;
+                        progressCallback(completedOperations / totalOperations * 100, `Created project folder: ${project}`);
+                        
+                        for (const [channel, countryLanguages] of Object.entries(channels)) {
+                            const channelPath = `${projectPath}${channel}/`;
+                            await this.createFolder(channelPath);
+                            completedOperations++;
+                            progressCallback(completedOperations / totalOperations * 100, `Created channel folder: ${channel}`);
+                            
+                            for (const [countryLanguage, variations] of Object.entries(countryLanguages)) {
+                                const countryLangPath = `${channelPath}${countryLanguage}/`;
+                                await this.createFolder(countryLangPath);
+                                completedOperations++;
+                                progressCallback(completedOperations / totalOperations * 100, `Created country-language folder: ${countryLanguage}`);
+                                
+                                for (const [variation, assetList] of Object.entries(variations)) {
+                                    const variationPath = `${countryLangPath}${variation}/`;
+                                    await this.createFolder(variationPath);
+                                    completedOperations++;
+                                    progressCallback(completedOperations / totalOperations * 100, `Created variation folder: ${variation}`);
+                                    
+                                    // Process each asset
+                                    for (const asset of assetList) {
+                                        // In a real implementation, you would fetch the actual file content
+                                        // For demo, create a simulated file content
+                                        const fileContent = new Uint8Array([0, 1, 2, 3, 4]).buffer;
+                                        
+                                        await this.uploadFile(variationPath, asset.name, fileContent);
+                                        
+                                        completedOperations++;
+                                        progressCallback(completedOperations / totalOperations * 100, `Uploaded file: ${asset.name}`);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Final completion
+                    progressCallback(100, 'Export completed successfully');
+                    
+                    // Show the share button
+                    document.getElementById('share-btn').classList.remove('hidden');
+                    
+                    return { success: true, message: "Assets have been successfully exported to Cloudflare R2" };
+                } catch (error) {
+                    console.error('Export to Cloudflare R2 failed:', error);
+                    throw new Error(`Export to Cloudflare R2 failed: ${error.message}`);
+                }
+            }
+            
+            /**
+             * Count the number of folders in the structure
+             * @param {Object} structure Nested structure of folders
+             * @returns {number} Number of folders
+             */
+            countFolders(structure) {
+                let count = 0;
+                
+                for (const project in structure) {
+                    count++; // Project folder
+                    
+                    for (const channel in structure[project]) {
+                        count++; // Channel folder
+                        
+                        for (const countryLanguage in structure[project][channel]) {
+                            count++; // Country-Language folder
+                            
+                            for (const variation in structure[project][channel][countryLanguage]) {
+                                count++; // Variation folder
+                            }
+                        }
+                    }
+                }
+                
+                return count;
+            }
+        }
+
+        // Collection management
+        const CollectionManager = {
+            // Get all collections from storage or API
+            getAllCollections: async function() {
+                try {
+                    // Check if user is authenticated
+                    const imsToken = document.getElementById('imsToken').value;
+                    
+                    if (imsToken) {
+                        // If user is authenticated, try to get collections from the API
+                        return await this.searchCollectionsFromAPI("");
+                    } else {
+                        // If not authenticated, show a gentle notification and use sample data
+                        showNotification('Sign in with Adobe to access your collections', 'info', 5000);
+                        throw new Error("Authentication required");
+                    }
+                } catch (error) {
+                    console.error('Error loading collections from API:', error);
+                    
+                    // Fall back to local collections if API fails
+                    try {
+                        const savedCollections = localStorage.getItem('collections');
+                        const parsedCollections = savedCollections ? JSON.parse(savedCollections) : [];
+                        
+                        // Combine saved collections with sample ones
+                        return [...parsedCollections, ...sampleCollections];
+                    } catch (localError) {
+                        console.error('Error loading local collections:', localError);
+                        return sampleCollections;  // Ultimate fallback
+                    }
+                }
+            },
+            
+            // Search collections from Adobe API
+            searchCollectionsFromAPI: async function(query) {
+                const apiUrl = 'https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/search';
+                
+                // Get the authentication token - this is the token obtained from Adobe IMS login
+                const imsToken = document.getElementById('imsToken').value;
+                
+                // Check if we have authentication
+                if (!imsToken) {
+                    throw new Error("Authentication required. Please sign in with Adobe.");
+                }
+                
+                // Prepare the search payload
+                const searchPayload = {
+                    "requests": [
+                        {
+                            "indexName": "108396-1040009",
+                            "params": {
+                                "facetFilters": [],
+                                "facets": ["dc-format-label", "dc-language", "gmo-campaignName", "gmo-contentType", 
+                                          "gmo-creativeDescription", "gmo-deliverableType", "gmo-fiscalYear", 
+                                          "gmo-licensedContent", "gmo-lineofBusiness", "gmo-namesOfCreativeVariations", 
+                                          "gmo-p0TargetMarketArea", "gmo-p0TargetMarketGeo", "gmo-platform", 
+                                          "gmo-productsOffering", "gmo-programName", "repo-modifyDate"],
+                                "filters": "",
+                                "highlightPostTag": "__/ais-highlight__",
+                                "highlightPreTag": "__ais-highlight__",
+                                "hitsPerPage": 100,
+                                "maxValuesPerFacet": 10,
+                                "page": 0,
+                                "query": query,
+                                "tagFilters": ""
+                            }
+                        },
+                        {
+                            "indexName": "108396-1040009",
+                            "params": {
+                                "analytics": false,
+                                "clickAnalytics": false,
+                                "facets": "collectionIds",
+                                "filters": "",
+                                "highlightPostTag": "__/ais-highlight__",
+                                "highlightPreTag": "__ais-highlight__",
+                                "hitsPerPage": 0,
+                                "maxValuesPerFacet": 10,
+                                "page": 0,
+                                "query": query
+                            }
+                        }
+                    ]
+                };
+                
+                // Make the API request with authentication token
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': imsToken // Include the IMS token for authentication
+                    },
+                    body: JSON.stringify(searchPayload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Process the collections from the facets in the second result
+                if (data.results && data.results[1] && data.results[1].facets && data.results[1].facets.collectionIds) {
+                    const collectionsData = data.results[1].facets.collectionIds;
+                    
+                    // Transform the collection data to our app format
+                    const collections = Object.entries(collectionsData).map(([collectionId, count], index) => {
+                        return {
+                            id: index + 1, // Generate a sequential ID
+                            collectionId: collectionId, // Store the actual collection ID
+                            name: `Collection ${collectionId.substring(0, 8)}`, // Use first part of ID as name
+                            description: `Contains ${count} assets matching "${query || 'all items'}"`,
+                            filters: {
+                                project: "", // These will be set when we get assets from the collection
+                                channel: "",
+                                country: "",
+                                language: "",
+                                variation: ""
+                            }
+                        };
+                    });
+                    
+                    return collections;
+                }
+                
+                // Return empty array if no collections found
+                return [];
+            },
+            
+            // Search collections by name or description
+            searchCollections: async function(query) {
+                try {
+                    return await this.searchCollectionsFromAPI(query);
+                } catch (error) {
+                    console.error('Error searching collections via API:', error);
+                    showNotification('Collection search API error, using local data', 'warning');
+                    
+                    // Fall back to local search if API fails
+                    try {
+                        const collections = await this.getAllCollections();
+                        if (!query) return collections;
+                        
+                        const lowerQuery = query.toLowerCase();
+                        return collections.filter(collection => {
+                            return collection.name.toLowerCase().includes(lowerQuery) || 
+                                (collection.description && collection.description.toLowerCase().includes(lowerQuery));
+                        });
+                    } catch (fallbackError) {
+                        console.error('Fallback collection search failed:', fallbackError);
+                        return [];
+                    }
+                }
+            },
+            
+            // Get a collection by ID
+            getCollectionById: function(id) {
+                const collections = this.getAllCollections();
+                return collections.find(collection => collection.id === id);
+            },
+            
+            // Current active collection
+            activeCollection: null,
+            
+            // Set the active collection
+            setActiveCollection: function(collection) {
+                this.activeCollection = collection;
+                
+                if (collection) {
+                    // Update the collection details in the workspace
+                    document.getElementById('collection-title').textContent = collection.name;
+                    document.getElementById('collection-description').textContent = collection.description || 'No description';
+                    
+                    // Update breadcrumb
+                    document.getElementById('breadcrumb-collection').textContent = collection.name;
+                    
+                    // Switch to workspace view
+                    document.getElementById('welcome-container').classList.add('hidden');
+                    document.getElementById('workspace-container').classList.remove('hidden');
+                }
+            }
+        };
+
+        // Cloudflare configuration management
+        const CloudflareConfig = {
+            get: function() {
+                try {
+                    const config = localStorage.getItem('cloudflareConfig');
+                    return config ? JSON.parse(config) : null;
+                } catch (error) {
+                    console.error('Error retrieving Cloudflare config:', error);
+                    return null;
+                }
+            },
+            
+            save: function(config, remember = false) {
+                if (remember) {
+                    try {
+                        localStorage.setItem('cloudflareConfig', JSON.stringify(config));
+                    } catch (error) {
+                        console.error('Error saving Cloudflare config:', error);
+                        showError('Failed to save configuration: ' + error.message);
+                    }
+                } else {
+                    // Store in memory only
+                    this.currentConfig = config;
+                    try {
+                        localStorage.removeItem('cloudflareConfig');
+                    } catch (error) {
+                        console.error('Error removing Cloudflare config:', error);
+                    }
+                }
+                
+                // Update UI mode indicator
+                updateModeIndicator();
+            },
+            
+            clear: function() {
+                this.currentConfig = null;
+                try {
+                    localStorage.removeItem('cloudflareConfig');
+                } catch (error) {
+                    console.error('Error clearing Cloudflare config:', error);
+                }
+                
+                // Update UI mode indicator
+                updateModeIndicator();
+            },
+            
+            isConfigured: function() {
+                const config = this.get() || this.currentConfig;
+                return !!(config && config.url && config.apiKey);
+            },
+            
+            currentConfig: null
+        };
+
+        // Adobe Experience Manager configuration management
+        const AEMConfig = {
+            get: function() {
+                try {
+                    const config = localStorage.getItem('aemConfig');
+                    return config ? JSON.parse(config) : null;
+                } catch (error) {
+                    console.error('Error retrieving AEM config:', error);
+                    return null;
+                }
+            },
+            
+            save: function(config) {
+                try {
+                    localStorage.setItem('aemConfig', JSON.stringify(config));
+                } catch (error) {
+                    console.error('Error saving AEM config:', error);
+                    showError('Failed to save AEM configuration: ' + error.message);
+                }
+            },
+            
+            isConfigured: function() {
+                const config = this.get();
+                return !!(config && config.endpoint);
+            }
+        };
+
+        // Function to initiate IMS login flow
+        function loginWithIMS() {
+            // Create and show the auth loading indicator
+            const authLoadingIndicator = document.createElement('div');
+            authLoadingIndicator.id = 'authLoadingIndicator';
+            authLoadingIndicator.className = 'fixed inset-0 bg-white/50 dark:bg-gray-900/50 flex flex-col justify-center items-center z-50';
+            authLoadingIndicator.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary/30 border-t-4 border-t-primary mb-4"></div>
+                    <p class="text-lg font-medium">Preparing Adobe Authentication...</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Please wait while we connect to Adobe's authentication service</p>
+                </div>
+            `;
+            document.body.appendChild(authLoadingIndicator);
+            
+            // Save current app state to restore after authentication
+            const currentState = {
+                apiEndpoint: document.getElementById('apiEndpoint').value,
+                apiKey: document.getElementById('apiKey').value,
+                limitResults: document.getElementById('limitResults').value
+            };
+            
+            // Store current state in memory so we can retrieve it later
+            window.imsState = currentState;
+            
+            // Create the authorization URL
+            const authUrl = `https://ims-na1.adobelogin.com/ims/authorize/v2?` +
+                `client_id=${encodeURIComponent(imsConfig.clientId)}` +
+                `&redirect_uri=${encodeURIComponent(imsConfig.redirectUri)}` +
+                `&scope=${encodeURIComponent(imsConfig.scope)}` +
+                `&response_type=${imsConfig.responseType}`;
+            
+            // Delay opening the window to give the user time to see the loading indicator
+            setTimeout(() => {
+                // Store the auth window reference globally to close it later
+                window.authWindow = window.open(authUrl, 'adobeImsLogin', 
+                    'width=800,height=600,location=yes,resizable=yes,scrollbars=yes,status=yes');
+                
+                if (!window.authWindow) {
+                    // Remove the loading indicator
+                    if (document.body.contains(authLoadingIndicator)) {
+                        document.body.removeChild(authLoadingIndicator);
+                    }
+                    showNotification('Popup blocked. Please allow popups for this site and try again.', 'error');
+                    return;
+                }
+                
+                // Update the loading indicator message after opening the window
+                const loadingText = authLoadingIndicator.querySelector('p.text-lg');
+                const loadingSubtext = authLoadingIndicator.querySelector('p.text-sm');
+                if (loadingText && loadingSubtext) {
+                    loadingText.textContent = 'Adobe Authentication Window Opened';
+                    loadingSubtext.textContent = 'Please complete the sign in process in the popup window';
+                }
+                
+                // Remove loading indicator after a longer delay to ensure user notices it
+                setTimeout(() => {
+                    if (document.body.contains(authLoadingIndicator)) {
+                        document.body.removeChild(authLoadingIndicator);
+                    }
+                    // Show a helper notification to guide users
+                    showNotification('Adobe login window opened. Please complete authentication in the popup.', 'info', 10000);
+                }, 1500);
+                
+                // Handle message events from the popup
+                window.addEventListener('message', receiveImsToken, false);
+                
+                // Function to monitor for popup closure with a longer interval
+                const checkClosed = setInterval(() => {
+                    if (window.authWindow && window.authWindow.closed) {
+                        clearInterval(checkClosed);
+                        window.removeEventListener('message', receiveImsToken);
+                        
+                        // Show loading when checking for token
+                        const tokenCheckIndicator = document.createElement('div');
+                        tokenCheckIndicator.className = 'fixed inset-0 bg-white/50 dark:bg-gray-900/50 flex flex-col justify-center items-center z-50';
+                        tokenCheckIndicator.innerHTML = `
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                                <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary/30 border-t-4 border-t-primary mb-4"></div>
+                                <p class="text-lg font-medium">Processing Authentication</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Retrieving your access token...</p>
+                            </div>
+                        `;
+                        document.body.appendChild(tokenCheckIndicator);
+                        
+                        // Add a longer delay before checking for the token to give more time for processing
+                        setTimeout(() => {
+                            // Check if we have a token in the URL hash (in case the popup redirected to our main window)
+                            const hasToken = handleImsRedirect();
+                            
+                            // Remove the token check indicator
+                            if (document.body.contains(tokenCheckIndicator)) {
+                                document.body.removeChild(tokenCheckIndicator);
+                            }
+                            
+                            // If we don't have a token yet, prompt the user to enter it manually
+                            const imsTokenField = document.getElementById('imsToken');
+                            if (!hasToken && !imsTokenField.value) {
+                                // Show manual token entry helper
+                                showManualTokenHelper();
+                            }
+                        }, 2000); // Wait 2 seconds before checking for token
+                    }
+                }, 1000); // Check every second if the popup is closed
+            }, 800); // Wait 800ms before opening the authentication window
+        }
+
+        // Function to handle IMS auth response
+        function receiveImsToken(event) {
+            // Only accept messages from Adobe domains
+            if (!event.origin.includes('adobe.com')) {
+                return;
+            }
+            
+            try {
+                // Parse the received data
+                const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                console.log('IMS Response Data:', JSON.stringify(data, null, 2));
+                
+                // Check if this is an IMS auth response with access token
+                if (data && data.access_token) {
+                    // Format the token properly with 'Bearer' prefix
+                    const token = `Bearer ${data.access_token}`;
+                    
+                    // Update the IMS token input field
+                    document.getElementById('imsToken').value = token;
+                    
+                    // Restore application state if we saved it
+                    if (window.imsState) {
+                        document.getElementById('apiEndpoint').value = window.imsState.apiEndpoint;
+                        document.getElementById('apiKey').value = window.imsState.apiKey;
+                        document.getElementById('limitResults').value = window.imsState.limitResults;
+                    }
+                    
+                    // Update auth status in settings panel if needed
+                    updateAuthStatusUI(true);
+                    
+                    // Update sign in button to show signed in state
+                    const signInBtn = document.getElementById('signInBtn');
+                    signInBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Signed In';
+                    signInBtn.classList.remove('bg-primary', 'hover:bg-secondary');
+                    signInBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    
+                    // Show a success message
+                    showNotification('Successfully authenticated with Adobe IMS', 'success');
+                    
+                    // Close the authentication window if it's still open
+                    if (window.authWindow && !window.authWindow.closed) {
+                        window.authWindow.close();
+                    }
+                }
+            } catch (error) {
+                console.error('Error processing IMS response:', error);
+                showNotification('Error authenticating with Adobe IMS', 'error');
+            }
+        }
+
+        // Function to update the authentication status UI
+        function updateAuthStatusUI(isAuthenticated) {
+            const authStatus = document.getElementById('authStatus');
+            if (authStatus) {
+                if (isAuthenticated) {
+                    authStatus.innerHTML = `
+                        <span class="text-green-500 dark:text-green-400 flex items-center">
+                            <i class="fas fa-circle text-xs mr-2"></i>Signed in successfully
+                        </span>
+                    `;
+                    
+                    // Update the Adobe status in settings
+                    const adobeAuthStatus = document.getElementById('adobe-auth-status');
+                    if (adobeAuthStatus) {
+                        adobeAuthStatus.textContent = 'Authentication successful. You are now signed in.';
+                        adobeAuthStatus.className = 'mb-2 text-green-600 dark:text-green-400';
+                    }
+                    
+                    // Show user info if available
+                    document.getElementById('adobe-user-info').classList.remove('hidden');
+                    document.getElementById('adobe-username').textContent = 'Adobe User';
+                    document.getElementById('adobe-org').textContent = 'Your Organization';
+                    document.getElementById('adobe-token-expires').textContent = 'In 24 hours';
+                } else {
+                    authStatus.innerHTML = `
+                        <span class="text-red-500 dark:text-red-400 flex items-center">
+                            <i class="fas fa-circle text-xs mr-2"></i>Not signed in
+                        </span>
+                    `;
+                    
+                    // Update the Adobe status in settings
+                    const adobeAuthStatus = document.getElementById('adobe-auth-status');
+                    if (adobeAuthStatus) {
+                        adobeAuthStatus.textContent = 'Not authenticated. Use the "Sign in with Adobe" button to connect.';
+                        adobeAuthStatus.className = 'mb-2';
+                    }
+                    
+                    // Hide user info section
+                    document.getElementById('adobe-user-info').classList.add('hidden');
+                }
+            }
+        }
+
+        // Check if we have a hash fragment from an IMS redirect
+        function handleImsRedirect() {
+            // Check if we have a hash in the URL
+            if (window.location.hash) {
+                try {
+                    // Parse the hash fragment
+                    const params = new URLSearchParams(window.location.hash.substring(1));
+                    const accessToken = params.get('access_token');
+                    
+                    if (accessToken) {
+                        // Format the token with 'Bearer' prefix
+                        const token = `Bearer ${accessToken}`;
+                        
+                        // Set token in the field
+                        document.getElementById('imsToken').value = token;
+                        
+                        // Clear the hash from the URL
+                        history.replaceState(null, null, ' ');
+                        
+                        // Show success message
+                        showNotification('Successfully authenticated with Adobe IMS', 'success');
+                        
+                        // Close the authentication window if it's still open
+                        if (window.authWindow && !window.authWindow.closed) {
+                            window.authWindow.close();
+                        }
+                        
+                        return true; // Indicate that we found and processed a token
+                    }
+                } catch (error) {
+                    console.error('Error handling IMS redirect:', error);
+                }
+            }
+            return false; // Indicate that we did not find a token
+        }
+
+        // Function to show a manual token entry helper
+        function showManualTokenHelper() {
+            const helper = document.createElement('div');
+            helper.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50';
+            helper.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-lg overflow-hidden shadow-xl p-6">
+                    <h3 class="text-xl font-bold mb-4">Adobe Authentication Help</h3>
+                    <p class="mb-4">The authentication window was closed, but we couldn't automatically retrieve your token.</p>
+                    
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 mb-4">
+                        <p class="font-medium mb-2">To complete authentication:</p>
+                        <ol class="list-decimal ml-5 space-y-2">
+                            <li>If you completed authentication in the popup window, check the address bar in that window.</li>
+                            <li>Look for a URL that starts with your current domain and has <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">access_token=</code> in it.</li>
+                            <li>Copy the entire <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">access_token</code> value (the long string after the equals sign).</li>
+                            <li>Paste it in the field below, and click "Use Token".</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="manualToken" class="block mb-1 font-medium">Access Token</label>
+                        <input type="text" id="manualToken" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-base" 
+                            placeholder="Paste your access_token here">
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button id="cancelTokenHelperBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md">
+                            Cancel
+                        </button>
+                        <button id="useManualTokenBtn" class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-md">
+                            Use Token
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(helper);
+            
+            // Add event listeners
+            document.getElementById('cancelTokenHelperBtn').addEventListener('click', () => {
+                document.body.removeChild(helper);
+            });
+            
+            document.getElementById('useManualTokenBtn').addEventListener('click', () => {
+                const manualToken = document.getElementById('manualToken').value.trim();
+                if (manualToken) {
+                    // Format the token with Bearer prefix if it doesn't have it
+                    const token = manualToken.startsWith('Bearer ') ? manualToken : `Bearer ${manualToken}`;
+                    document.getElementById('imsToken').value = token;
+                    showNotification('Token applied successfully!', 'success');
+                    document.body.removeChild(helper);
+                    
+                    // Update auth status UI
+                    updateAuthStatusUI(true);
+                    
+                    // Update sign in button to show signed in state
+                    const signInBtn = document.getElementById('signInBtn');
+                    signInBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Signed In';
+                    signInBtn.classList.remove('bg-primary', 'hover:bg-secondary');
+                    signInBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                } else {
+                    showNotification('Please enter a valid token', 'error');
+                }
+            });
+            
+            // Focus the input field
+            setTimeout(() => {
+                document.getElementById('manualToken').focus();
+            }, 100);
+        }
+
+        // Get Cloudflare service instance
+        function getCloudflareService() {
+            const config = CloudflareConfig.get() || CloudflareConfig.currentConfig;
+            if (!config) return null;
+            
+            return new CloudflareService(config);
+        }
+
+        // Update mode indicator based on Cloudflare config
+        function updateModeIndicator() {
+            const modeIndicator = document.getElementById('mode-indicator');
+            
+            if (CloudflareConfig.isConfigured()) {
+                modeIndicator.textContent = 'Cloudflare Mode';
+                modeIndicator.classList.remove('bg-yellow-100', 'text-yellow-800', 'dark:bg-yellow-900', 'dark:text-yellow-200');
+                modeIndicator.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+            } else {
+                modeIndicator.textContent = 'Demo Mode';
+                modeIndicator.classList.remove('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+                modeIndicator.classList.add('bg-yellow-100', 'text-yellow-800', 'dark:bg-yellow-900', 'dark:text-yellow-200');
+            }
+        }
+
+        // Extract unique values for filter dropdowns
+        function populateFilterDropdowns() {
+            const filters = {
+                channel: new Set(),
+                country: new Set(),
+                language: new Set(),
+                variation: new Set()
+            };
+            
+            contentHubAssets.forEach(asset => {
+                filters.channel.add(asset.channel);
+                filters.country.add(asset.country);
+                filters.language.add(asset.language);
+                filters.variation.add(asset.variation);
+            });
+            
+            // Populate channel dropdown
+            const channelSelect = document.getElementById('channel');
+            channelSelect.innerHTML = '<option value="">All Channels</option>';
+            Array.from(filters.channel).sort().forEach(channel => {
+                const option = document.createElement('option');
+                option.value = channel;
+                option.textContent = channel;
+                channelSelect.appendChild(option);
+            });
+            
+            // Populate country dropdown
+            const countrySelect = document.getElementById('country');
+            countrySelect.innerHTML = '<option value="">All Countries</option>';
+            Array.from(filters.country).sort().forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = country;
+                countrySelect.appendChild(option);
+            });
+            
+            // Populate language dropdown
+            const languageSelect = document.getElementById('language');
+            languageSelect.innerHTML = '<option value="">All Languages</option>';
+            Array.from(filters.language).sort().forEach(language => {
+                const option = document.createElement('option');
+                option.value = language;
+                option.textContent = language;
+                languageSelect.appendChild(option);
+            });
+            
+            // Populate variation dropdown
+            const variationSelect = document.getElementById('variation');
+            variationSelect.innerHTML = '<option value="">All Variations</option>';
+            Array.from(filters.variation).sort().forEach(variation => {
+                const option = document.createElement('option');
+                option.value = variation;
+                option.textContent = variation;
+                variationSelect.appendChild(option);
+            });
+        }
+
+        // Apply filters from a collection
+        function applyCollectionFilters(collection) {
+            if (!collection || !collection.filters) return;
+            
+            // Note: project filter is handled internally now
+            document.getElementById('channel').value = collection.filters.channel || '';
+            document.getElementById('country').value = collection.filters.country || '';
+            document.getElementById('language').value = collection.filters.language || '';
+            document.getElementById('variation').value = collection.filters.variation || '';
+            
+            // Set as active collection
+            CollectionManager.setActiveCollection(collection);
+            
+            // Update UI with filtered assets
+            updateUI();
+        }
+
+        // Clear collection and return to welcome screen
+        function clearCollectionSelection() {
+            CollectionManager.activeCollection = null;
+            
+            // Return to welcome screen
+            document.getElementById('workspace-container').classList.add('hidden');
+            document.getElementById('welcome-container').classList.remove('hidden');
+        }
+
+        // Get current filters from form
+        function getCurrentFilters() {
+            return {
+                project: document.getElementById('project').value,
+                channel: document.getElementById('channel').value,
+                country: document.getElementById('country').value,
+                language: document.getElementById('language').value,
+                variation: document.getElementById('variation').value
+            };
+        }
+
+        // Populate collections list in the welcome screen
+        function populateWelcomeCollectionsList(collections) {
+            const collectionsList = document.getElementById('collections-list-welcome');
+            collectionsList.innerHTML = '';
+            
+            if (collections.length === 0) {
+                collectionsList.innerHTML = '<li class="text-gray-500 dark:text-gray-400 p-4 text-center">No collections found</li>';
+                return;
+            }
+            
+            collections.forEach(collection => {
+                const listItem = document.createElement('li');
+                listItem.className = 'p-3 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md mb-2 cursor-pointer border border-gray-200 dark:border-gray-700';
+                listItem.dataset.id = collection.id;
+                
+                listItem.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="text-primary mr-3 mt-1">
+                            <i class="fas fa-folder text-lg"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium">${collection.name}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">${collection.description || 'No description'}</div>
+                            <div class="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center">
+                                <i class="fas fa-filter mr-1"></i>
+                                <span class="truncate">
+                                    ${collection.filters.project ? collection.filters.project : 'All projects'}
+                                    ${collection.filters.channel ? '· ' + collection.filters.channel : ''}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                listItem.addEventListener('click', () => {
+                    const collection = CollectionManager.getCollectionById(parseInt(listItem.dataset.id));
+                    applyCollectionFilters(collection);
+                });
+                
+                collectionsList.appendChild(listItem);
+            });
+        }
+
+        // Filter assets based on selected criteria
+        function filterAssets() {
+            // Get active collection
+            const activeCollection = CollectionManager.activeCollection;
+            
+            // Always apply the project filter from the active collection if it exists
+            const project = activeCollection && activeCollection.filters.project ? activeCollection.filters.project : '';
+            const channel = document.getElementById('channel').value;
+            const country = document.getElementById('country').value;
+            const language = document.getElementById('language').value;
+            const variation = document.getElementById('variation').value;
+            
+            return contentHubAssets.filter(asset => {
+                return (project === '' || asset.project === project) &&
+                       (channel === '' || asset.channel === channel) &&
+                       (country === '' || asset.country === country) &&
+                       (language === '' || asset.language === language) &&
+                       (variation === '' || asset.variation === variation);
+            });
+        }
+
+        // Display assets in the assets container
+        function displayAssets(assets) {
+            const assetsContainer = document.getElementById('assets-container');
+            const assetsCount = document.getElementById('assets-count');
+            
+            assetsContainer.innerHTML = '';
+            assetsCount.textContent = `Showing ${assets.length} assets`;
+            
+            if (assets.length === 0) {
+                assetsContainer.innerHTML = '<div class="col-span-full text-center py-4 text-gray-500 dark:text-gray-400">No assets match the selected filters</div>';
+                return;
+            }
+            
+            assets.forEach(asset => {
+                const assetCard = document.createElement('div');
+                assetCard.className = 'bg-gray-50 dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600 flex items-center';
+                
+                const icon = fileTypeIcons[asset.type] || '📁';
+                
+                assetCard.innerHTML = `
+                    <div class="text-2xl mr-3">${icon}</div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="font-medium truncate" title="${asset.name}">${asset.name}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${asset.project} · ${asset.channel}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${asset.countryLanguage} · ${asset.variation}</div>
+                    </div>
+                `;
+                
+                assetsContainer.appendChild(assetCard);
+            });
+        }
+
+        // Generate folder structure based on filtered assets
+        function generateFolderStructure(assets) {
+            const folderStructureContainer = document.getElementById('folder-structure');
+            
+            if (assets.length === 0) {
+                folderStructureContainer.innerHTML = '<div class="text-gray-500 dark:text-gray-400">No assets to organize</div>';
+                return;
+            }
+            
+            // Get active collection for folder naming
+            const activeCollection = CollectionManager.activeCollection;
+            const collectionName = activeCollection ? activeCollection.name : "Collection";
+            
+            // Group assets by channel, countryLanguage, and variation
+            const structure = {};
+            
+            assets.forEach(asset => {
+                const { channel, countryLanguage, variation, name } = asset;
+                
+                if (!structure[channel]) structure[channel] = {};
+                if (!structure[channel][countryLanguage]) structure[channel][countryLanguage] = {};
+                if (!structure[channel][countryLanguage][variation]) structure[channel][countryLanguage][variation] = [];
+                
+                structure[channel][countryLanguage][variation].push(name);
+            });
+            
+            // Save the structure for sharing with collection name
+            // Convert to the format expected by sharing functions
+            currentFolderStructure = { [collectionName]: structure };
+            
+            // Generate HTML representation of the folder structure
+            let html = '';
+            
+            // Add base folder if Cloudflare is configured
+            const config = CloudflareConfig.get() || CloudflareConfig.currentConfig;
+            if (CloudflareConfig.isConfigured() && config.folder) {
+                html += `<div class="mb-1">📁 <span class="font-semibold">${config.folder}</span></div>`;
+            }
+            
+            // Add collection as top level folder
+            html += `<div class="${config && config.folder ? 'ml-4' : ''} mb-1">📁 <span class="font-semibold">${collectionName}</span></div>`;
+            
+            // Loop through the structure
+            Object.entries(structure).sort().forEach(([channel, countryLanguages]) => {
+                html += `<div class="${config && config.folder ? 'ml-8' : 'ml-4'} mb-1">📁 <span class="font-semibold">${channel}</span></div>`;
+                
+                Object.entries(countryLanguages).sort().forEach(([countryLanguage, variations]) => {
+                    html += `<div class="${config && config.folder ? 'ml-12' : 'ml-8'} mb-1">📁 <span class="font-semibold">${countryLanguage}</span></div>`;
+                    
+                    Object.entries(variations).sort().forEach(([variation, assetNames]) => {
+                        html += `<div class="${config && config.folder ? 'ml-16' : 'ml-12'} mb-1">📁 <span class="font-semibold">${variation}</span></div>`;
+                        
+                        assetNames.sort().forEach(name => {
+                            const icon = fileTypeIcons[getFileType(name)] || '📄';
+                            html += `<div class="${config && config.folder ? 'ml-20' : 'ml-16'} mb-1">${icon} ${name}</div>`;
+                        });
+                    });
+                });
+            });
+            
+            folderStructureContainer.innerHTML = html;
+        }
+
+        // Convert folder structure to different formats for sharing
+        function getFolderStructureForSharing(format) {
+            if (!currentFolderStructure) return "No folder structure available.";
+            
+            const config = CloudflareConfig.get() || CloudflareConfig.currentConfig;
+            const baseFolder = (config && config.folder) ? config.folder : '';
+            
+            switch(format) {
+                case 'text':
+                    return generatePlainTextStructure(currentFolderStructure, baseFolder);
+                case 'markdown':
+                    return generateMarkdownStructure(currentFolderStructure, baseFolder);
+                case 'json':
+                    return JSON.stringify(currentFolderStructure, null, 2);
+                default:
+                    return generatePlainTextStructure(currentFolderStructure, baseFolder);
+            }
+        }
+
+        // Generate plain text representation of folder structure
+        function generatePlainTextStructure(structure, baseFolder) {
+            let result = '';
+            
+            if (baseFolder) {
+                result += `${baseFolder}\n`;
+            }
+            
+            // Loop through each level of the structure
+            Object.entries(structure).sort().forEach(([project, channels]) => {
+                result += `${baseFolder ? '├── ' : ''}${project}/\n`;
+                
+                const projectPrefix = baseFolder ? '│   ' : '';
+                
+                Object.entries(channels).sort().forEach(([channel, countryLanguages], cIndex, cArray) => {
+                    const isLastChannel = cIndex === cArray.length - 1;
+                    result += `${projectPrefix}${isLastChannel ? '└── ' : '├── '}${channel}/\n`;
+                    
+                    const channelPrefix = projectPrefix + (isLastChannel ? '    ' : '│   ');
+                    
+                    Object.entries(countryLanguages).sort().forEach(([countryLanguage, variations], clIndex, clArray) => {
+                        const isLastCountryLang = clIndex === clArray.length - 1;
+                        result += `${channelPrefix}${isLastCountryLang ? '└── ' : '├── '}${countryLanguage}/\n`;
+                        
+                        const countryLangPrefix = channelPrefix + (isLastCountryLang ? '    ' : '│   ');
+                        
+                        Object.entries(variations).sort().forEach(([variation, assetNames], vIndex, vArray) => {
+                            const isLastVariation = vIndex === vArray.length - 1;
+                            result += `${countryLangPrefix}${isLastVariation ? '└── ' : '├── '}${variation}/\n`;
+                            
+                            const variationPrefix = countryLangPrefix + (isLastVariation ? '    ' : '│   ');
+                            
+                            assetNames.sort().forEach((name, aIndex) => {
+                                const isLastAsset = aIndex === assetNames.length - 1;
+                                result += `${variationPrefix}${isLastAsset ? '└── ' : '├── '}${name}\n`;
+                            });
+                        });
+                    });
+                });
+            });
+            
+            return result;
+        }
+
+        // Generate markdown representation of folder structure
+        function generateMarkdownStructure(structure, baseFolder) {
+            let result = '';
+            
+            if (baseFolder) {
+                result += `# ${baseFolder}\n\n`;
+            }
+            
+            // Loop through each level of the structure
+            Object.entries(structure).sort().forEach(([project, channels]) => {
+                result += `${baseFolder ? '- ' : '# '}**${project}/**\n`;
+                
+                Object.entries(channels).sort().forEach(([channel, countryLanguages]) => {
+                    result += `${baseFolder ? '  - ' : '- '}**${channel}/**\n`;
+                    
+                    Object.entries(countryLanguages).sort().forEach(([countryLanguage, variations]) => {
+                        result += `${baseFolder ? '    - ' : '  - '}**${countryLanguage}/**\n`;
+                        
+                        Object.entries(variations).sort().forEach(([variation, assetNames]) => {
+                            result += `${baseFolder ? '      - ' : '    - '}**${variation}/**\n`;
+                            
+                            assetNames.sort().forEach(name => {
+                                const icon = getFileTypeEmoji(name);
+                                result += `${baseFolder ? '        - ' : '      - '}${icon} ${name}\n`;
+                            });
+                        });
+                    });
+                });
+                
+                result += '\n';
+            });
+            
+            return result;
+        }
+
+        // Get file type based on file extension
+        function getFileType(filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            
+            const typeMap = {
+                'pdf': 'document',
+                'docx': 'document',
+                'doc': 'document',
+                'txt': 'document',
+                'zip': 'archive',
+                'rar': 'archive',
+                'jpg': 'image',
+                'jpeg': 'image',
+                'png': 'image',
+                'gif': 'image',
+                'mp4': 'video',
+                'mov': 'video',
+                'avi': 'video',
+                'mp3': 'audio',
+                'wav': 'audio',
+                'psd': 'design',
+                'ai': 'design',
+                'xd': 'design',
+                'html': 'code',
+                'css': 'code',
+                'js': 'code'
+            };
+            
+            return typeMap[extension] || 'document';
+        }
+
+        // Get file type emoji for markdown
+        function getFileTypeEmoji(filename) {
+            const type = getFileType(filename);
+            return fileTypeIcons[type] || '📄';
+        }
+
+        // Update the UI based on the current filters
+        function updateUI() {
+            const filteredAssets = filterAssets();
+            displayAssets(filteredAssets);
+            generateFolderStructure(filteredAssets);
+        }
+
+        // Show share modal with folder structure
+        function showShareModal() {
+            const format = document.getElementById('share-format').value;
+            const structureText = getFolderStructureForSharing(format);
+            
+            document.getElementById('share-content').value = structureText;
+            document.getElementById('share-modal').classList.remove('hidden');
+        }
+
+        // Copy share content to clipboard
+        function copyShareContentToClipboard() {
+            const shareContent = document.getElementById('share-content');
+            shareContent.select();
+            
+            try {
+                document.execCommand('copy');
+                
+                // Show feedback
+                const copyBtn = document.getElementById('copy-share-btn');
+                const originalText = copyBtn.innerHTML;
+                
+                copyBtn.innerHTML = `
+                    <span class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                        Copied!
+                    </span>
+                `;
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
+        }
+
+        // Show connection status in the config modal
+        function showConnectionStatus(success, message) {
+            const connectionStatus = document.getElementById('connection-status');
+            const statusDiv = connectionStatus.querySelector('div');
+            
+            connectionStatus.classList.remove('hidden');
+            statusDiv.textContent = message;
+            
+            if (success) {
+                statusDiv.classList.remove('bg-red-100', 'text-red-800', 'dark:bg-red-900', 'dark:text-red-200');
+                statusDiv.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+            } else {
+                statusDiv.classList.remove('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+                statusDiv.classList.add('bg-red-100', 'text-red-800', 'dark:bg-red-900', 'dark:text-red-200');
+            }
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            document.getElementById('success-message').textContent = message;
+            document.getElementById('success-modal').classList.remove('hidden');
+        }
+
+        // Show error message
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-modal').classList.remove('hidden');
+        }
+
+        // Export assets to Cloudflare
+        async function exportToCloudflare() {
+            const filteredAssets = filterAssets();
+            
+            if (filteredAssets.length === 0) {
+                showError('No assets to export. Please adjust your filters.');
+                return;
+            }
+            
+            // If Cloudflare is not configured, show demo success message
+            if (!CloudflareConfig.isConfigured()) {
+                // Show share button after export (even in demo mode)
+                document.getElementById('share-btn').classList.remove('hidden');
+                
+                document.getElementById('success-message').textContent = "The assets have been organized according to the specified structure (Demo Mode).";
+                document.getElementById('success-modal').classList.remove('hidden');
+                return;
+            }
+            
+            // Show export progress modal
+            const exportModal = document.getElementById('export-modal');
+            const progressBar = document.getElementById('export-progress-bar');
+            const percentageText = document.getElementById('export-percentage');
+            const statusText = document.getElementById('export-status');
+            
+            exportModal.classList.remove('hidden');
+            
+            try {
+                // Get Cloudflare service instance
+                const cloudflareService = getCloudflareService();
+                
+                // Call export method
+                await cloudflareService.exportAssets(filteredAssets, (percentage, status) => {
+                    progressBar.style.width = `${percentage}%`;
+                    percentageText.textContent = `${Math.round(percentage)}%`;
+                    statusText.textContent = status;
+                    
+                    // Auto-scroll status to bottom
+                    statusText.scrollTop = statusText.scrollHeight;
+                });
+                
+                // Hide export modal after successful export
+                exportModal.classList.add('hidden');
+                
+                // Show success message
+                showSuccess("The assets have been successfully exported to Cloudflare R2.");
+            } catch (error) {
+                console.error('Export to Cloudflare failed:', error);
+                
+                // Hide export modal
+                exportModal.classList.add('hidden');
+                
+                // Show error message
+                showError(`Export to Cloudflare failed: ${error.message}`);
+            }
+        }
+
+        // Initialize the configuration form with saved data
+        function initConfigForm() {
+            const config = CloudflareConfig.get();
+            if (config) {
+                document.getElementById('api-url').value = config.url || '';
+                document.getElementById('api-key').value = config.apiKey || '';
+                document.getElementById('base-folder').value = config.folder || '';
+                document.getElementById('remember-config').checked = true;
+            }
+            
+            // Initialize Adobe AEM config
+            const aemConfig = AEMConfig.get();
+            if (aemConfig) {
+                document.getElementById('aem-endpoint').value = aemConfig.endpoint || '';
+                document.getElementById('aem-path').value = aemConfig.path || '/content/dam/assets';
+            }
+        }
+
+        // Get configuration from form
+        function getConfigFromForm() {
+            return {
+                url: document.getElementById('api-url').value.trim(),
+                apiKey: document.getElementById('api-key').value.trim(),
+                folder: document.getElementById('base-folder').value.trim()
+            };
+        }
+
+        // Get AEM configuration from form
+        function getAemConfigFromForm() {
+            return {
+                endpoint: document.getElementById('aem-endpoint').value.trim(),
+                path: document.getElementById('aem-path').value.trim()
+            };
+        }
+
+        // Load assets
+        async function loadAssets() {
+            try {
+                if (CloudflareConfig.isConfigured()) {
+                    // In a real implementation, this would load assets from content hub via listing API
+                    // For now, we'll use the same mock data
+                    populateFilterDropdowns();
+                    updateUI();
+                } else {
+                    // Use mock data
+                    populateFilterDropdowns();
+                    updateUI();
+                }
+            } catch (error) {
+                console.error('Error loading assets:', error);
+                showError(`Failed to load assets: ${error.message}`);
+            }
+        }
+
+        // Initialize the application
+        async function init() {
+            // Load saved Cloudflare configuration
+            const config = CloudflareConfig.get();
+            if (config) {
+                CloudflareConfig.currentConfig = config;
+            }
+            
+            // Update mode indicator
+            updateModeIndicator();
+            
+            // Load assets
+            loadAssets();
+            
+            // Show loading state for collections
+            const collectionsList = document.getElementById('collections-list-welcome');
+            collectionsList.innerHTML = '<li class="text-center p-4"><div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary/30 border-t-primary"></div><div class="mt-2">Loading collections...</div></li>';
+            
+            try {
+                // Load and display collections in the welcome screen
+                const collections = await CollectionManager.getAllCollections();
+                populateWelcomeCollectionsList(collections);
+            } catch (error) {
+                console.error('Error loading initial collections:', error);
+                collectionsList.innerHTML = '<li class="text-red-500 dark:text-red-400 p-4 text-center">Error loading collections. Please try again.</li>';
+            }
+            
+            // Set up collections search box in welcome screen with debounce
+            const welcomeSearchBox = document.getElementById('collection-search-welcome');
+            let searchTimeout = null;
+            
+            welcomeSearchBox.addEventListener('input', (e) => {
+                // Clear previous timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                // Show loading indicator
+                collectionsList.innerHTML = '<li class="text-center p-4"><div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary/30 border-t-primary"></div><div class="mt-2">Searching...</div></li>';
+                
+                // Set new timeout to avoid making too many requests while typing
+                searchTimeout = setTimeout(async () => {
+                    const query = e.target.value.trim();
+                    try {
+                        const searchResults = await CollectionManager.searchCollections(query);
+                        populateWelcomeCollectionsList(searchResults);
+                    } catch (error) {
+                        console.error('Error searching collections:', error);
+                        collectionsList.innerHTML = '<li class="text-red-500 dark:text-red-400 p-4 text-center">Error searching collections. Please try again.</li>';
+                    }
+                }, 500); // 500ms debounce time
+            });
+            
+            // Set up back to collections button
+            document.getElementById('back-to-collections-btn').addEventListener('click', () => {
+                clearCollectionSelection();
+                
+                // Reload collections list to ensure it's up to date
+                const collections = CollectionManager.getAllCollections();
+                populateWelcomeCollectionsList(collections);
+            });
+            
+            // Set up the Sign In button
+            document.getElementById('signInBtn').addEventListener('click', () => {
+                loginWithIMS();
+            });
+            
+            // Set up share folder structure button
+            document.getElementById('share-btn').addEventListener('click', showShareModal);
+            
+            // Set up share folder structure button in success modal
+            document.getElementById('share-after-export-btn').addEventListener('click', () => {
+                document.getElementById('success-modal').classList.add('hidden');
+                showShareModal();
+            });
+            
+            // Set up share format change
+            document.getElementById('share-format').addEventListener('change', () => {
+                const format = document.getElementById('share-format').value;
+                const structureText = getFolderStructureForSharing(format);
+                document.getElementById('share-content').value = structureText;
+            });
+            
+            // Set up copy to clipboard button
+            document.getElementById('copy-share-btn').addEventListener('click', copyShareContentToClipboard);
+            
+            // Set up close share modal buttons
+            document.getElementById('close-share-modal').addEventListener('click', () => {
+                document.getElementById('share-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('close-share-btn').addEventListener('click', () => {
+                document.getElementById('share-modal').classList.add('hidden');
+            });
+            
+            // Set up tab functionality in settings modal
+            document.querySelectorAll('.tab-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    // Deactivate all tabs
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.classList.remove('border-primary', 'text-primary');
+                        btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    
+                    // Hide all tab content
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    // Activate clicked tab
+                    button.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    button.classList.add('border-primary', 'text-primary');
+                    
+                    // Show corresponding tab content
+                    const tabId = button.id.replace('tab-btn-', '');
+                    document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
+                });
+            });
+            
+            // Set up event listeners for filters
+            document.getElementById('apply-filters').addEventListener('click', updateUI);
+            
+            document.getElementById('clear-filters').addEventListener('click', () => {
+                document.getElementById('channel').value = '';
+                document.getElementById('country').value = '';
+                document.getElementById('language').value = '';
+                document.getElementById('variation').value = '';
+                
+                // Update UI
+                updateUI();
+            });
+            
+            // Set up event listeners for export button
+            document.getElementById('export-btn').addEventListener('click', exportToCloudflare);
+            
+            // Set up event listeners for config button
+            document.getElementById('config-btn').addEventListener('click', () => {
+                initConfigForm();
+                document.getElementById('connection-status').classList.add('hidden');
+                document.getElementById('config-modal').classList.remove('hidden');
+            });
+            
+            document.getElementById('close-config-modal').addEventListener('click', () => {
+                document.getElementById('config-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('test-connection-btn').addEventListener('click', async () => {
+                const config = getConfigFromForm();
+                
+                if (!config.url || !config.apiKey) {
+                    showConnectionStatus(false, "API URL and API Key are required");
+                    return;
+                }
+                
+                // Test the connection
+                const cloudflareService = new CloudflareService(config);
+                const result = await cloudflareService.testConnection();
+                showConnectionStatus(result.success, result.message);
+            });
+            
+            document.getElementById('save-config-btn').addEventListener('click', () => {
+                const config = getConfigFromForm();
+                const remember = document.getElementById('remember-config').checked;
+                
+                // Validate required fields
+                if (!config.url || !config.apiKey) {
+                    showConnectionStatus(false, "API URL and API Key are required");
+                    return;
+                }
+                
+                // Save the configuration
+                CloudflareConfig.save(config, remember);
+                
+                // Close the modal
+                document.getElementById('config-modal').classList.add('hidden');
+                
+                // Reload assets based on the new configuration
+                loadAssets();
+            });
+            
+            document.getElementById('clear-config-btn').addEventListener('click', () => {
+                document.getElementById('api-url').value = '';
+                document.getElementById('api-key').value = '';
+                document.getElementById('base-folder').value = '';
+                document.getElementById('remember-config').checked = false;
+                
+                // Clear the configuration
+                CloudflareConfig.clear();
+                
+                // Hide the connection status
+                document.getElementById('connection-status').classList.add('hidden');
+            });
+            
+            // Save Adobe AEM configuration
+            document.getElementById('save-adobe-config-btn').addEventListener('click', () => {
+                const config = getAemConfigFromForm();
+                
+                // Save the configuration
+                AEMConfig.save(config);
+                
+                // Close the modal
+                document.getElementById('config-modal').classList.add('hidden');
+                
+                // Show success notification
+                showNotification('Adobe Experience Manager configuration saved', 'success');
+            });
+            
+            // Cancel export button
+            document.getElementById('cancel-export-btn').addEventListener('click', () => {
+                document.getElementById('export-modal').classList.add('hidden');
+                // In a real implementation, you would need to abort the export process
+            });
+            
+            // Close success modal
+            document.getElementById('close-success-modal').addEventListener('click', () => {
+                document.getElementById('success-modal').classList.add('hidden');
+            });
+            
+            // Close error modal
+            document.getElementById('close-error-modal').addEventListener('click', () => {
+                document.getElementById('error-modal').classList.add('hidden');
+            });
+
+            // Check if we have an IMS token from a redirect
+            handleImsRedirect();
+        }
+        
+        // Run initialization when DOM is ready
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
