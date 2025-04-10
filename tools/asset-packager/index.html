@@ -911,8 +911,8 @@
                 // Ensure token is properly formatted with Bearer prefix
                 const formattedToken = imsToken.startsWith('Bearer ') ? imsToken : `Bearer ${imsToken}`;
                 
-                // Get the API key - stored in hidden input field
-                const apiKey = document.getElementById('apiKey').value || 'demo-key-1234'; // Fallback to demo key if not set
+                // Use the specific API key for the Adobe Assets Search API
+                const apiKey = 'asset_search_service';
                 
                 // Prepare the search payload
                 const searchPayload = {
