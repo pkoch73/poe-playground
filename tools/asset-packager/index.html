@@ -384,6 +384,19 @@
                         <label for="aem-path" class="block text-sm font-medium mb-1">Base Path</label>
                         <input type="text" id="aem-path" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base" value="/content/dam/assets" placeholder="/content/dam/assets">
                     </div>
+                    
+                    <div class="mt-4 border-t dark:border-gray-700 pt-4">
+                        <h4 class="font-bold mb-2">API Connection Options</h4>
+                        
+                        <div class="flex items-center justify-between">
+                            <label for="use-cors-proxy" class="font-medium">Use CORS Proxy</label>
+                            <div class="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                                <input type="checkbox" id="use-cors-proxy" class="absolute w-6 h-6 opacity-0 z-10 cursor-pointer peer" checked>
+                                <span class="absolute left-0 top-0 right-0 bottom-0 bg-gray-300 dark:bg-gray-600 peer-checked:bg-primary rounded-full transition-all duration-200 before:absolute before:content-[''] before:top-[2px] before:left-[2px] before:bg-white before:border-gray-300 before:border before:rounded-full before:h-5 before:w-5 before:transition-all before:duration-200 peer-checked:before:translate-x-6"></span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enable this to use the CORS proxy for API requests. Disable for direct API calls (may cause CORS errors).</p>
+                    </div>
 
                     <div class="flex justify-end pt-4">
                         <button id="save-adobe-config-btn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
@@ -897,8 +910,28 @@
                 // CORS proxy URL provided
                 const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=';
                 
-                // Construct the full URL with the CORS proxy
-                const apiUrl = corsProxyUrl + encodeURIComponent(originalApiUrl);
+                // Check if CORS proxy is enabled - default to true if not found in config
+                let useCorsProxy = true;
+                
+                // Check the Adobe config to see if using CORS proxy
+                const aemConfig = AEMConfig.get();
+                if (aemConfig && typeof aemConfig.useCorsProxy !== 'undefined') {
+                    useCorsProxy = aemConfig.useCorsProxy;
+                }
+                
+                // Also check the toggle in the UI (which may have changed but not been saved)
+                const corsToggle = document.getElementById('use-cors-proxy');
+                if (corsToggle) {
+                    useCorsProxy = corsToggle.checked;
+                }
+                
+                // Construct the URL based on the CORS proxy setting
+                const apiUrl = useCorsProxy 
+                    ? corsProxyUrl + encodeURIComponent(originalApiUrl)
+                    : originalApiUrl;
+                
+                // Log for debugging
+                console.log(`Making API request to: ${apiUrl} (CORS Proxy: ${useCorsProxy ? 'Enabled' : 'Disabled'})`);
                 
                 // Get the authentication token - this is the token obtained from Adobe IMS login
                 const imsToken = document.getElementById('imsToken').value;
@@ -954,7 +987,7 @@
                     ]
                 };
                 
-                // Make the API request through the CORS proxy with all required headers
+                // Make the API request with all required headers
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -2001,6 +2034,12 @@
             if (aemConfig) {
                 document.getElementById('aem-endpoint').value = aemConfig.endpoint || '';
                 document.getElementById('aem-path').value = aemConfig.path || '/content/dam/assets';
+                
+                // Set the CORS proxy toggle based on saved config
+                const corsToggle = document.getElementById('use-cors-proxy');
+                if (corsToggle && typeof aemConfig.useCorsProxy !== 'undefined') {
+                    corsToggle.checked = aemConfig.useCorsProxy;
+                }
             }
         }
 
@@ -2237,6 +2276,10 @@
             document.getElementById('save-adobe-config-btn').addEventListener('click', () => {
                 const config = getAemConfigFromForm();
                 
+                // Add the CORS proxy setting to the config
+                const useCorsProxy = document.getElementById('use-cors-proxy').checked;
+                config.useCorsProxy = useCorsProxy;
+                
                 // Save the configuration
                 AEMConfig.save(config);
                 
@@ -2244,7 +2287,7 @@
                 document.getElementById('config-modal').classList.add('hidden');
                 
                 // Show success notification
-                showNotification('Adobe Experience Manager configuration saved', 'success');
+                showNotification(`Adobe config saved (CORS Proxy: ${useCorsProxy ? 'Enabled' : 'Disabled'})`, 'success');
             });
             
             // Cancel export button
