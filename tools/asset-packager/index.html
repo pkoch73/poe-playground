@@ -891,7 +891,14 @@
             
             // Search collections from Adobe API
             searchCollectionsFromAPI: async function(query) {
-                const apiUrl = 'https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/search';
+                // Original API URL
+                const originalApiUrl = 'https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/search';
+                
+                // CORS proxy URL provided
+                const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev?apiurl=';
+                
+                // Construct the full URL with the CORS proxy
+                const apiUrl = corsProxyUrl + encodeURIComponent(originalApiUrl);
                 
                 // Get the authentication token - this is the token obtained from Adobe IMS login
                 const imsToken = document.getElementById('imsToken').value;
@@ -947,7 +954,7 @@
                     ]
                 };
                 
-                // Make the API request with all required headers
+                // Make the API request through the CORS proxy with all required headers
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
