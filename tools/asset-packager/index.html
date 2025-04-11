@@ -802,11 +802,21 @@
              * @returns {Promise<Object>} Export result
              */
             async exportAssets(assets, progressCallback) {
+                // Log export initialization
+                console.log(`CloudflareService.exportAssets: Starting export of ${assets.length} assets to Cloudflare R2`);
+                
                 if (!this.config) {
+                    console.error("CloudflareService.exportAssets: Error - Cloudflare configuration not set");
                     throw new Error("Cloudflare configuration not set");
                 }
                 
+                // Log configuration details
+                console.log(`CloudflareService.exportAssets: Using configuration:
+                - API URL: ${this.baseUrl}
+                - Base Folder: ${this.baseFolder || '(root)'}`);
+                
                 // Group assets by project, channel, countryLanguage, and variation
+                console.log("CloudflareService.exportAssets: Organizing assets into folder structure...");
                 const structure = {};
                 
                 assets.forEach(asset => {
@@ -820,18 +830,42 @@
                     structure[project][channel][countryLanguage][variation].push(asset);
                 });
                 
+                // Log the organization structure
+                console.log("CloudflareService.exportAssets: Assets organized into structure:");
+                console.log(`- Projects: ${Object.keys(structure).length}`);
+                Object.keys(structure).forEach(project => {
+                    const channels = Object.keys(structure[project]).length;
+                    const totalAssets = Object.values(structure[project])
+                        .flatMap(ch => Object.values(ch))
+                        .flatMap(cl => Object.values(cl))
+                        .flatMap(v => v)
+                        .length;
+                    console.log(`  - ${project}: ${channels} channels, ${totalAssets} assets`);
+                });
+                
                 // Store the structure for sharing
                 currentFolderStructure = structure;
                 
-                // Total number of operations to perform - we count folders + (2 operations per file - download and upload)
-                const totalOperations = (assets.length * 2) + this.countFolders(structure) + 1; // +1 for base folder
+                // Calculate total operations for progress tracking
+                // Each asset requires download and upload operations, plus folder creation
+                const folderCount = this.countFolders(structure);
+                const totalOperations = (assets.length * 2) + folderCount + 1; // +1 for base folder
+                
+                console.log(`CloudflareService.exportAssets: Export operations breakdown:
+                - Total folders to create: ${folderCount + 1} (including base folder)
+                - Total assets to process: ${assets.length} (each requires download + upload)
+                - Total operations: ${totalOperations}`);
+                
                 let completedOperations = 0;
                 
                 try {
+                    console.log(`CloudflareService.exportAssets: Beginning creation of folder structure`);
+                    
                     // Create the base folder if specified
                     const basePath = this.baseFolder || '';
                     
                     if (basePath) {
+                        console.log(`CloudflareService.exportAssets: Creating base folder: "${basePath}"`);
                         progressCallback(0, 'Creating base folder structure...');
                         await this.createFolder(basePath);
                         completedOperations++;
@@ -2586,32 +2620,69 @@
 
         // Export assets to Cloudflare
         async function exportToCloudflare() {
+            console.log("=== EXPORT TO CLOUDFLARE STARTED ===");
+            
+            // Log the Cloudflare configuration status
+            const cloudflareConfigStatus = CloudflareConfig.isConfigured();
+            console.log(`Cloudflare Configuration Status: ${cloudflareConfigStatus ? 'Configured' : 'Not Configured (Demo Mode)'}`);
+            
+            if (cloudflareConfigStatus) {
+                const config = CloudflareConfig.get() || CloudflareConfig.currentConfig;
+                console.log(`Using Cloudflare Configuration:
+                - API URL: ${config.url}
+                - Base Folder: ${config.folder || '(root)'}`);
+            }
+            
             // First check if we have the filtered assets stored from a previous filter action
             let assetsToExport;
             
             const activeCollection = CollectionManager.activeCollection;
+            console.log(`Active Collection: ${activeCollection ? activeCollection.name : 'None'}`);
             
             // Check if we're using API-fetched assets or demo assets with stored filter results
             if (activeCollection && activeCollection.collectionId && CollectionManager.currentCollectionAssets.length > 0) {
+                console.log("Source: API-fetched assets with current filters");
                 // For API assets, get the already filtered set from the current filter criteria
                 assetsToExport = filterAssets();
             } else if (CollectionManager.currentFilteredDemoAssets && CollectionManager.currentFilteredDemoAssets.length > 0) {
+                console.log("Source: Previously filtered demo assets");
                 // For demo assets that have been filtered and stored
                 assetsToExport = CollectionManager.currentFilteredDemoAssets;
             } else {
+                console.log("Source: Current filter criteria");
                 // Otherwise use the normal filter function
                 assetsToExport = filterAssets();
             }
             
-            console.log(`Attempting to export ${assetsToExport.length} assets`);
+            console.log(`Assets to export: ${assetsToExport.length}`);
+            
+            // Log some details about the assets being exported
+            if (assetsToExport.length > 0) {
+                // Count by type
+                const typeCount = {};
+                assetsToExport.forEach(asset => {
+                    typeCount[asset.type] = (typeCount[asset.type] || 0) + 1;
+                });
+                
+                console.log("Asset types breakdown:");
+                Object.entries(typeCount).forEach(([type, count]) => {
+                    console.log(`- ${type}: ${count}`);
+                });
+                
+                // Sample of asset names (up to 5)
+                const sampleAssets = assetsToExport.slice(0, 5).map(a => a.name);
+                console.log(`Sample assets: ${sampleAssets.join(', ')}${assetsToExport.length > 5 ? '...' : ''}`);
+            }
             
             if (assetsToExport.length === 0) {
+                console.log("ERROR: No assets to export");
                 showError('No assets to export. Please adjust your filters.');
                 return;
             }
             
             // If Cloudflare is not configured, show demo success message
             if (!CloudflareConfig.isConfigured()) {
+                console.log("Running in demo mode - showing success message without actual export");
                 // Show share button after export (even in demo mode)
                 document.getElementById('share-btn').classList.remove('hidden');
                 
@@ -2629,32 +2700,56 @@
             exportModal.classList.remove('hidden');
             
             try {
+                console.log("Starting actual export process");
+                
                 // Get Cloudflare service instance
                 const cloudflareService = getCloudflareService();
+                console.log("CloudflareService instance created");
+                
+                // Set up progress tracking
+                let lastStatus = "";
+                let lastPercentage = 0;
                 
                 // Call export method with the assets we prepared in assetsToExport
                 await cloudflareService.exportAssets(assetsToExport, (percentage, status) => {
+                    // Update UI
                     progressBar.style.width = `${percentage}%`;
                     percentageText.textContent = `${Math.round(percentage)}%`;
                     statusText.textContent = status;
                     
                     // Auto-scroll status to bottom
                     statusText.scrollTop = statusText.scrollHeight;
+                    
+                    // Only log when status changes or percentage changes significantly
+                    if (status !== lastStatus || Math.abs(percentage - lastPercentage) >= 5) {
+                        console.log(`Export progress ${Math.round(percentage)}%: ${status}`);
+                        lastStatus = status;
+                        lastPercentage = percentage;
+                    }
                 });
+                
+                console.log("Export completed successfully");
                 
                 // Hide export modal after successful export
                 exportModal.classList.add('hidden');
                 
                 // Show success message
                 showSuccess("The assets have been successfully exported to Cloudflare R2.");
+                console.log("=== EXPORT TO CLOUDFLARE COMPLETED ===");
             } catch (error) {
                 console.error('Export to Cloudflare failed:', error);
+                
+                // Add more detailed error logging
+                if (error.stack) {
+                    console.error('Error stack:', error.stack);
+                }
                 
                 // Hide export modal
                 exportModal.classList.add('hidden');
                 
                 // Show error message
                 showError(`Export to Cloudflare failed: ${error.message}`);
+                console.log("=== EXPORT TO CLOUDFLARE FAILED ===");
             }
         }
 
