@@ -1075,8 +1075,13 @@
                 // Use the specific API key for the Adobe Assets Search API
                 const apiKey = 'asset_search_service';
 
-                // Build facet filters array
-                let facetFilters = [[`collectionIds:${collectionId}`]];
+                // Extract the UUID part from the collectionId if it contains "urn:cid:aem:"
+                const cleanCollectionId = collectionId.includes("urn:cid:aem:") 
+                    ? collectionId.replace("urn:cid:aem:", "")
+                    : collectionId;
+                    
+                // Build facet filters array with just the UUID part
+                let facetFilters = [[`collectionIds:${cleanCollectionId}`]];
                 
                 // Add other filters if provided
                 const additionalFacets = [];
