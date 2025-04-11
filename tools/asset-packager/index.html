@@ -2147,8 +2147,28 @@
                 const isImage = asset.type === 'image';
                 const isVideo = asset.type === 'video';
                 
-                // For videos and images, create a preview area
-                if (isImage || isVideo) {
+                // For images, create a preview area with actual image thumbnail
+                if (isImage) {
+                    // Check if asset has ID that can be used for preview URL
+                    if (asset.id && typeof asset.id === 'string' && asset.id.includes('urn:aaid:aem:')) {
+                        // Format: https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/[assetId]/as/preview-[filename]?width=350&preferwebp=true
+                        const previewUrl = `https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/${asset.id}/as/preview-${encodeURIComponent(asset.name)}?width=350&preferwebp=true`;
+                        previewHtml = `
+                            <div class="mb-2 bg-gray-200 dark:bg-gray-800 rounded-md flex items-center justify-center overflow-hidden" style="height: 120px;">
+                                <img src="${previewUrl}" alt="${asset.name}" class="object-contain max-h-full max-w-full" 
+                                     onerror="this.onerror=null; this.src=''; this.parentNode.innerHTML='<div class=\\'text-4xl\\'>${icon}</div>';">
+                            </div>
+                        `;
+                    } else {
+                        // Fallback to icon for images without proper ID
+                        previewHtml = `
+                            <div class="mb-2 bg-gray-200 dark:bg-gray-800 rounded-md flex items-center justify-center overflow-hidden" style="height: 120px;">
+                                <div class="text-4xl">${icon}</div>
+                            </div>
+                        `;
+                    }
+                } else if (isVideo) {
+                    // Video thumbnails could be handled similarly if we have preview URLs for them
                     previewHtml = `
                         <div class="mb-2 bg-gray-200 dark:bg-gray-800 rounded-md flex items-center justify-center overflow-hidden" style="height: 120px;">
                             <div class="text-4xl">${icon}</div>
@@ -2584,6 +2604,19 @@
             
             // Update mode indicator
             updateModeIndicator();
+            
+            // Check for existing authentication token and update UI accordingly
+            const imsToken = document.getElementById('imsToken').value;
+            if (imsToken) {
+                // User is already authenticated
+                updateAuthStatusUI(true);
+                
+                // Update sign in button to show signed in state
+                const signInBtn = document.getElementById('signInBtn');
+                signInBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Signed In';
+                signInBtn.classList.remove('bg-primary', 'hover:bg-secondary');
+                signInBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            }
             
             // Load assets
             loadAssets();
