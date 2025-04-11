@@ -993,13 +993,24 @@
                 if (data.results && data.results[0] && data.results[0].hits) {
                     const collectionsHits = data.results[0].hits;
                     
-                    // Transform the hits to our collection format
-                    const collections = collectionsHits.map((hit, index) => {
+                    // Filter hits to ensure they have a collectionId
+                    const validHits = collectionsHits.filter(hit => hit && hit.collectionId);
+                    
+                    if (validHits.length === 0) {
+                        console.warn("No valid collections found in the response");
+                        return [];
+                    }
+                    
+                    // Transform the valid hits to our collection format
+                    const collections = validHits.map((hit, index) => {
+                        const collectionId = hit.collectionId;
+                        const shortId = collectionId.substring(0, 8);
+                        
                         return {
                             id: index + 1, // Generate a sequential ID
-                            collectionId: hit.collectionId, // Store the actual collection ID
-                            name: hit.collectionMetadata?.title || `Collection ${hit.collectionId.substring(0, 8)}`,
-                            description: hit.collectionMetadata?.description || `Collection with ID ${hit.collectionId}`,
+                            collectionId: collectionId, // Store the actual collection ID
+                            name: hit.collectionMetadata?.title || `Collection ${shortId}`,
+                            description: hit.collectionMetadata?.description || `Collection with ID ${shortId}`,
                             filters: {
                                 project: "", // These will be populated when we get collection items
                                 channel: "",
@@ -1010,6 +1021,7 @@
                         };
                     });
                     
+                    console.log(`Found ${collections.length} valid collections`);
                     return collections;
                 }
                 
