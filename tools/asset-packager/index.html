@@ -2632,8 +2632,8 @@
                 // Get Cloudflare service instance
                 const cloudflareService = getCloudflareService();
                 
-                // Call export method
-                await cloudflareService.exportAssets(filteredAssets, (percentage, status) => {
+                // Call export method with the assets we prepared in assetsToExport
+                await cloudflareService.exportAssets(assetsToExport, (percentage, status) => {
                     progressBar.style.width = `${percentage}%`;
                     percentageText.textContent = `${Math.round(percentage)}%`;
                     statusText.textContent = status;
