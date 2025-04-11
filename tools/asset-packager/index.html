@@ -904,8 +904,9 @@
             
             // Search collections from Adobe API
             searchCollectionsFromAPI: async function(query) {
-                // Original API URL
-                const originalApiUrl = 'https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/search';
+                // Base API URL
+                const baseApiUrl = 'https://delivery-p108396-e1040009.adobeaemcloud.com';
+                const searchEndpoint = `${baseApiUrl}/adobe/assets/search`;
                 
                 // CORS proxy URL provided
                 const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=';
@@ -927,8 +928,8 @@
                 
                 // Construct the URL based on the CORS proxy setting
                 const apiUrl = useCorsProxy 
-                    ? corsProxyUrl + encodeURIComponent(originalApiUrl)
-                    : originalApiUrl;
+                    ? corsProxyUrl + encodeURIComponent(searchEndpoint)
+                    : searchEndpoint;
                 
                 // Log for debugging
                 console.log(`Making API request to: ${apiUrl} (CORS Proxy: ${useCorsProxy ? 'Enabled' : 'Disabled'})`);
@@ -947,41 +948,19 @@
                 // Use the specific API key for the Adobe Assets Search API
                 const apiKey = 'asset_search_service';
                 
-                // Prepare the search payload
+                // Prepare the search payload - simplified to focus on collections search
                 const searchPayload = {
                     "requests": [
                         {
                             "indexName": "108396-1040009",
                             "params": {
-                                "facetFilters": [],
-                                "facets": ["dc-format-label", "dc-language", "gmo-campaignName", "gmo-contentType", 
-                                          "gmo-creativeDescription", "gmo-deliverableType", "gmo-fiscalYear", 
-                                          "gmo-licensedContent", "gmo-lineofBusiness", "gmo-namesOfCreativeVariations", 
-                                          "gmo-p0TargetMarketArea", "gmo-p0TargetMarketGeo", "gmo-platform", 
-                                          "gmo-productsOffering", "gmo-programName", "repo-modifyDate"],
-                                "filters": "",
-                                "highlightPostTag": "__/ais-highlight__",
+                                "attributesToRetrieve": ["*", "-roles", "-access"],
+                                "facets": [],
                                 "highlightPreTag": "__ais-highlight__",
-                                "hitsPerPage": 100,
-                                "maxValuesPerFacet": 10,
-                                "page": 0,
-                                "query": query,
-                                "tagFilters": ""
-                            }
-                        },
-                        {
-                            "indexName": "108396-1040009",
-                            "params": {
-                                "analytics": false,
-                                "clickAnalytics": false,
-                                "facets": "collectionIds",
-                                "filters": "",
                                 "highlightPostTag": "__/ais-highlight__",
-                                "highlightPreTag": "__ais-highlight__",
-                                "hitsPerPage": 0,
-                                "maxValuesPerFacet": 10,
                                 "page": 0,
-                                "query": query
+                                "hitsPerPage": 40,
+                                "query": query || ""
                             }
                         }
                     ]
@@ -995,7 +974,7 @@
                         'X-Adobe-Accept-Experimental': '1',
                         'Authorization': formattedToken,
                         'X-Api-Key': apiKey,
-                        'X-Ch-Request': 'search'  // Add channel request header
+                        'X-Ch-Request': 'search'
                     },
                     body: JSON.stringify(searchPayload)
                 });
@@ -1008,20 +987,21 @@
                 }
                 
                 const data = await response.json();
+                console.log("Collections search response:", data);
                 
-                // Process the collections from the facets in the second result
-                if (data.results && data.results[1] && data.results[1].facets && data.results[1].facets.collectionIds) {
-                    const collectionsData = data.results[1].facets.collectionIds;
+                // Process the collections from the hits in the first result
+                if (data.results && data.results[0] && data.results[0].hits) {
+                    const collectionsHits = data.results[0].hits;
                     
-                    // Transform the collection data to our app format
-                    const collections = Object.entries(collectionsData).map(([collectionId, count], index) => {
+                    // Transform the hits to our collection format
+                    const collections = collectionsHits.map((hit, index) => {
                         return {
                             id: index + 1, // Generate a sequential ID
-                            collectionId: collectionId, // Store the actual collection ID
-                            name: `Collection ${collectionId.substring(0, 8)}`, // Use first part of ID as name
-                            description: `Contains ${count} assets matching "${query || 'all items'}"`,
+                            collectionId: hit.collectionId, // Store the actual collection ID
+                            name: hit.collectionMetadata?.title || `Collection ${hit.collectionId.substring(0, 8)}`,
+                            description: hit.collectionMetadata?.description || `Collection with ID ${hit.collectionId}`,
                             filters: {
-                                project: "", // These will be set when we get assets from the collection
+                                project: "", // These will be populated when we get collection items
                                 channel: "",
                                 country: "",
                                 language: "",
@@ -1035,6 +1015,125 @@
                 
                 // Return empty array if no collections found
                 return [];
+            },
+            
+            // Get collection items - fetches the assets in a collection
+            getCollectionItems: async function(collectionId) {
+                // Base API URL
+                const baseApiUrl = 'https://delivery-p108396-e1040009.adobeaemcloud.com';
+                const collectionItemsEndpoint = `${baseApiUrl}/adobe/assets/collections/${collectionId}/items`;
+                
+                // CORS proxy URL provided
+                const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=';
+                
+                // Check if CORS proxy is enabled
+                let useCorsProxy = true;
+                
+                // Check the Adobe config to see if using CORS proxy
+                const aemConfig = AEMConfig.get();
+                if (aemConfig && typeof aemConfig.useCorsProxy !== 'undefined') {
+                    useCorsProxy = aemConfig.useCorsProxy;
+                }
+                
+                // Also check the toggle in the UI (which may have changed but not been saved)
+                const corsToggle = document.getElementById('use-cors-proxy');
+                if (corsToggle) {
+                    useCorsProxy = corsToggle.checked;
+                }
+                
+                // Construct the URL based on the CORS proxy setting
+                const apiUrl = useCorsProxy 
+                    ? corsProxyUrl + encodeURIComponent(collectionItemsEndpoint)
+                    : collectionItemsEndpoint;
+                
+                // Log for debugging
+                console.log(`Fetching collection items from: ${apiUrl}`);
+                
+                // Get the authentication token
+                const imsToken = document.getElementById('imsToken').value;
+                
+                // Check if we have authentication
+                if (!imsToken) {
+                    throw new Error("Authentication required. Please sign in with Adobe.");
+                }
+                
+                // Ensure token is properly formatted with Bearer prefix
+                const formattedToken = imsToken.startsWith('Bearer ') ? imsToken : `Bearer ${imsToken}`;
+                
+                // Make the API request with all required headers
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Adobe-Accept-Experimental': '1',
+                        'Authorization': formattedToken,
+                        'X-Ch-Request': 'collection' // Specify this is a collection request
+                    }
+                });
+                
+                if (!response.ok) {
+                    // Log detailed error information, including the response body if available.
+                    const errorText = await response.text();
+                    console.error(`Collection items request failed with status ${response.status}: ${errorText}`);
+                    throw new Error(`Collection items request failed with status ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log("Collection items response:", data);
+                
+                // Extract collection metadata and items
+                const collectionMetadata = data.metadata || {};
+                const collectionAssets = data.items || [];
+                
+                // Transform the assets to our format with metadata
+                const assets = collectionAssets.map(item => {
+                    // Extract metadata from the item
+                    const metadata = item.metadata || {};
+                    
+                    // Extract useful fields (adapt as needed based on the actual structure)
+                    return {
+                        id: item.id || Math.random().toString(36).substring(2, 10),
+                        name: metadata.title || metadata.filename || "Unnamed Asset",
+                        type: this.getAssetTypeFromMetadata(metadata),
+                        project: metadata.campaign || metadata["gmo-campaignName"] || "",
+                        channel: metadata.channel || metadata["gmo-platform"] || "",
+                        country: metadata.country || metadata["gmo-p0TargetMarketGeo"] || "",
+                        language: metadata.language || metadata["dc-language"] || "",
+                        countryLanguage: `${metadata.country || "gl"}-${metadata.language || "en"}`,
+                        variation: metadata.variation || metadata["gmo-namesOfCreativeVariations"] || "Standard",
+                        url: item.href || "",
+                        thumbnail: item.thumbnail || ""
+                    };
+                });
+                
+                // Return both the collection metadata and the processed assets
+                return {
+                    metadata: collectionMetadata,
+                    assets: assets
+                };
+            },
+            
+            // Helper method to determine asset type from metadata
+            getAssetTypeFromMetadata: function(metadata) {
+                // Try to determine asset type from format, mimetype, or other fields
+                const format = metadata.format || metadata["dc-format"] || "";
+                const mimetype = metadata.mimetype || "";
+                
+                if (format.includes("pdf") || mimetype.includes("pdf")) {
+                    return "document";
+                } else if (format.includes("jpg") || format.includes("jpeg") || format.includes("png") || 
+                           mimetype.includes("image")) {
+                    return "image";
+                } else if (format.includes("mp4") || format.includes("video") || 
+                           mimetype.includes("video")) {
+                    return "video";
+                } else if (format.includes("mp3") || format.includes("audio") || 
+                           mimetype.includes("audio")) {
+                    return "audio";
+                } else {
+                    // Default to document for unknown types
+                    return "document";
+                }
             },
             
             // Search collections by name or description
