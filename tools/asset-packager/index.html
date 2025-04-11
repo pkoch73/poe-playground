@@ -2151,12 +2151,21 @@
                 if (isImage) {
                     // Check if asset has ID that can be used for preview URL
                     if (asset.id && typeof asset.id === 'string' && asset.id.includes('urn:aaid:aem:')) {
-                        // Format: https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/[assetId]/as/preview-[filename]?width=350&preferwebp=true
-                        const previewUrl = `https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/${asset.id}/as/preview-${encodeURIComponent(asset.name)}?width=350&preferwebp=true`;
+                        // Format: https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/[assetId]/as/preview-[filename].jpg?width=350&preferwebp=true
+                        
+                        // Make sure we append the proper extension for the preview URL
+                        // Some AEM preview URLs require the file extension to be explicitly included, like .jpg
+                        const fileExtension = asset.name.split('.').pop().toLowerCase();
+                        
+                        // Construct the preview URL with the extension
+                        const previewUrl = `https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/${asset.id}/as/preview-${encodeURIComponent(asset.name)}.${fileExtension}?width=350&preferwebp=true`;
+                        
+                        console.log(`Loading preview image for ${asset.name}: ${previewUrl}`);
+                        
                         previewHtml = `
                             <div class="mb-2 bg-gray-200 dark:bg-gray-800 rounded-md flex items-center justify-center overflow-hidden" style="height: 120px;">
                                 <img src="${previewUrl}" alt="${asset.name}" class="object-contain max-h-full max-w-full" 
-                                     onerror="this.onerror=null; this.src=''; this.parentNode.innerHTML='<div class=\\'text-4xl\\'>${icon}</div>';">
+                                     onerror="this.onerror=null; this.src=''; console.log('Preview image failed to load for: ${asset.name}'); this.parentNode.innerHTML='<div class=\\'text-4xl\\'>${icon}</div>';">
                             </div>
                         `;
                     } else {
