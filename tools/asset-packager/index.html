@@ -1029,16 +1029,16 @@
                 return [];
             },
             
-            // Get collection items - fetches the assets in a collection
-            getCollectionItems: async function(collectionId) {
+            // Search for assets within a collection using facetFilters
+            searchCollectionAssets: async function(collectionId, filters = {}) {
                 // Base API URL
                 const baseApiUrl = 'https://delivery-p108396-e1040009.adobeaemcloud.com';
-                const collectionItemsEndpoint = `${baseApiUrl}/adobe/assets/collections/${collectionId}/items`;
+                const searchEndpoint = `${baseApiUrl}/adobe/assets/search`;
                 
                 // CORS proxy URL provided
                 const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=';
                 
-                // Check if CORS proxy is enabled
+                // Check if CORS proxy is enabled - default to true if not found in config
                 let useCorsProxy = true;
                 
                 // Check the Adobe config to see if using CORS proxy
@@ -1055,11 +1055,11 @@
                 
                 // Construct the URL based on the CORS proxy setting
                 const apiUrl = useCorsProxy 
-                    ? corsProxyUrl + encodeURIComponent(collectionItemsEndpoint)
-                    : collectionItemsEndpoint;
+                    ? corsProxyUrl + encodeURIComponent(searchEndpoint)
+                    : searchEndpoint;
                 
                 // Log for debugging
-                console.log(`Fetching collection items from: ${apiUrl}`);
+                console.log(`Searching assets in collection: ${collectionId}`);
                 
                 // Get the authentication token
                 const imsToken = document.getElementById('imsToken').value;
@@ -1072,56 +1072,192 @@
                 // Ensure token is properly formatted with Bearer prefix
                 const formattedToken = imsToken.startsWith('Bearer ') ? imsToken : `Bearer ${imsToken}`;
                 
+                // Use the specific API key for the Adobe Assets Search API
+                const apiKey = 'asset_search_service';
+
+                // Build facet filters array
+                let facetFilters = [[`collectionIds:${collectionId}`]];
+                
+                // Add other filters if provided
+                const additionalFacets = [];
+                
+                if (filters.channel) {
+                    additionalFacets.push(`gmo-platform:${filters.channel}`);
+                }
+                
+                if (filters.country) {
+                    additionalFacets.push(`gmo-p0TargetMarketGeo:${filters.country}`);
+                }
+                
+                if (filters.language) {
+                    const langFilter = Array.isArray(filters.language) 
+                        ? `dc-language:${filters.language[0]}` 
+                        : `dc-language:${filters.language}`;
+                    additionalFacets.push(langFilter);
+                }
+                
+                if (filters.variation) {
+                    additionalFacets.push(`gmo-namesOfCreativeVariations:${filters.variation}`);
+                }
+                
+                // Add additional facets if there are any
+                if (additionalFacets.length > 0) {
+                    facetFilters.push(additionalFacets);
+                }
+                
+                // Prepare the search payload
+                const searchPayload = {
+                    "requests": [
+                        {
+                            "indexName": "108396-1040009",
+                            "params": {
+                                "facetFilters": facetFilters,
+                                "facets": [
+                                    "dc-format-label", 
+                                    "dc-language", 
+                                    "gmo-campaignName", 
+                                    "gmo-contentType", 
+                                    "gmo-creativeDescription", 
+                                    "gmo-deliverableType", 
+                                    "gmo-fiscalYear", 
+                                    "gmo-licensedContent", 
+                                    "gmo-lineofBusiness", 
+                                    "gmo-namesOfCreativeVariations", 
+                                    "gmo-p0TargetMarketArea", 
+                                    "gmo-p0TargetMarketGeo", 
+                                    "gmo-platform", 
+                                    "gmo-productsOffering", 
+                                    "gmo-programName", 
+                                    "repo-modifyDate"
+                                ],
+                                "filters": "",
+                                "highlightPostTag": "__/ais-highlight__",
+                                "highlightPreTag": "__ais-highlight__",
+                                "hitsPerPage": 100,
+                                "maxValuesPerFacet": 10,
+                                "page": 0,
+                                "query": "",
+                                "tagFilters": ""
+                            }
+                        },
+                        {
+                            "indexName": "108396-1040009",
+                            "params": {
+                                "analytics": false,
+                                "clickAnalytics": false,
+                                "facets": "collectionIds",
+                                "filters": "",
+                                "highlightPostTag": "__/ais-highlight__",
+                                "highlightPreTag": "__ais-highlight__",
+                                "hitsPerPage": 0,
+                                "maxValuesPerFacet": 10,
+                                "page": 0,
+                                "query": ""
+                            }
+                        }
+                    ]
+                };
+                
                 // Make the API request with all required headers
                 const response = await fetch(apiUrl, {
-                    method: 'GET',
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-Adobe-Accept-Experimental': '1',
                         'Authorization': formattedToken,
-                        'X-Ch-Request': 'collection' // Specify this is a collection request
-                    }
+                        'X-Api-Key': apiKey,
+                        'X-Ch-Request': 'search'
+                    },
+                    body: JSON.stringify(searchPayload)
                 });
                 
                 if (!response.ok) {
                     // Log detailed error information, including the response body if available.
                     const errorText = await response.text();
-                    console.error(`Collection items request failed with status ${response.status}: ${errorText}`);
-                    throw new Error(`Collection items request failed with status ${response.status}`);
+                    console.error(`Collection assets search failed with status ${response.status}: ${errorText}`);
+                    throw new Error(`Collection assets search failed with status ${response.status}`);
                 }
                 
                 const data = await response.json();
-                console.log("Collection items response:", data);
+                console.log("Collection assets search response:", data);
                 
-                // Extract collection metadata and items
-                const collectionMetadata = data.metadata || {};
-                const collectionAssets = data.items || [];
+                // Process the search results - first result has the assets
+                const results = data.results[0];
                 
-                // Transform the assets to our format with metadata
-                const assets = collectionAssets.map(item => {
-                    // Extract metadata from the item
-                    const metadata = item.metadata || {};
-                    
-                    // Extract useful fields (adapt as needed based on the actual structure)
+                if (!results || !results.hits || !Array.isArray(results.hits)) {
+                    console.warn("No assets found in collection or invalid response format");
                     return {
-                        id: item.id || Math.random().toString(36).substring(2, 10),
-                        name: metadata.title || metadata.filename || "Unnamed Asset",
-                        type: this.getAssetTypeFromMetadata(metadata),
-                        project: metadata.campaign || metadata["gmo-campaignName"] || "",
-                        channel: metadata.channel || metadata["gmo-platform"] || "",
-                        country: metadata.country || metadata["gmo-p0TargetMarketGeo"] || "",
-                        language: metadata.language || metadata["dc-language"] || "",
-                        countryLanguage: `${metadata.country || "gl"}-${metadata.language || "en"}`,
-                        variation: metadata.variation || metadata["gmo-namesOfCreativeVariations"] || "Standard",
-                        url: item.href || "",
-                        thumbnail: item.thumbnail || ""
+                        totalAssets: 0,
+                        facets: {},
+                        assets: []
+                    };
+                }
+                
+                // Extract the total count and facets
+                const totalAssets = results.nbHits || 0;
+                const facets = results.facets || {};
+                
+                // Transform the assets to our format
+                const assets = results.hits.map(hit => {
+                    return {
+                        id: hit.assetId || hit.objectID || Math.random().toString(36).substring(2, 10),
+                        name: hit["dc-title"] || hit["repo-name"] || "Unnamed Asset",
+                        type: this.getAssetTypeFromFormat(hit["dc-format-label"]),
+                        format: hit["dc-format-label"] || "",
+                        project: hit["gmo-campaignName"] || "",
+                        channel: hit["gmo-platform"] || "",
+                        country: hit["gmo-p0TargetMarketGeo"] || "",
+                        language: Array.isArray(hit["dc-language"]) ? hit["dc-language"][0] : hit["dc-language"] || "",
+                        countryLanguage: hit["gmo-p0TargetMarketGeo"] 
+                            ? `${hit["gmo-p0TargetMarketGeo"]}-${Array.isArray(hit["dc-language"]) ? hit["dc-language"][0] : hit["dc-language"]}`
+                            : "gl-en",
+                        variation: hit["gmo-namesOfCreativeVariations"] || "Standard",
+                        size: hit.size || 0,
+                        modifyDate: hit["repo-modifyDate"] || hit["dc-modified"] || "",
+                        programName: hit["gmo-programName"] || "",
+                        productsOffering: Array.isArray(hit["gmo-productsOffering"]) 
+                            ? hit["gmo-productsOffering"][0] 
+                            : hit["gmo-productsOffering"] || "",
+                        // Additional fields for UI display
+                        width: hit["stDim-w"] || 0,
+                        height: hit["stDim-h"] || 0,
+                        keywords: hit["xcm-machineKeywords"] || []
                     };
                 });
                 
-                // Return both the collection metadata and the processed assets
                 return {
-                    metadata: collectionMetadata,
-                    assets: assets
+                    totalAssets,
+                    facets,
+                    assets
+                };
+            },
+            
+            // Helper method to determine asset type from format label
+            getAssetTypeFromFormat: function(formatLabel) {
+                if (!formatLabel) return "document";
+                
+                const format = formatLabel.toLowerCase();
+                if (format === "mp4" || format === "quicktime") {
+                    return "video";
+                } else if (format === "jpeg" || format === "png" || format === "jpg") {
+                    return "image";
+                } else if (format === "pdf") {
+                    return "document";
+                } else if (format === "mp3" || format === "wav") {
+                    return "audio";
+                } else {
+                    return "document";
+                }
+            },
+            
+            // Get collection items - fetches the assets in a collection
+            getCollectionItems: async function(collectionId) {
+                // Call the searchCollectionAssets method instead, as it's more reliable
+                const result = await this.searchCollectionAssets(collectionId);
+                
+                return {
+                    metadata: { collectionId },
+                    assets: result.assets || []
                 };
             },
             
@@ -1197,11 +1333,23 @@
             // Current active collection
             activeCollection: null,
             
-            // Set the active collection
-            setActiveCollection: function(collection) {
+            // Current collection assets
+            currentCollectionAssets: [],
+            
+            // Current collection facets
+            currentCollectionFacets: {},
+            
+            // Set the active collection and load its assets
+            setActiveCollection: async function(collection) {
                 this.activeCollection = collection;
                 
                 if (collection) {
+                    // Show loading state
+                    const assetsContainer = document.getElementById('assets-container');
+                    const assetsCount = document.getElementById('assets-count');
+                    assetsContainer.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-8"><div class="animate-spin rounded-full h-10 w-10 border-4 border-primary/30 border-t-primary mb-4"></div><div>Loading assets...</div></div>';
+                    assetsCount.textContent = 'Loading...';
+                    
                     // Update the collection details in the workspace
                     document.getElementById('collection-title').textContent = collection.name;
                     document.getElementById('collection-description').textContent = collection.description || 'No description';
@@ -1212,7 +1360,88 @@
                     // Switch to workspace view
                     document.getElementById('welcome-container').classList.add('hidden');
                     document.getElementById('workspace-container').classList.remove('hidden');
+                    
+                    try {
+                        // Check if we have a collection ID (from real API) or using sample data
+                        if (collection.collectionId) {
+                            const result = await this.searchCollectionAssets(collection.collectionId);
+                            
+                            // Store the assets and facets for later use
+                            this.currentCollectionAssets = result.assets;
+                            this.currentCollectionFacets = result.facets;
+                            
+                            // Update the filter dropdowns from facets
+                            this.populateFiltersFromFacets(result.facets);
+                            
+                            // Display the assets and folder structure
+                            displayAssets(result.assets);
+                            generateFolderStructure(result.assets);
+                        } else {
+                            // We're using sample data
+                            const filtered = filterAssets();
+                            displayAssets(filtered);
+                            generateFolderStructure(filtered);
+                        }
+                    } catch (error) {
+                        console.error('Error loading collection assets:', error);
+                        assetsContainer.innerHTML = '<div class="col-span-full text-center text-red-500 dark:text-red-400 py-4">Error loading assets. Please try again.</div>';
+                        assetsCount.textContent = 'Error loading assets';
+                        
+                        // Show notification about the error
+                        showNotification('Failed to load collection assets: ' + error.message, 'error');
+                    }
                 }
+            },
+            
+            // Populate filter dropdowns from facets in the API response
+            populateFiltersFromFacets: function(facets) {
+                // Channel/Platform filter
+                const platformValues = facets['gmo-platform'] || {};
+                const channelSelect = document.getElementById('channel');
+                channelSelect.innerHTML = '<option value="">All Channels</option>';
+                
+                Object.keys(platformValues).sort().forEach(platform => {
+                    const option = document.createElement('option');
+                    option.value = platform;
+                    option.textContent = `${platform} (${platformValues[platform]})`;
+                    channelSelect.appendChild(option);
+                });
+                
+                // Country/Market Geo filter
+                const countryValues = facets['gmo-p0TargetMarketGeo'] || {};
+                const countrySelect = document.getElementById('country');
+                countrySelect.innerHTML = '<option value="">All Countries</option>';
+                
+                Object.keys(countryValues).sort().forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country;
+                    option.textContent = `${country} (${countryValues[country]})`;
+                    countrySelect.appendChild(option);
+                });
+                
+                // Language filter
+                const languageValues = facets['dc-language'] || {};
+                const languageSelect = document.getElementById('language');
+                languageSelect.innerHTML = '<option value="">All Languages</option>';
+                
+                Object.keys(languageValues).sort().forEach(language => {
+                    const option = document.createElement('option');
+                    option.value = language;
+                    option.textContent = `${language} (${languageValues[language]})`;
+                    languageSelect.appendChild(option);
+                });
+                
+                // Variation filter
+                const variationValues = facets['gmo-namesOfCreativeVariations'] || {};
+                const variationSelect = document.getElementById('variation');
+                variationSelect.innerHTML = '<option value="">All Variations</option>';
+                
+                Object.keys(variationValues).sort().forEach(variation => {
+                    const option = document.createElement('option');
+                    option.value = variation;
+                    option.textContent = `${variation} (${variationValues[variation]})`;
+                    variationSelect.appendChild(option);
+                });
             }
         };
 
@@ -1785,7 +2014,7 @@
             });
         }
 
-        // Display assets in the assets container
+        // Display assets in the assets container with thumbnails when available
         function displayAssets(assets) {
             const assetsContainer = document.getElementById('assets-container');
             const assetsCount = document.getElementById('assets-count');
@@ -1800,16 +2029,47 @@
             
             assets.forEach(asset => {
                 const assetCard = document.createElement('div');
-                assetCard.className = 'bg-gray-50 dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600 flex items-center';
+                assetCard.className = 'bg-gray-50 dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600';
                 
+                // Use emoji icons for consistency
                 const icon = fileTypeIcons[asset.type] || '📁';
                 
+                // Determine if a preview is available
+                let previewHtml = '';
+                const isImage = asset.type === 'image';
+                const isVideo = asset.type === 'video';
+                
+                // For videos and images, create a preview area
+                if (isImage || isVideo) {
+                    previewHtml = `
+                        <div class="mb-2 bg-gray-200 dark:bg-gray-800 rounded-md flex items-center justify-center overflow-hidden" style="height: 120px;">
+                            <div class="text-4xl">${icon}</div>
+                        </div>
+                    `;
+                } else {
+                    // For other file types, show a smaller icon
+                    previewHtml = `
+                        <div class="mb-2 flex items-center">
+                            <div class="text-2xl mr-2">${icon}</div>
+                            <div class="text-xs bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded uppercase">${asset.format || asset.type}</div>
+                        </div>
+                    `;
+                }
+                
+                // Build the card content
                 assetCard.innerHTML = `
-                    <div class="text-2xl mr-3">${icon}</div>
-                    <div class="flex-1 overflow-hidden">
+                    ${previewHtml}
+                    <div class="overflow-hidden">
                         <div class="font-medium truncate" title="${asset.name}">${asset.name}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">${asset.project} · ${asset.channel}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">${asset.countryLanguage} · ${asset.variation}</div>
+                        <div class="mt-1 flex flex-wrap gap-1">
+                            ${asset.project ? `<span class="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">${asset.project}</span>` : ''}
+                            ${asset.channel ? `<span class="text-xs bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded-full">${asset.channel}</span>` : ''}
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <span title="Country-Language">${asset.countryLanguage || 'gl-en'}</span>
+                            ${asset.variation ? ` · ${asset.variation}` : ''}
+                            ${asset.width && asset.height ? ` · ${asset.width}×${asset.height}` : ''}
+                        </div>
                     </div>
                 `;
                 
@@ -2334,16 +2594,87 @@
             });
             
             // Set up event listeners for filters
-            document.getElementById('apply-filters').addEventListener('click', updateUI);
+            document.getElementById('apply-filters').addEventListener('click', async () => {
+                try {
+                    // Show loading indicator
+                    const assetsContainer = document.getElementById('assets-container');
+                    const assetsCount = document.getElementById('assets-count');
+                    assetsContainer.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-8"><div class="animate-spin rounded-full h-10 w-10 border-4 border-primary/30 border-t-primary mb-4"></div><div>Updating assets...</div></div>';
+                    assetsCount.textContent = 'Loading...';
+                    
+                    // Get collection ID and current filters
+                    const activeCollection = CollectionManager.activeCollection;
+                    
+                    if (activeCollection && activeCollection.collectionId) {
+                        // Real API collection - get filter values
+                        const filters = {
+                            channel: document.getElementById('channel').value,
+                            country: document.getElementById('country').value,
+                            language: document.getElementById('language').value,
+                            variation: document.getElementById('variation').value
+                        };
+                        
+                        // Fetch assets with these filters
+                        const result = await CollectionManager.searchCollectionAssets(
+                            activeCollection.collectionId,
+                            filters
+                        );
+                        
+                        // Update the UI with filtered assets
+                        displayAssets(result.assets);
+                        generateFolderStructure(result.assets);
+                    } else {
+                        // Demo data - use local filtering
+                        updateUI();
+                    }
+                } catch (error) {
+                    console.error('Error applying filters:', error);
+                    showNotification('Error applying filters: ' + error.message, 'error');
+                    
+                    // Show error in assets container
+                    const assetsContainer = document.getElementById('assets-container');
+                    const assetsCount = document.getElementById('assets-count');
+                    assetsContainer.innerHTML = '<div class="col-span-full text-center text-red-500 dark:text-red-400 py-4">Error applying filters. Please try again.</div>';
+                    assetsCount.textContent = 'Error';
+                }
+            });
             
-            document.getElementById('clear-filters').addEventListener('click', () => {
+            document.getElementById('clear-filters').addEventListener('click', async () => {
                 document.getElementById('channel').value = '';
                 document.getElementById('country').value = '';
                 document.getElementById('language').value = '';
                 document.getElementById('variation').value = '';
                 
-                // Update UI
-                updateUI();
+                try {
+                    // Show loading indicator
+                    const assetsContainer = document.getElementById('assets-container');
+                    const assetsCount = document.getElementById('assets-count');
+                    assetsContainer.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-8"><div class="animate-spin rounded-full h-10 w-10 border-4 border-primary/30 border-t-primary mb-4"></div><div>Clearing filters...</div></div>';
+                    assetsCount.textContent = 'Loading...';
+                    
+                    // Get active collection
+                    const activeCollection = CollectionManager.activeCollection;
+                    
+                    if (activeCollection && activeCollection.collectionId) {
+                        // Reload assets with no filters
+                        const result = await CollectionManager.searchCollectionAssets(
+                            activeCollection.collectionId
+                        );
+                        
+                        // Update the UI with all assets
+                        displayAssets(result.assets);
+                        generateFolderStructure(result.assets);
+                    } else {
+                        // Demo data - use local filtering
+                        updateUI();
+                    }
+                } catch (error) {
+                    console.error('Error clearing filters:', error);
+                    showNotification('Error clearing filters: ' + error.message, 'error');
+                    
+                    // Show error in assets container
+                    updateUI(); // Attempt to restore the view anyway
+                }
             });
             
             // Set up event listeners for export button
