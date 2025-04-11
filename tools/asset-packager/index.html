@@ -948,19 +948,19 @@
                 // Use the specific API key for the Adobe Assets Search API
                 const apiKey = 'asset_search_service';
                 
-                // Prepare the search payload - simplified to focus on collections search
+                // Prepare the search payload for collections specifically
                 const searchPayload = {
                     "requests": [
                         {
-                            "indexName": "108396-1040009",
+                            "indexName": "108396-1040009_collections",
                             "params": {
-                                "attributesToRetrieve": ["*", "-roles", "-access"],
                                 "facets": [],
-                                "highlightPreTag": "__ais-highlight__",
                                 "highlightPostTag": "__/ais-highlight__",
-                                "page": 0,
+                                "highlightPreTag": "__ais-highlight__",
                                 "hitsPerPage": 40,
-                                "query": query || ""
+                                "page": 0,
+                                "query": query || "",
+                                "tagFilters": ""
                             }
                         }
                     ]
