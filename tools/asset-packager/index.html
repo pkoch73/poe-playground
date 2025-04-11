@@ -2586,9 +2586,26 @@
 
         // Export assets to Cloudflare
         async function exportToCloudflare() {
-            const filteredAssets = filterAssets();
+            // First check if we have the filtered assets stored from a previous filter action
+            let assetsToExport;
             
-            if (filteredAssets.length === 0) {
+            const activeCollection = CollectionManager.activeCollection;
+            
+            // Check if we're using API-fetched assets or demo assets with stored filter results
+            if (activeCollection && activeCollection.collectionId && CollectionManager.currentCollectionAssets.length > 0) {
+                // For API assets, get the already filtered set from the current filter criteria
+                assetsToExport = filterAssets();
+            } else if (CollectionManager.currentFilteredDemoAssets && CollectionManager.currentFilteredDemoAssets.length > 0) {
+                // For demo assets that have been filtered and stored
+                assetsToExport = CollectionManager.currentFilteredDemoAssets;
+            } else {
+                // Otherwise use the normal filter function
+                assetsToExport = filterAssets();
+            }
+            
+            console.log(`Attempting to export ${assetsToExport.length} assets`);
+            
+            if (assetsToExport.length === 0) {
                 showError('No assets to export. Please adjust your filters.');
                 return;
             }
@@ -2871,12 +2888,25 @@
                         // Update the filter panel with new facets while preserving selected values
                         CollectionManager.updateFiltersFromFacets(result.facets, filters);
                         
+                        // *IMPORTANT* Store the filtered results in the currentCollectionAssets to ensure
+                        // they can be exported properly later
+                        CollectionManager.currentCollectionAssets = result.assets;
+                        
                         // Update the UI with filtered assets
                         displayAssets(result.assets);
                         generateFolderStructure(result.assets);
                     } else {
                         // Demo data - use local filtering
-                        updateUI();
+                        const filteredAssets = filterAssets();
+                        
+                        // Make sure we're storing the filtered assets for export later
+                        if (!activeCollection.collectionId) {
+                            // For demo data, we need to manually create a reference to filtered assets
+                            CollectionManager.currentFilteredDemoAssets = filteredAssets;
+                        }
+                        
+                        displayAssets(filteredAssets);
+                        generateFolderStructure(filteredAssets);
                     }
                 } catch (error) {
                     console.error('Error applying filters:', error);
