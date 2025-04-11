@@ -99,7 +99,7 @@
                 <span id="breadcrumb-collection" class="font-medium"></span>
             </div>
             
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-230px)]">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6" style="height: 580px;">
                 <!-- Left Panel: Search and Filters -->
                 <div class="lg:col-span-3 space-y-6 flex flex-col">
                     <!-- Authentication Status Panel -->
@@ -2187,20 +2187,37 @@
             // Get active collection
             const activeCollection = CollectionManager.activeCollection;
             
-            // Always apply the project filter from the active collection if it exists
-            const project = activeCollection && activeCollection.filters.project ? activeCollection.filters.project : '';
-            const channel = document.getElementById('channel').value;
-            const country = document.getElementById('country').value;
-            const language = document.getElementById('language').value;
-            const variation = document.getElementById('variation').value;
-            
-            return contentHubAssets.filter(asset => {
-                return (project === '' || asset.project === project) &&
-                       (channel === '' || asset.channel === channel) &&
-                       (country === '' || asset.country === country) &&
-                       (language === '' || asset.language === language) &&
-                       (variation === '' || asset.variation === variation);
-            });
+            // Check if we're using API-fetched assets or demo assets
+            if (activeCollection && activeCollection.collectionId && CollectionManager.currentCollectionAssets.length > 0) {
+                // For real API assets, we can use the assets already fetched and loaded
+                // We filter the already-retrieved assets based on current filters
+                const channel = document.getElementById('channel').value;
+                const country = document.getElementById('country').value;
+                const language = document.getElementById('language').value;
+                const variation = document.getElementById('variation').value;
+                
+                return CollectionManager.currentCollectionAssets.filter(asset => {
+                    return (channel === '' || asset.channel === channel) &&
+                           (country === '' || asset.country === country) &&
+                           (language === '' || asset.language === language) &&
+                           (variation === '' || asset.variation === variation);
+                });
+            } else {
+                // For demo assets, we use the contentHubAssets as before
+                const project = activeCollection && activeCollection.filters.project ? activeCollection.filters.project : '';
+                const channel = document.getElementById('channel').value;
+                const country = document.getElementById('country').value;
+                const language = document.getElementById('language').value;
+                const variation = document.getElementById('variation').value;
+                
+                return contentHubAssets.filter(asset => {
+                    return (project === '' || asset.project === project) &&
+                           (channel === '' || asset.channel === channel) &&
+                           (country === '' || asset.country === country) &&
+                           (language === '' || asset.language === language) &&
+                           (variation === '' || asset.variation === variation);
+                });
+            }
         }
 
         // Display assets in the assets container with thumbnails when available
