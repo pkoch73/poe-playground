@@ -1447,6 +1447,110 @@
                     option.textContent = `${variation} (${variationValues[variation]})`;
                     variationSelect.appendChild(option);
                 });
+            },
+            
+            // Update filter dropdowns from facets while preserving currently selected values
+            updateFiltersFromFacets: function(facets, currentFilters = {}) {
+                // Store the currently selected values
+                const selectedChannel = currentFilters.channel || '';
+                const selectedCountry = currentFilters.country || '';
+                const selectedLanguage = currentFilters.language || '';
+                const selectedVariation = currentFilters.variation || '';
+                
+                // Channel/Platform filter
+                const platformValues = facets['gmo-platform'] || {};
+                const channelSelect = document.getElementById('channel');
+                channelSelect.innerHTML = '<option value="">All Channels</option>';
+                
+                // Add each channel option, marking the current selection
+                Object.keys(platformValues).sort().forEach(platform => {
+                    const option = document.createElement('option');
+                    option.value = platform;
+                    option.textContent = `${platform} (${platformValues[platform]})`;
+                    if (platform === selectedChannel) {
+                        option.selected = true;
+                    }
+                    channelSelect.appendChild(option);
+                });
+                
+                // If the selected value is no longer in options, add it back
+                if (selectedChannel && !Object.keys(platformValues).includes(selectedChannel)) {
+                    const option = document.createElement('option');
+                    option.value = selectedChannel;
+                    option.textContent = `${selectedChannel} (0)`;
+                    option.selected = true;
+                    channelSelect.appendChild(option);
+                }
+                
+                // Country/Market Geo filter - follow same pattern as above
+                const countryValues = facets['gmo-p0TargetMarketGeo'] || {};
+                const countrySelect = document.getElementById('country');
+                countrySelect.innerHTML = '<option value="">All Countries</option>';
+                
+                Object.keys(countryValues).sort().forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country;
+                    option.textContent = `${country} (${countryValues[country]})`;
+                    if (country === selectedCountry) {
+                        option.selected = true;
+                    }
+                    countrySelect.appendChild(option);
+                });
+                
+                if (selectedCountry && !Object.keys(countryValues).includes(selectedCountry)) {
+                    const option = document.createElement('option');
+                    option.value = selectedCountry;
+                    option.textContent = `${selectedCountry} (0)`;
+                    option.selected = true;
+                    countrySelect.appendChild(option);
+                }
+                
+                // Language filter
+                const languageValues = facets['dc-language'] || {};
+                const languageSelect = document.getElementById('language');
+                languageSelect.innerHTML = '<option value="">All Languages</option>';
+                
+                Object.keys(languageValues).sort().forEach(language => {
+                    const option = document.createElement('option');
+                    option.value = language;
+                    option.textContent = `${language} (${languageValues[language]})`;
+                    if (language === selectedLanguage) {
+                        option.selected = true;
+                    }
+                    languageSelect.appendChild(option);
+                });
+                
+                if (selectedLanguage && !Object.keys(languageValues).includes(selectedLanguage)) {
+                    const option = document.createElement('option');
+                    option.value = selectedLanguage;
+                    option.textContent = `${selectedLanguage} (0)`;
+                    option.selected = true;
+                    languageSelect.appendChild(option);
+                }
+                
+                // Variation filter
+                const variationValues = facets['gmo-namesOfCreativeVariations'] || {};
+                const variationSelect = document.getElementById('variation');
+                variationSelect.innerHTML = '<option value="">All Variations</option>';
+                
+                Object.keys(variationValues).sort().forEach(variation => {
+                    const option = document.createElement('option');
+                    option.value = variation;
+                    option.textContent = `${variation} (${variationValues[variation]})`;
+                    if (variation === selectedVariation) {
+                        option.selected = true;
+                    }
+                    variationSelect.appendChild(option);
+                });
+                
+                if (selectedVariation && !Object.keys(variationValues).includes(selectedVariation)) {
+                    const option = document.createElement('option');
+                    option.value = selectedVariation;
+                    option.textContent = `${selectedVariation} (0)`;
+                    option.selected = true;
+                    variationSelect.appendChild(option);
+                }
+            }
             }
         };
 
@@ -2625,6 +2729,9 @@
                             filters
                         );
                         
+                        // Update the filter panel with new facets while preserving selected values
+                        CollectionManager.updateFiltersFromFacets(result.facets, filters);
+                        
                         // Update the UI with filtered assets
                         displayAssets(result.assets);
                         generateFolderStructure(result.assets);
@@ -2665,6 +2772,9 @@
                         const result = await CollectionManager.searchCollectionAssets(
                             activeCollection.collectionId
                         );
+                        
+                        // Update the filter dropdowns with fresh facets and no selections
+                        CollectionManager.populateFiltersFromFacets(result.facets);
                         
                         // Update the UI with all assets
                         displayAssets(result.assets);
