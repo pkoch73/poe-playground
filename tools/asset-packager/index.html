@@ -99,9 +99,9 @@
                 <span id="breadcrumb-collection" class="font-medium"></span>
             </div>
             
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-230px)]">
                 <!-- Left Panel: Search and Filters -->
-                <div class="lg:col-span-3 space-y-6">
+                <div class="lg:col-span-3 space-y-6 flex flex-col">
                     <!-- Authentication Status Panel -->
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
                         <h2 class="text-xl font-semibold mb-4">Authentication</h2>
@@ -144,12 +144,12 @@
                     </div>
                     
                     <!-- Filters Panel -->
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex-1 flex flex-col">
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="text-xl font-semibold">Apply Filters</h2>
                         </div>
                         
-                        <div class="space-y-4">
+                        <div class="space-y-4 flex-1 overflow-y-auto">
                             <div>
                                 <label for="channel" class="block text-sm font-medium mb-1">Channel</label>
                                 <select id="channel" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
@@ -177,7 +177,9 @@
                                     <option value="">All Variations</option>
                                 </select>
                             </div>
+                        </div>
 
+                        <div class="mt-4 space-y-3">
                             <button id="apply-filters" class="w-full bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
                                 Apply Filters
                             </button>
@@ -190,22 +192,22 @@
                 </div>
                 
                 <!-- Assets Panel -->
-                <div class="lg:col-span-5 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                <div class="lg:col-span-5 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex flex-col h-full">
                     <h2 class="text-xl font-semibold mb-4">Matching Assets</h2>
                     <div id="assets-count" class="text-sm text-gray-500 dark:text-gray-400 mb-4">
                         Showing 0 assets
                     </div>
                     
-                    <div id="assets-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto p-1">
+                    <div id="assets-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto p-1 flex-grow">
                         <!-- Assets will be populated here -->
                     </div>
                 </div>
                 
                 <!-- Folder Structure Panel -->
-                <div class="lg:col-span-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                <div class="lg:col-span-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex flex-col h-full">
                     <h2 class="text-xl font-semibold mb-4">Folder Structure Preview</h2>
                     
-                    <div id="folder-structure" class="text-sm bg-gray-50 dark:bg-gray-700 p-4 rounded-md max-h-[430px] overflow-y-auto font-mono">
+                    <div id="folder-structure" class="text-sm bg-gray-50 dark:bg-gray-700 p-4 rounded-md overflow-y-auto font-mono flex-grow">
                         <!-- Folder structure will be populated here -->
                     </div>
                     
@@ -745,6 +747,55 @@
             }
             
             /**
+             * Download asset binary from Adobe Experience Manager
+             * @param {Object} asset The asset object containing id and name
+             * @returns {Promise<ArrayBuffer>} The binary content of the asset
+             */
+            async downloadAssetBinary(asset) {
+                try {
+                    if (!asset.id || typeof asset.id !== 'string' || !asset.id.includes('urn:aaid:aem:')) {
+                        throw new Error("Asset does not have a valid Adobe AEM ID");
+                    }
+                    
+                    // Format: https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/[assetId]/renditions/original/as/[filename]?attachment=true
+                    const downloadUrl = `https://delivery-p108396-e1040009.adobeaemcloud.com/adobe/assets/${asset.id}/renditions/original/as/${encodeURIComponent(asset.name)}?attachment=true`;
+                    
+                    // Get the authentication token
+                    const imsToken = document.getElementById('imsToken').value;
+                    
+                    // Check if we have authentication
+                    if (!imsToken) {
+                        throw new Error("Authentication required. Please sign in with Adobe first.");
+                    }
+                    
+                    // Ensure token is properly formatted with Bearer prefix
+                    const formattedToken = imsToken.startsWith('Bearer ') ? imsToken : `Bearer ${imsToken}`;
+                    
+                    // Log the download attempt
+                    console.log(`Downloading asset binary from: ${downloadUrl}`);
+                    
+                    // Fetch the asset binary
+                    const response = await fetch(downloadUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': formattedToken
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to download asset: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    // Get the binary content as ArrayBuffer
+                    const binaryContent = await response.arrayBuffer();
+                    return binaryContent;
+                } catch (error) {
+                    console.error(`Error downloading asset '${asset.name}':`, error);
+                    throw error;
+                }
+            }
+            
+            /**
              * Export assets to Cloudflare R2 with the folder structure
              * @param {Array} assets Array of assets to export
              * @param {Function} progressCallback Callback for progress updates
@@ -772,8 +823,8 @@
                 // Store the structure for sharing
                 currentFolderStructure = structure;
                 
-                // Total number of operations to perform (folders + files)
-                const totalOperations = assets.length + this.countFolders(structure) + 1; // +1 for base folder
+                // Total number of operations to perform - we count folders + (2 operations per file - download and upload)
+                const totalOperations = (assets.length * 2) + this.countFolders(structure) + 1; // +1 for base folder
                 let completedOperations = 0;
                 
                 try {
@@ -814,14 +865,44 @@
                                     
                                     // Process each asset
                                     for (const asset of assetList) {
-                                        // In a real implementation, you would fetch the actual file content
-                                        // For demo, create a simulated file content
-                                        const fileContent = new Uint8Array([0, 1, 2, 3, 4]).buffer;
-                                        
-                                        await this.uploadFile(variationPath, asset.name, fileContent);
-                                        
-                                        completedOperations++;
-                                        progressCallback(completedOperations / totalOperations * 100, `Uploaded file: ${asset.name}`);
+                                        try {
+                                            // Check if this is a demo mode or if we have a real asset with ID
+                                            let fileContent;
+                                            
+                                            if (asset.id && typeof asset.id === 'string' && asset.id.includes('urn:aaid:aem:')) {
+                                                // Download the real asset binary from AEM
+                                                progressCallback(completedOperations / totalOperations * 100, `Downloading: ${asset.name}`);
+                                                
+                                                try {
+                                                    fileContent = await this.downloadAssetBinary(asset);
+                                                    completedOperations++; // Count download as an operation
+                                                    progressCallback(completedOperations / totalOperations * 100, `Downloaded: ${asset.name}`);
+                                                } catch (downloadError) {
+                                                    console.error(`Download failed for ${asset.name}:`, downloadError);
+                                                    progressCallback(completedOperations / totalOperations * 100, `Download failed for ${asset.name}: ${downloadError.message}`);
+                                                    
+                                                    // Create a placeholder binary for failed downloads
+                                                    fileContent = new TextEncoder().encode(`Failed to download ${asset.name}: ${downloadError.message}`).buffer;
+                                                    completedOperations++; // Still count the operation even though it failed
+                                                }
+                                            } else {
+                                                // For demo assets without real IDs, create a placeholder
+                                                fileContent = new Uint8Array([0, 1, 2, 3, 4]).buffer;
+                                                completedOperations++; // Count the simulated download
+                                                progressCallback(completedOperations / totalOperations * 100, `Created placeholder for: ${asset.name}`);
+                                            }
+                                            
+                                            // Upload the file to Cloudflare
+                                            await this.uploadFile(variationPath, asset.name, fileContent);
+                                            completedOperations++; // Count the upload operation
+                                            progressCallback(completedOperations / totalOperations * 100, `Uploaded file: ${asset.name}`);
+                                        } catch (assetError) {
+                                            console.error(`Error processing asset ${asset.name}:`, assetError);
+                                            progressCallback(completedOperations / totalOperations * 100, `Error with asset ${asset.name}: ${assetError.message}`);
+                                            
+                                            // Increment operations counter even for failed assets to keep progress moving
+                                            completedOperations += 2; // Count both download and upload operations
+                                        }
                                     }
                                 }
                             }
