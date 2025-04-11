@@ -1173,10 +1173,25 @@
                 }
             },
             
+            // Current collections cache
+            cachedCollections: [],
+            
+            // Cache collections list when loaded
+            cacheCollections: function(collections) {
+                this.cachedCollections = collections;
+            },
+            
             // Get a collection by ID
             getCollectionById: function(id) {
-                const collections = this.getAllCollections();
-                return collections.find(collection => collection.id === id);
+                // First try to find in the cached collections
+                const found = this.cachedCollections.find(collection => collection.id === id);
+                if (found) {
+                    return found;
+                }
+                
+                // If not found in cache, log an error - this shouldn't happen
+                console.error(`Collection with ID ${id} not found in cache`);
+                return null;
             },
             
             // Current active collection
@@ -2212,6 +2227,11 @@
             try {
                 // Load and display collections in the welcome screen
                 const collections = await CollectionManager.getAllCollections();
+                
+                // Cache the collections in memory
+                CollectionManager.cacheCollections(collections);
+                
+                // Populate the UI with collections
                 populateWelcomeCollectionsList(collections);
             } catch (error) {
                 console.error('Error loading initial collections:', error);
@@ -2236,6 +2256,9 @@
                     const query = e.target.value.trim();
                     try {
                         const searchResults = await CollectionManager.searchCollections(query);
+                        // Update the cache with these search results
+                        CollectionManager.cacheCollections(searchResults);
+                        // Populate the UI
                         populateWelcomeCollectionsList(searchResults);
                     } catch (error) {
                         console.error('Error searching collections:', error);
