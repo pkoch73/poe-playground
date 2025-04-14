@@ -906,27 +906,37 @@
                         progressCallback(completedOperations / totalOperations * 100, `Created base folder: ${basePath}`);
                     }
                     
+                    // Helper function to join path segments without double slashes
+                    const joinPath = (basePath, segment) => {
+                        if (!basePath) return segment + '/';
+                        if (basePath.endsWith('/')) {
+                            return basePath + segment + '/';
+                        } else {
+                            return basePath + '/' + segment + '/';
+                        }
+                    };
+                    
                     // Process each level of the structure
                     for (const [project, channels] of Object.entries(structure)) {
-                        const projectPath = `${basePath}${project}/`;
+                        const projectPath = joinPath(basePath, project);
                         await this.createFolder(projectPath);
                         completedOperations++;
                         progressCallback(completedOperations / totalOperations * 100, `Created project folder: ${project}`);
                         
                         for (const [channel, countryLanguages] of Object.entries(channels)) {
-                            const channelPath = `${projectPath}${channel}/`;
+                            const channelPath = joinPath(projectPath.slice(0, -1), channel);
                             await this.createFolder(channelPath);
                             completedOperations++;
                             progressCallback(completedOperations / totalOperations * 100, `Created channel folder: ${channel}`);
                             
                             for (const [countryLanguage, variations] of Object.entries(countryLanguages)) {
-                                const countryLangPath = `${channelPath}${countryLanguage}/`;
+                                const countryLangPath = joinPath(channelPath.slice(0, -1), countryLanguage);
                                 await this.createFolder(countryLangPath);
                                 completedOperations++;
                                 progressCallback(completedOperations / totalOperations * 100, `Created country-language folder: ${countryLanguage}`);
                                 
                                 for (const [variation, assetList] of Object.entries(variations)) {
-                                    const variationPath = `${countryLangPath}${variation}/`;
+                                    const variationPath = joinPath(countryLangPath.slice(0, -1), variation);
                                     await this.createFolder(variationPath);
                                     completedOperations++;
                                     progressCallback(completedOperations / totalOperations * 100, `Created variation folder: ${variation}`);
