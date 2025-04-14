@@ -1895,25 +1895,33 @@
             // Get the current Cloudflare configuration
             const config = CloudflareConfig.get() || CloudflareConfig.currentConfig;
             
-            // Base URL - use the API URL as base but remove any trailing '/api' or similar
-            let baseUrl = "";
-            
-            if (config && config.url) {
-                // Parse the URL to get the domain part
-                baseUrl = config.url.replace(/\/api\/?$/, '');
-                if (!baseUrl.endsWith('/')) baseUrl += '/';
-                baseUrl += 'view';
-            } else {
-                // Demo mode - use placeholder URL
-                baseUrl = "https://your-cloudflare-url.com/view";
-            }
+            // Use Poe URL as the base instead of the storage worker
+            // This is a dedicated Poe app that will serve as the viewer UI
+            const poeViewerUrl = "https://poe.com/CloudflareAssetViewer";
             
             // Get collection info
             const activeCollection = CollectionManager.activeCollection;
             const collectionName = activeCollection ? encodeURIComponent(activeCollection.name) : "collection";
             
+            // Build the storage API URL - this is the actual Cloudflare storage URL
+            let storageApiUrl = "";
+            if (config && config.url) {
+                storageApiUrl = encodeURIComponent(config.url);
+            } else {
+                // Demo mode - use placeholder URL
+                storageApiUrl = encodeURIComponent("https://storage-demo.workers.dev");
+            }
+            
             // Build the URL with parameters
-            let viewUrl = `${baseUrl}?collection=${collectionName}`;
+            let viewUrl = `${poeViewerUrl}?storageUrl=${storageApiUrl}`;
+            viewUrl += `&collection=${collectionName}`;
+            
+            // Add API key (encrypted or hashed in a real implementation)
+            if (config && config.apiKey) {
+                // In a real implementation, you would want to use a view-only API key
+                // or implement a token system rather than sharing the full API key
+                viewUrl += `&key=${encodeURIComponent(config.apiKey)}`;
+            }
             
             // Add base folder if available
             if (config && config.folder) {
