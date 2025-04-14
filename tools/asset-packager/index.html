@@ -440,11 +440,45 @@
 
     <!-- Success Modal -->
     <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-xl w-full">
             <h3 class="text-xl font-bold mb-4">Success!</h3>
-            <p class="mb-6" id="success-message">The assets have been organized and exported to Cloudflare.</p>
-            <div class="flex justify-between">
-                <button id="share-after-export-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition">
+            <p class="mb-4" id="success-message">The assets have been organized and exported to Cloudflare.</p>
+            
+            <!-- Read-only View Link Section -->
+            <div id="readonly-link-section" class="mb-6 mt-3 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-r-md">
+                <h4 class="font-semibold mb-2 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                    Read-only View Link
+                </h4>
+                <p class="text-sm mb-3">Share this link with users who need to view or download the assets:</p>
+                <div class="flex">
+                    <input type="text" id="readonly-view-link" readonly class="flex-1 py-2 px-3 text-sm border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-l-md focus:outline-none focus:ring-1 focus:ring-primary" value="">
+                    <button id="copy-readonly-link" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-3 rounded-r-md flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    This link gives view-only access to the exported content structure with download capabilities.
+                </div>
+            </div>
+            
+            <div class="flex justify-between space-x-3">
+                <button id="view-readonly-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition">
+                    <span class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                        </svg>
+                        View Content
+                    </span>
+                </button>
+                <button id="share-after-export-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition">
                     <span class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
@@ -1856,6 +1890,85 @@
             }, 800); // Wait 800ms before opening the authentication window
         }
 
+        // Generate a read-only view link based on the current configuration
+        function generateReadOnlyViewLink() {
+            // Get the current Cloudflare configuration
+            const config = CloudflareConfig.get() || CloudflareConfig.currentConfig;
+            
+            // Base URL - use the API URL as base but remove any trailing '/api' or similar
+            let baseUrl = "";
+            
+            if (config && config.url) {
+                // Parse the URL to get the domain part
+                baseUrl = config.url.replace(/\/api\/?$/, '');
+                if (!baseUrl.endsWith('/')) baseUrl += '/';
+                baseUrl += 'view';
+            } else {
+                // Demo mode - use placeholder URL
+                baseUrl = "https://your-cloudflare-url.com/view";
+            }
+            
+            // Get collection info
+            const activeCollection = CollectionManager.activeCollection;
+            const collectionName = activeCollection ? encodeURIComponent(activeCollection.name) : "collection";
+            
+            // Build the URL with parameters
+            let viewUrl = `${baseUrl}?collection=${collectionName}`;
+            
+            // Add base folder if available
+            if (config && config.folder) {
+                viewUrl += `&base=${encodeURIComponent(config.folder)}`;
+            }
+            
+            // Add a timestamp to make the URL unique
+            viewUrl += `&t=${Date.now()}`;
+            
+            return viewUrl;
+        }
+        
+        // Update the read-only view link in the success modal
+        function updateReadOnlyViewLink() {
+            const viewLink = generateReadOnlyViewLink();
+            document.getElementById('readonly-view-link').value = viewLink;
+        }
+        
+        // Copy the read-only view link to clipboard
+        function copyReadOnlyViewLink() {
+            const linkInput = document.getElementById('readonly-view-link');
+            linkInput.select();
+            
+            try {
+                document.execCommand('copy');
+                
+                // Show feedback
+                const copyBtn = document.getElementById('copy-readonly-link');
+                const originalHTML = copyBtn.innerHTML;
+                
+                copyBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Copied!
+                `;
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                }, 2000);
+                
+                // Show a notification
+                showNotification('Read-only view link copied to clipboard!', 'success', 3000);
+            } catch (err) {
+                console.error('Failed to copy link: ', err);
+                showNotification('Failed to copy link', 'error');
+            }
+        }
+        
+        // Open the read-only viewer in a new tab
+        function openReadOnlyViewer() {
+            const viewLink = document.getElementById('readonly-view-link').value;
+            window.open(viewLink, '_blank');
+        }
+        
         // Function to handle IMS auth response
         function receiveImsToken(event) {
             // Only accept messages from Adobe domains
@@ -2733,6 +2846,9 @@
                 // Hide export modal after successful export
                 exportModal.classList.add('hidden');
                 
+                // Generate and set read-only view link before showing success message
+                updateReadOnlyViewLink();
+                
                 // Show success message
                 showSuccess("The assets have been successfully exported to Cloudflare R2.");
                 console.log("=== EXPORT TO CLOUDFLARE COMPLETED ===");
@@ -3058,6 +3174,10 @@
             
             // Set up event listeners for export button
             document.getElementById('export-btn').addEventListener('click', exportToCloudflare);
+            
+            // Set up event listeners for the read-only view functionality
+            document.getElementById('copy-readonly-link').addEventListener('click', copyReadOnlyViewLink);
+            document.getElementById('view-readonly-btn').addEventListener('click', openReadOnlyViewer);
             
             // Set up event listeners for config button
             document.getElementById('config-btn').addEventListener('click', () => {
