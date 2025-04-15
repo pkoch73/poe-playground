@@ -849,32 +849,36 @@
                 - API URL: ${this.baseUrl}
                 - Base Folder: ${this.baseFolder || '(root)'}`);
                 
-                // Group assets by project, channel, countryLanguage, and variation
+                // Get active collection name for folder naming
+                const activeCollection = CollectionManager.activeCollection;
+                const collectionName = activeCollection ? activeCollection.name : "Collection";
+                
+                // Group assets by collection name (as project), channel, countryLanguage, and variation
                 console.log("CloudflareService.exportAssets: Organizing assets into folder structure...");
                 const structure = {};
                 
+                // Create a single project entry using the collection name
+                structure[collectionName] = {};
+                
                 assets.forEach(asset => {
-                    const { project, channel, countryLanguage, variation } = asset;
+                    const { channel, countryLanguage, variation } = asset;
                     
-                    if (!structure[project]) structure[project] = {};
-                    if (!structure[project][channel]) structure[project][channel] = {};
-                    if (!structure[project][channel][countryLanguage]) structure[project][channel][countryLanguage] = {};
-                    if (!structure[project][channel][countryLanguage][variation]) structure[project][channel][countryLanguage][variation] = [];
+                    if (!structure[collectionName][channel]) structure[collectionName][channel] = {};
+                    if (!structure[collectionName][channel][countryLanguage]) structure[collectionName][channel][countryLanguage] = {};
+                    if (!structure[collectionName][channel][countryLanguage][variation]) structure[collectionName][channel][countryLanguage][variation] = [];
                     
-                    structure[project][channel][countryLanguage][variation].push(asset);
+                    structure[collectionName][channel][countryLanguage][variation].push(asset);
                 });
                 
                 // Log the organization structure
                 console.log("CloudflareService.exportAssets: Assets organized into structure:");
-                console.log(`- Projects: ${Object.keys(structure).length}`);
-                Object.keys(structure).forEach(project => {
-                    const channels = Object.keys(structure[project]).length;
-                    const totalAssets = Object.values(structure[project])
-                        .flatMap(ch => Object.values(ch))
+                console.log(`- Collection: ${collectionName}`);
+                Object.entries(structure[collectionName]).forEach(([channel, countryLanguages]) => {
+                    const totalAssets = Object.values(countryLanguages)
                         .flatMap(cl => Object.values(cl))
                         .flatMap(v => v)
                         .length;
-                    console.log(`  - ${project}: ${channels} channels, ${totalAssets} assets`);
+                    console.log(`  - ${channel}: ${totalAssets} assets`);
                 });
                 
                 // Store the structure for sharing
@@ -916,27 +920,31 @@
                         }
                     };
                     
-                    // Process each level of the structure
+                    // Process each level of the structure with collection as the project folder
                     for (const [project, channels] of Object.entries(structure)) {
+                        // Create collection (project) folder
                         const projectPath = joinPath(basePath, project);
                         await this.createFolder(projectPath);
                         completedOperations++;
-                        progressCallback(completedOperations / totalOperations * 100, `Created project folder: ${project}`);
+                        progressCallback(completedOperations / totalOperations * 100, `Created collection folder: ${project}`);
                         
                         for (const [channel, countryLanguages] of Object.entries(channels)) {
-                            const channelPath = joinPath(projectPath.slice(0, -1), channel);
+                            // Create channel folder
+                            const channelPath = joinPath(projectPath, channel);
                             await this.createFolder(channelPath);
                             completedOperations++;
                             progressCallback(completedOperations / totalOperations * 100, `Created channel folder: ${channel}`);
                             
                             for (const [countryLanguage, variations] of Object.entries(countryLanguages)) {
-                                const countryLangPath = joinPath(channelPath.slice(0, -1), countryLanguage);
+                                // Create country-language folder
+                                const countryLangPath = joinPath(channelPath, countryLanguage);
                                 await this.createFolder(countryLangPath);
                                 completedOperations++;
                                 progressCallback(completedOperations / totalOperations * 100, `Created country-language folder: ${countryLanguage}`);
                                 
                                 for (const [variation, assetList] of Object.entries(variations)) {
-                                    const variationPath = joinPath(countryLangPath.slice(0, -1), variation);
+                                    // Create variation folder
+                                    const variationPath = joinPath(countryLangPath, variation);
                                     await this.createFolder(variationPath);
                                     completedOperations++;
                                     progressCallback(completedOperations / totalOperations * 100, `Created variation folder: ${variation}`);
