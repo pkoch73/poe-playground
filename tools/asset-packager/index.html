@@ -2429,11 +2429,11 @@
         // Get current filters from form
         function getCurrentFilters() {
             return {
-                project: document.getElementById('project').value,
-                channel: document.getElementById('channel').value,
-                country: document.getElementById('country').value,
-                language: document.getElementById('language').value,
-                variation: document.getElementById('variation').value
+                project: activeCollection && activeCollection.filters ? activeCollection.filters.project : '',
+                channel: document.getElementById('channel').value || '',
+                country: document.getElementById('country').value || '',
+                language: document.getElementById('language').value || '',
+                variation: document.getElementById('variation').value || ''
             };
         }
 
@@ -3366,6 +3366,8 @@
             // Set up event listeners for filters
             document.getElementById('apply-filters').addEventListener('click', async () => {
                 try {
+                    console.log("Apply filters button clicked");
+                    
                     // Show loading indicator
                     const assetsContainer = document.getElementById('assets-container');
                     const assetsCount = document.getElementById('assets-count');
@@ -3382,10 +3384,10 @@
                     if (activeCollection && activeCollection.collectionId) {
                         // Real API collection - get filter values
                         const filters = {
-                            channel: document.getElementById('channel').value,
-                            country: document.getElementById('country').value,
-                            language: document.getElementById('language').value,
-                            variation: document.getElementById('variation').value
+                            channel: document.getElementById('channel').value || '',
+                            country: document.getElementById('country').value || '',
+                            language: document.getElementById('language').value || '',
+                            variation: document.getElementById('variation').value || ''
                         };
                         
                         console.log('Applying filters:', filters);
@@ -3405,8 +3407,10 @@
                         CollectionManager.currentCollectionAssets = filteredAssets;
                         console.log(`Fetched ${filteredAssets.length} assets from API with filters`);
                     } else {
+                        console.log('Using demo mode filtering');
                         // Demo data - use local filtering
                         filteredAssets = filterAssets();
+                        console.log('filteredAssets:', filteredAssets);
                         
                         // Store the filtered assets for export later
                         CollectionManager.currentFilteredDemoAssets = filteredAssets;
