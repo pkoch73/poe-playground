@@ -45,7 +45,7 @@
                 <button id="signInBtn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition flex items-center">
                     <i class="fas fa-sign-in-alt mr-2"></i>Sign In with Adobe
                 </button>
-                <button id="config-btn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
+                <button id="config-btn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition" onclick="openSettingsModal()">
                     <i class="fas fa-cog mr-2"></i>Settings
                 </button>
             </div>
@@ -252,7 +252,7 @@
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-xl w-full">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold">Settings</h3>
-                <button id="close-config-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <button id="close-config-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" onclick="closeSettingsModal()">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -3589,30 +3589,155 @@
         // Run initialization when DOM is ready
         document.addEventListener('DOMContentLoaded', init);
 
-// Make sure these event listeners are attached even if the page is already loaded
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    // Reattach critical event listeners to ensure buttons work
+// Direct function to open the settings modal
+function openSettingsModal() {
+    console.log("📋 Settings button clicked directly via onclick");
+    initConfigForm();
+    document.getElementById('connection-status').classList.add('hidden');
+    document.getElementById('config-modal').classList.remove('hidden');
+}
+
+// Direct function to close the settings modal
+function closeSettingsModal() {
+    console.log("📋 Close settings button clicked directly via onclick");
+    document.getElementById('config-modal').classList.add('hidden');
+}
+
+// Function to switch between settings tabs
+function switchSettingsTab(tabId) {
+    console.log(`📋 Switching to settings tab: ${tabId}`);
+    
+    // Deactivate all tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-primary', 'text-primary');
+        btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+    });
+    
+    // Hide all tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Activate clicked tab
+    const selectedTabBtn = document.getElementById(`tab-btn-${tabId}`);
+    if (selectedTabBtn) {
+        selectedTabBtn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        selectedTabBtn.classList.add('border-primary', 'text-primary');
+    }
+    
+    // Show corresponding tab content
+    const selectedTabContent = document.getElementById(`tab-content-${tabId}`);
+    if (selectedTabContent) {
+        selectedTabContent.classList.remove('hidden');
+    }
+}
+
+// Test connection function for the settings panel
+function testConnection() {
+    const config = getConfigFromForm();
+    
+    if (!config.url || !config.apiKey) {
+        showConnectionStatus(false, "API URL and API Key are required");
+        return;
+    }
+    
+    // Test the connection
+    const cloudflareService = new CloudflareService(config);
+    cloudflareService.testConnection().then(result => {
+        showConnectionStatus(result.success, result.message);
+    }).catch(error => {
+        showConnectionStatus(false, "Connection test failed: " + error.message);
+    });
+}
+
+// Save configuration function for the settings panel
+function saveConfig() {
+    const config = getConfigFromForm();
+    const remember = document.getElementById('remember-config').checked;
+    
+    // Validate required fields
+    if (!config.url || !config.apiKey) {
+        showConnectionStatus(false, "API URL and API Key are required");
+        return;
+    }
+    
+    // Save the configuration
+    CloudflareConfig.save(config, remember);
+    
+    // Close the modal
+    document.getElementById('config-modal').classList.add('hidden');
+    
+    // Reload assets based on the new configuration
+    loadAssets();
+}
+
+// Clear configuration function for the settings panel
+function clearConfig() {
+    document.getElementById('api-url').value = '';
+    document.getElementById('api-key').value = '';
+    document.getElementById('base-folder').value = '';
+    document.getElementById('remember-config').checked = false;
+    
+    // Clear the configuration
+    CloudflareConfig.clear();
+    
+    // Hide the connection status
+    document.getElementById('connection-status').classList.add('hidden');
+}
+
+// Save Adobe configuration function for the settings panel
+function saveAdobeConfig() {
+    const config = getAemConfigFromForm();
+    
+    // Add the CORS proxy setting to the config
+    const useCorsProxy = document.getElementById('use-cors-proxy').checked;
+    config.useCorsProxy = useCorsProxy;
+    
+    // Save the configuration
+    AEMConfig.save(config);
+    
+    // Close the modal
+    document.getElementById('config-modal').classList.add('hidden');
+    
+    // Show success notification
+    showNotification(`Adobe config saved (CORS Proxy: ${useCorsProxy ? 'Enabled' : 'Disabled'})`, 'success');
+}
+
+// Force reattachment of all essential event listeners
+function reattachAllEventListeners() {
+    console.log("🛠️ Reattaching ALL event listeners");
+    
     try {
-        console.log("Reattaching critical event listeners");
+        // Settings button
+        const configBtn = document.getElementById('config-btn');
+        if (configBtn) {
+            console.log("Reattaching Settings button");
+            configBtn.addEventListener('click', () => {
+                initConfigForm();
+                document.getElementById('connection-status').classList.add('hidden');
+                document.getElementById('config-modal').classList.remove('hidden');
+            });
+        }
         
         // Apply Filters button
         const applyFiltersBtn = document.getElementById('apply-filters');
         if (applyFiltersBtn) {
-            console.log("Reattaching apply-filters button listener");
+            console.log("Reattaching Apply Filters button");
             applyFiltersBtn.addEventListener('click', async () => {
-                console.log("Apply filters clicked");
+                console.log("Apply filters clicked!");
                 try {
                     // Show loading indicator
                     const assetsContainer = document.getElementById('assets-container');
                     const assetsCount = document.getElementById('assets-count');
                     const folderStructureContainer = document.getElementById('folder-structure');
                     
-                    assetsContainer.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-8"><div class="animate-spin rounded-full h-10 w-10 border-4 border-primary/30 border-t-primary mb-4"></div><div>Updating assets...</div></div>';
-                    assetsCount.textContent = 'Loading...';
-                    folderStructureContainer.innerHTML = '<div class="text-center py-4"><div class="inline-block animate-spin rounded-full h-6 w-6 border-4 border-primary/30 border-t-primary mb-2"></div><div>Updating folder structure...</div></div>';
+                    if (assetsContainer) assetsContainer.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-8"><div class="animate-spin rounded-full h-10 w-10 border-4 border-primary/30 border-t-primary mb-4"></div><div>Updating assets...</div></div>';
+                    if (assetsCount) assetsCount.textContent = 'Loading...';
+                    if (folderStructureContainer) folderStructureContainer.innerHTML = '<div class="text-center py-4"><div class="inline-block animate-spin rounded-full h-6 w-6 border-4 border-primary/30 border-t-primary mb-2"></div><div>Updating folder structure...</div></div>';
                     
                     // Get fresh filtered assets
                     const filteredAssets = filterAssets();
+                    console.log(`Filtered ${filteredAssets.length} assets`);
                     
                     // Update the UI with filtered assets
                     displayAssets(filteredAssets);
@@ -3634,13 +3759,203 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
         // Export to Cloudflare button
         const exportBtn = document.getElementById('export-btn');
         if (exportBtn) {
-            console.log("Reattaching export-btn button listener");
-            exportBtn.addEventListener('click', exportToCloudflare);
+            console.log("Reattaching Export to Cloudflare button");
+            exportBtn.addEventListener('click', () => {
+                console.log("Export button clicked!");
+                exportToCloudflare();
+            });
         }
         
+        // Sign in button
+        const signInBtn = document.getElementById('signInBtn');
+        if (signInBtn) {
+            console.log("Reattaching Sign In button");
+            signInBtn.addEventListener('click', () => {
+                loginWithIMS();
+            });
+        }
+        
+        // Back to collections button
+        const backToCollectionsBtn = document.getElementById('back-to-collections-btn');
+        if (backToCollectionsBtn) {
+            console.log("Reattaching Back to Collections button");
+            backToCollectionsBtn.addEventListener('click', async () => {
+                clearCollectionSelection();
+                
+                // Show loading state for collections
+                const collectionsList = document.getElementById('collections-list-welcome');
+                if (collectionsList) {
+                    collectionsList.innerHTML = '<li class="text-center p-4"><div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary/30 border-t-primary"></div><div class="mt-2">Loading collections...</div></li>';
+                }
+                
+                try {
+                    // Check if there's a search term in the search box
+                    const searchBox = document.getElementById('collection-search-welcome');
+                    const searchTerm = searchBox ? searchBox.value.trim() : '';
+                    
+                    // Reload collections list with the current search term if any
+                    let collections;
+                    if (searchTerm) {
+                        collections = await CollectionManager.searchCollections(searchTerm);
+                    } else {
+                        collections = await CollectionManager.getAllCollections();
+                    }
+                    
+                    // Update the cache with these results
+                    CollectionManager.cacheCollections(collections);
+                    
+                    // Populate the UI with the updated collections
+                    populateWelcomeCollectionsList(collections);
+                } catch (error) {
+                    console.error('Error loading collections:', error);
+                    if (collectionsList) {
+                        collectionsList.innerHTML = '<li class="text-red-500 dark:text-red-400 p-4 text-center">Error loading collections. Please try again.</li>';
+                    }
+                    
+                    // Show notification about the error
+                    showNotification('Failed to load collections: ' + error.message, 'error');
+                }
+            });
+        }
+        
+        // Clear filters button
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        if (clearFiltersBtn) {
+            console.log("Reattaching Clear Filters button");
+            clearFiltersBtn.addEventListener('click', async () => {
+                const channelSelect = document.getElementById('channel');
+                const countrySelect = document.getElementById('country');
+                const languageSelect = document.getElementById('language');
+                const variationSelect = document.getElementById('variation');
+                
+                if (channelSelect) channelSelect.value = '';
+                if (countrySelect) countrySelect.value = '';
+                if (languageSelect) languageSelect.value = '';
+                if (variationSelect) variationSelect.value = '';
+                
+                try {
+                    // Show loading indicator
+                    const assetsContainer = document.getElementById('assets-container');
+                    const assetsCount = document.getElementById('assets-count');
+                    if (assetsContainer) {
+                        assetsContainer.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-8"><div class="animate-spin rounded-full h-10 w-10 border-4 border-primary/30 border-t-primary mb-4"></div><div>Clearing filters...</div></div>';
+                    }
+                    if (assetsCount) assetsCount.textContent = 'Loading...';
+                    
+                    // Get active collection
+                    const activeCollection = CollectionManager.activeCollection;
+                    
+                    if (activeCollection && activeCollection.collectionId) {
+                        // Reload assets with no filters
+                        const result = await CollectionManager.searchCollectionAssets(
+                            activeCollection.collectionId
+                        );
+                        
+                        // Update the filter dropdowns with fresh facets and no selections
+                        CollectionManager.populateFiltersFromFacets(result.facets);
+                        
+                        // Update the UI with all assets
+                        displayAssets(result.assets);
+                        generateFolderStructure(result.assets);
+                    } else {
+                        // Demo data - use local filtering
+                        updateUI();
+                    }
+                } catch (error) {
+                    console.error('Error clearing filters:', error);
+                    showNotification('Error clearing filters: ' + error.message, 'error');
+                    
+                    // Attempt to restore the view anyway
+                    updateUI(); 
+                }
+            });
+        }
+        
+        // Modal related buttons
+        // Close config modal button
+        const closeConfigModalBtn = document.getElementById('close-config-modal');
+        if (closeConfigModalBtn) {
+            closeConfigModalBtn.addEventListener('click', () => {
+                document.getElementById('config-modal').classList.add('hidden');
+            });
+        }
+        
+        // Test connection button
+        const testConnectionBtn = document.getElementById('test-connection-btn');
+        if (testConnectionBtn) {
+            testConnectionBtn.addEventListener('click', async () => {
+                const config = getConfigFromForm();
+                
+                if (!config.url || !config.apiKey) {
+                    showConnectionStatus(false, "API URL and API Key are required");
+                    return;
+                }
+                
+                // Test the connection
+                const cloudflareService = new CloudflareService(config);
+                const result = await cloudflareService.testConnection();
+                showConnectionStatus(result.success, result.message);
+            });
+        }
+        
+        // Save config button
+        const saveConfigBtn = document.getElementById('save-config-btn');
+        if (saveConfigBtn) {
+            saveConfigBtn.addEventListener('click', () => {
+                const config = getConfigFromForm();
+                const rememberCheckbox = document.getElementById('remember-config');
+                const remember = rememberCheckbox ? rememberCheckbox.checked : false;
+                
+                // Validate required fields
+                if (!config.url || !config.apiKey) {
+                    showConnectionStatus(false, "API URL and API Key are required");
+                    return;
+                }
+                
+                // Save the configuration
+                CloudflareConfig.save(config, remember);
+                
+                // Close the modal
+                const configModal = document.getElementById('config-modal');
+                if (configModal) configModal.classList.add('hidden');
+                
+                // Reload assets based on the new configuration
+                loadAssets();
+            });
+        }
+
+        // Clear config button
+        const clearConfigBtn = document.getElementById('clear-config-btn');
+        if (clearConfigBtn) {
+            clearConfigBtn.addEventListener('click', () => {
+                const apiUrlInput = document.getElementById('api-url');
+                const apiKeyInput = document.getElementById('api-key');
+                const baseFolderInput = document.getElementById('base-folder');
+                const rememberCheckbox = document.getElementById('remember-config');
+                
+                if (apiUrlInput) apiUrlInput.value = '';
+                if (apiKeyInput) apiKeyInput.value = '';
+                if (baseFolderInput) baseFolderInput.value = '';
+                if (rememberCheckbox) rememberCheckbox.checked = false;
+                
+                // Clear the configuration
+                CloudflareConfig.clear();
+                
+                // Hide the connection status
+                const connectionStatus = document.getElementById('connection-status');
+                if (connectionStatus) connectionStatus.classList.add('hidden');
+            });
+        }
+        
+        console.log("✅ All event listeners reattached successfully");
     } catch (error) {
-        console.error("Error reattaching event listeners:", error);
+        console.error("❌ Error reattaching event listeners:", error);
     }
+}
+
+// Execute event listener reattachment if the page is already loaded
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    reattachAllEventListeners();
 }
 
 // Event handlers for the export postfix modal
