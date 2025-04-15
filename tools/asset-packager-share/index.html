@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Collection Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6">Media Collection Viewer</h1>
+        
+        <!-- Settings button -->
+        <div class="flex justify-end mb-4">
+            <button id="showSettingsBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-opacity-90 transition flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Settings
+            </button>
+        </div>
+        
+        <!-- Parameters Form - hidden by default -->
+        <div id="settingsPanel" class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 hidden">
+            <h2 class="text-xl font-semibold mb-3">Connection Parameters</h2>
+            <form id="paramsForm" class="space-y-4">
+                <div>
+                    <label for="connectionUrl" class="block text-sm font-medium mb-1">Complete URL</label>
+                    <input type="text" id="connectionUrl" class="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 text-base" 
+                           placeholder="https://example.com/app?storageUrl=https%3A%2F%2Fstorage-srv.workers.dev&collection=MyCollection&key=APIKey&base=BaseFolder">
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Enter a complete URL with all parameters (storageUrl, collection, key, base)</p>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" id="copyUrlBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-opacity-90 transition">Copy Sharing URL</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition">Connect</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Current path display and actions -->
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                <div class="flex items-center space-x-2">
+                    <h2 class="text-xl font-semibold">Files</h2>
+                    <div id="currentPathDisplay" class="text-sm text-gray-600 dark:text-gray-400"></div>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="downloadAllBtn" class="px-3 py-1 bg-primary text-white rounded-md hover:bg-opacity-90 transition hidden">Download All</button>
+                    <button id="refreshBtn" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-opacity-90 transition">Refresh</button>
+                </div>
+            </div>
+            
+            <!-- Breadcrumb navigation -->
+            <div id="breadcrumbNav" class="flex flex-wrap items-center text-sm mb-3 overflow-x-auto pb-1"></div>
+            
+            <!-- File and folder listing -->
+            <div id="contentList" class="border rounded-md dark:border-gray-700 p-4 min-h-[400px] overflow-auto">
+                <div class="flex justify-center items-center h-[300px] text-gray-500">
+                    No files to display. Please connect to a storage source.
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+                <p id="loadingMessage" class="text-lg">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Main application logic
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const paramsForm = document.getElementById('paramsForm');
+            const connectionUrlInput = document.getElementById('connectionUrl');
+            const copyUrlBtn = document.getElementById('copyUrlBtn');
+            const currentPathDisplay = document.getElementById('currentPathDisplay');
+            const breadcrumbNav = document.getElementById('breadcrumbNav');
+            const contentList = document.getElementById('contentList');
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingMessage = document.getElementById('loadingMessage');
+            
+            // State
+            let currentPath = '';
+            let allItems = [];
+            let storageConfig = {
+                url: '',
+                collection: '',
+                key: '',
+                base: '',
+                timestamp: ''
+            };
+
+            // Sample data for testing
+            const sampleData = [
+                { name: "facebook,instagram/", type: "folder" },
+                { name: "facebook,instagram/na-en-us/", type: "folder" },
+                { name: "facebook,instagram/na-en-us/Standard/", type: "folder" },
+                { name: "facebook,instagram/na-en-us/Standard/Display 2", type: "file" },
+                { name: "instagram,facebook/", type: "folder" },
+                { name: "instagram,facebook/na-en-us/", type: "folder" },
+                { name: "instagram,facebook/na-en-us/Standard/", type: "folder" },
+                { name: "instagram,facebook/na-en-us/Standard/Display 1", type: "file" },
+                { name: "instagram,facebook/na-en-us/Standard/Display 4", type: "file" },
+                { name: "instagram/", type: "folder" },
+                { name: "instagram/na-en-us/", type: "folder" },
+                { name: "instagram/na-en-us/Standard/", type: "folder" },
+                { name: "instagram/na-en-us/Standard/Display 3", type: "file" }
+            ];
+
+            // Show/hide loading overlay
+            function showLoading(message = 'Loading...') {
+                loadingMessage.textContent = message;
+                loadingOverlay.classList.remove('hidden');
+            }
+            
+            function hideLoading() {
+                loadingOverlay.classList.add('hidden');
+            }
+
+            // Initialize from URL parameters
+            function initFromUrl() {
+                const urlParams = new URLSearchParams(window.location.search);
+                
+                if (urlParams.has('storageUrl')) {
+                    const storageUrl = decodeURIComponent(urlParams.get('storageUrl'));
+                    const collection = urlParams.get('collection') || '';
+                    const apiKey = urlParams.get('key') || '';
+                    const baseFolder = urlParams.get('base') || '';
+                    const timestamp = urlParams.get('t') || '';
+                    
+                    // Set path from URL if available
+                    if (urlParams.has('path')) {
+                        currentPath = decodeURIComponent(urlParams.get('path'));
+                    }
+                    
+                    // Construct the full URL for the input field
+                    const fullUrl = new URL(window.location.href);
+                    connectionUrlInput.value = fullUrl.toString();
+                    
+                    storageConfig = {
+                        url: storageUrl,
+                        collection: collection,
+                        key: apiKey,
+                        base: baseFolder,
+                        timestamp: timestamp
+                    };
+                    
+                    fetchFiles();
+                } else {
+                    // For demo, use sample data if no URL parameters
+                    allItems = sampleData;
+                    renderUI();
+                }
+            }
+
+            // Fetch files from API
+            async function fetchFiles() {
+                if (!storageConfig.url) return;
+                
+                try {
+                    showLoading('Loading files...');
+                    contentList.innerHTML = '<div class="flex justify-center items-center h-[300px]"><div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div></div>';
+                    
+                    const headers = { 'x-api-key': storageConfig.key };
+                    
+                    // Construct the appropriate path
+                    let pathParam = '';
+                    if (storageConfig.base) {
+                        pathParam = storageConfig.base;
+                        if (currentPath) {
+                            pathParam += '/' + currentPath;
+                        }
+                    } else if (currentPath) {
+                        pathParam = currentPath;
+                    }
+
+                    // For the LIST operation - use GET with method=LIST parameter
+                    // This will specifically get only items from the selected collection
+                    const response = await fetch(`${storageConfig.url}?key=${encodeURIComponent(pathParam)}&collection=${encodeURIComponent(storageConfig.collection)}&method=LIST&prefix=/${encodeURIComponent(storageConfig.collection)}/`, {
+                        method: 'GET',
+                        headers: headers
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const files = await response.json();
+                    allItems = files;
+                    
+                    renderUI();
+                    hideLoading();
+                } catch (error) {
+                    contentList.innerHTML = `<div class="p-4 text-red-500">Error: ${error.message}</div>`;
+                    console.error('Error fetching files:', error);
+                    hideLoading();
+                }
+            }
+
+            // Render the UI based on current path
+            function renderUI() {
+                // Update current path display
+                currentPathDisplay.textContent = currentPath ? `/${currentPath}` : '/';
+                
+                // Render breadcrumb
+                renderBreadcrumb();
+                
+                // Find and display items for current path
+                const { folders, files } = getItemsForCurrentPath();
+                
+                renderContent(folders, files);
+                
+                // Show/hide download all button
+                downloadAllBtn.classList.toggle('hidden', files.length === 0);
+            }
+            
+            // Get folders and files for the current path - filtered by the current collection
+            function getItemsForCurrentPath() {
+                const folders = new Map(); // Use Map to avoid duplicates
+                const files = [];
+                
+                // Ensure current path ends with / if not empty
+                const pathPrefix = currentPath ? (currentPath.endsWith('/') ? currentPath : currentPath + '/') : '';
+                
+                // Go through all items
+                allItems.forEach(item => {
+                    const itemPath = item.name;
+                    const itemType = item.type;
+                    
+                    // Filter: Only show items from the current collection
+                    // Check if item belongs to the current collection (either at the root level or as subfolder)
+                    const collectionMatch = storageConfig.collection && 
+                        (itemPath === storageConfig.collection + '/' || 
+                         itemPath.startsWith(storageConfig.collection + '/') || 
+                         (storageConfig.base && itemPath.startsWith(storageConfig.base + '/' + storageConfig.collection + '/')));
+                    
+                    if (!collectionMatch) {
+                        return; // Skip items that don't belong to the current collection
+                    }
+                    
+                    // Fix path prefix for items that include collection in their path
+                    let effectivePathPrefix = pathPrefix;
+                    if (pathPrefix === '' && storageConfig.collection) {
+                        // When at root, we need to consider the collection as the effective prefix
+                        effectivePathPrefix = storageConfig.collection + '/';
+                    }
+                    
+                    // Skip items that don't start with the effective path prefix
+                    if (effectivePathPrefix && !itemPath.startsWith(effectivePathPrefix)) {
+                        return;
+                    }
+                    
+                    // Get the path relative to current directory
+                    let relativePath = effectivePathPrefix ? itemPath.substring(effectivePathPrefix.length) : itemPath;
+                    
+                    // Skip the current directory itself (empty relative path or just /)
+                    if (!relativePath || relativePath === '/') {
+                        return;
+                    }
+                    
+                    // For folders: Add only the next level folders
+                    if (itemType === 'folder') {
+                        // Get the next directory segment
+                        const slashIndex = relativePath.indexOf('/');
+                        if (slashIndex !== -1) {
+                            const nextDir = relativePath.substring(0, slashIndex);
+                            if (nextDir) {
+                                // Add this as a folder if we haven't seen it yet
+                                const fullPath = effectivePathPrefix + nextDir;
+                                if (!folders.has(nextDir)) {
+                                    folders.set(nextDir, {
+                                        name: nextDir,
+                                        path: fullPath
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    // For files: Add only files directly in this directory (no slashes in relative path)
+                    else if (itemType === 'file' && !relativePath.includes('/')) {
+                        files.push({
+                            name: relativePath,
+                            path: itemPath
+                        });
+                    }
+                });
+                
+                console.log(`Found ${folders.size} folders and ${files.length} files for collection: ${storageConfig.collection}`);
+                
+                return {
+                    folders: Array.from(folders.values()).sort((a, b) => a.name.localeCompare(b.name)),
+                    files: files.sort((a, b) => a.name.localeCompare(b.name))
+                };
+            }
+
+            // Render the content (folders and files)
+            function renderContent(folders, files) {
+                contentList.innerHTML = '';
+                
+                if (folders.length === 0 && files.length === 0) {
+                    contentList.innerHTML = '<div class="flex justify-center items-center h-[300px] text-gray-500">No files found in this directory.</div>';
+                    return;
+                }
+                
+                const container = document.createElement('div');
+                container.className = 'space-y-2';
+                
+                // Add parent directory option if not at root
+                if (currentPath) {
+                    const parentItem = document.createElement('div');
+                    parentItem.className = 'flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer';
+                    parentItem.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span>Parent Directory</span>
+                    `;
+                    parentItem.addEventListener('click', navigateToParent);
+                    container.appendChild(parentItem);
+                }
+                
+                // Add folders
+                folders.forEach(folder => {
+                    const folderItem = document.createElement('div');
+                    folderItem.className = 'flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer';
+                    folderItem.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        <span class="truncate">${folder.name}</span>
+                    `;
+                    folderItem.addEventListener('click', function() {
+                        navigateToFolder(folder.path);
+                    });
+                    container.appendChild(folderItem);
+                });
+                
+                // Add files
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded';
+                    
+                    const fileIcon = getFileIcon(file.name);
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'flex items-center overflow-hidden';
+                    contentDiv.innerHTML = `
+                        ${fileIcon}
+                        <span class="truncate">${file.name}</span>
+                    `;
+                    
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'flex items-center space-x-2 ml-2 flex-shrink-0';
+                    actionsDiv.innerHTML = `
+                        <button class="p-1 text-primary hover:text-opacity-80" title="Download ${file.name}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                        </button>
+                    `;
+                    
+                    const downloadBtn = actionsDiv.querySelector('button');
+                    downloadBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        downloadFile(file.path);
+                    });
+                    
+                    fileItem.appendChild(contentDiv);
+                    fileItem.appendChild(actionsDiv);
+                    container.appendChild(fileItem);
+                });
+                
+                contentList.appendChild(container);
+            }
+
+            // Render breadcrumb navigation
+            function renderBreadcrumb() {
+                breadcrumbNav.innerHTML = '';
+                
+                // Add root link
+                const homeLink = document.createElement('a');
+                homeLink.className = 'text-primary hover:underline cursor-pointer px-2';
+                homeLink.textContent = 'Home';
+                homeLink.addEventListener('click', navigateToRoot);
+                breadcrumbNav.appendChild(homeLink);
+                
+                // Don't add separator after Home if we're at root
+                if (currentPath) {
+                    const separator = document.createElement('span');
+                    separator.className = 'text-gray-500 mx-1';
+                    separator.textContent = '/';
+                    breadcrumbNav.appendChild(separator);
+                    
+                    // Split path into segments, respecting full folder names
+                    let segments = [];
+                    let pathSoFar = '';
+                    
+                    // Handle path segments
+                    const parts = currentPath.split('/');
+                    parts.forEach((part, index) => {
+                        if (!part) return; // Skip empty parts
+                        
+                        if (pathSoFar) {
+                            pathSoFar += '/' + part;
+                        } else {
+                            pathSoFar = part;
+                        }
+                        
+                        segments.push({
+                            name: part,
+                            path: pathSoFar
+                        });
+                    });
+                    
+                    // Add breadcrumb links
+                    segments.forEach((segment, index) => {
+                        const link = document.createElement('a');
+                        link.className = 'text-primary hover:underline cursor-pointer px-2';
+                        link.textContent = segment.name;
+                        link.addEventListener('click', function() {
+                            navigateToPath(segment.path);
+                        });
+                        breadcrumbNav.appendChild(link);
+                        
+                        // Add separator if not the last segment
+                        if (index < segments.length - 1) {
+                            const separator = document.createElement('span');
+                            separator.className = 'text-gray-500 mx-1';
+                            separator.textContent = '/';
+                            breadcrumbNav.appendChild(separator);
+                        }
+                    });
+                }
+            }
+            
+            // Get the appropriate icon for a file based on extension
+            function getFileIcon(fileName) {
+                const ext = fileName.split('.').pop()?.toLowerCase();
+                let iconColor, iconPath;
+                
+                switch (ext) {
+                    case 'pdf':
+                        iconColor = 'text-red-500';
+                        iconPath = 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z';
+                        break;
+                    case 'jpg':
+                    case 'jpeg':
+                    case 'png':
+                    case 'gif':
+                    case 'bmp':
+                    case 'svg':
+                        iconColor = 'text-green-500';
+                        iconPath = 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z';
+                        break;
+                    case 'mp3':
+                    case 'wav':
+                    case 'ogg':
+                    case 'flac':
+                        iconColor = 'text-purple-500';
+                        iconPath = 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3';
+                        break;
+                    case 'mp4':
+                    case 'webm':
+                    case 'avi':
+                    case 'mov':
+                    case 'wmv':
+                        iconColor = 'text-indigo-500';
+                        iconPath = 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z';
+                        break;
+                    case 'json':
+                    case 'xml':
+                    case 'html':
+                    case 'css':
+                    case 'js':
+                        iconColor = 'text-yellow-600';
+                        iconPath = 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4';
+                        break;
+                    default:
+                        iconColor = 'text-blue-500';
+                        iconPath = 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z';
+                }
+                
+                return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 ${iconColor}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${iconPath}" />
+                </svg>`;
+            }
+            
+            // Navigation functions
+            function navigateToRoot() {
+                currentPath = '';
+                updateUrlPath();
+                renderUI();
+            }
+            
+            function navigateToParent() {
+                if (!currentPath) return;
+                
+                const lastSlashIndex = currentPath.lastIndexOf('/');
+                if (lastSlashIndex <= 0) {
+                    // No slash found or it's at the beginning, go to root
+                    currentPath = '';
+                } else {
+                    currentPath = currentPath.substring(0, lastSlashIndex);
+                }
+                
+                updateUrlPath();
+                renderUI();
+            }
+            
+            function navigateToFolder(folderPath) {
+                // Ensure we have a consistent path format (no trailing slash)
+                currentPath = folderPath.endsWith('/') ? folderPath.slice(0, -1) : folderPath;
+                updateUrlPath();
+                renderUI();
+            }
+            
+            function navigateToPath(path) {
+                currentPath = path;
+                updateUrlPath();
+                renderUI();
+            }
+            
+            // Update the URL with the current path
+            function updateUrlPath() {
+                const newUrl = new URL(window.location.href);
+                if (currentPath) {
+                    newUrl.searchParams.set('path', currentPath);
+                } else {
+                    newUrl.searchParams.delete('path');
+                }
+                window.history.pushState({}, '', newUrl);
+            }
+            
+            // Download a single file using direct path
+            async function downloadFile(path) {
+                try {
+                    showLoading('Preparing download...');
+                    
+                    // Get the file name for the download
+                    const fileName = path.split('/').pop();
+                    
+                    // Debug the current configuration and path
+                    console.log('Current config and path:', {
+                        collection: storageConfig.collection,
+                        base: storageConfig.base,
+                        path: path
+                    });
+                    
+                    /*
+                    According to the example:
+                    - Collection: "gmo-assets"
+                    - Base folder: "14323879 FY24Q3 Summer with LR_ACQ Email_Evergreen"
+                    - Path relative to base: "email/na-en-us/Standard/filename"
+                    
+                    The URL should look like:
+                    https://miphi.io/gmo-assets/14323879 FY24Q3 Summer with LR_ACQ Email_Evergreen/email/na-en-us/Standard/filename
+                    */
+                    
+                    // Clean up path - remove base folder if present to avoid duplication
+                    let relativePathFromBase = path;
+                    if (storageConfig.base && path.startsWith(storageConfig.base + '/')) {
+                        // If path starts with base, strip it off
+                        relativePathFromBase = path.substring(storageConfig.base.length + 1);
+                    }
+                    
+                    // Extract the components for logging
+                    let baseComponent = storageConfig.base;
+                    let collectionComponent = storageConfig.collection;
+                    
+                    // Extract path component without duplicating the collection or base folder
+                    let pathComponent;
+                    
+                    // First, check if the path starts with collection + "/"
+                    if (path.startsWith(storageConfig.collection + '/')) {
+                        // Remove the collection prefix
+                        pathComponent = path.substring(storageConfig.collection.length + 1);
+                    } 
+                    // Next check if path starts with base + "/"
+                    else if (path.startsWith(storageConfig.base + '/')) {
+                        // Remove the base prefix
+                        let tempPath = path.substring(storageConfig.base.length + 1);
+                        
+                        // Also check if the remaining path starts with collection + "/"
+                        if (tempPath.startsWith(storageConfig.collection + '/')) {
+                            // Remove collection prefix too
+                            pathComponent = tempPath.substring(storageConfig.collection.length + 1);
+                        } else {
+                            pathComponent = tempPath;
+                        }
+                    } else {
+                        // Use the path as is
+                        pathComponent = path;
+                    }
+                    
+                    // Final check - if pathComponent still starts with collection, remove it
+                    if (pathComponent.startsWith(storageConfig.collection + '/')) {
+                        pathComponent = pathComponent.substring(storageConfig.collection.length + 1);
+                    }
+                    
+                    // Log all components to console
+                    console.log('URL Components for download:');
+                    console.log('1. Base:', baseComponent);
+                    console.log('2. Collection:', collectionComponent);
+                    console.log('3. Path Component:', pathComponent);
+                    console.log('Full original path:', path);
+                    
+                    // Start with the domain
+                    let downloadUrl = 'https://miphi.io/';
+                    
+                    // Add base folder FIRST
+                    downloadUrl += encodeURIComponent(baseComponent) + '/';
+                    
+                    // Add collection SECOND
+                    downloadUrl += encodeURIComponent(collectionComponent) + '/';
+                    
+                    // Add path component THIRD
+                    downloadUrl += encodeURIComponent(pathComponent);
+                    
+                    console.log('Download URL:', downloadUrl);
+                    
+                    // No URL debug box shown to user
+                    
+                    // Open the URL in a new tab for download
+                    window.open(downloadUrl, '_blank');
+                    hideLoading();
+                    
+                } catch (error) {
+                    console.error('Download error:', error);
+                    hideLoading();
+                    alert(`Error downloading file: ${error.message}`);
+                }
+            }
+            
+            // Download all files as a zip using direct paths
+            async function downloadAllFiles() {
+                try {
+                    showLoading('Creating ZIP archive...');
+                    const zip = new JSZip();
+                    
+                    // Get files for the current path
+                    const { files } = getItemsForCurrentPath();
+                    
+                    if (files.length === 0) {
+                        hideLoading();
+                        alert('No files to download in the current directory.');
+                        return;
+                    }
+                    
+                    console.log(`Preparing to download ${files.length} files in ZIP`);
+                    
+                    // Add each file to the zip using direct URLs
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const fileName = file.name;
+                        
+                        loadingMessage.textContent = `Downloading file ${i + 1}/${files.length}: ${fileName}`;
+                        
+                        try {
+                            // Create direct download URL using miphi.io domain
+                            // Format should be https://miphi.io/collection/base/filePath
+                            // We need to check if the path already includes the base folder
+                            let filePath = file.path;
+                            
+                            // If path starts with base folder, remove it to avoid duplication
+                            if (storageConfig.base && filePath.startsWith(storageConfig.base + '/')) {
+                                // Remove the base folder and the following slash
+                                filePath = filePath.substring(storageConfig.base.length + 1);
+                            }
+                            
+                            // Build URL in parts using the CORRECT ORDER
+                            let downloadUrl = 'https://miphi.io/';
+                            
+                            // Add base folder FIRST 
+                            downloadUrl += encodeURIComponent(storageConfig.base) + '/';
+                            
+                            // Add collection SECOND
+                            downloadUrl += encodeURIComponent(storageConfig.collection) + '/';
+                            
+                            // Add path component THIRD without duplicating the base folder
+                            let pathComponent;
+                            if (file.path.startsWith(storageConfig.base + '/')) {
+                                // Extract just the part after base folder
+                                pathComponent = file.path.substring(storageConfig.base.length + 1);
+                            } else {
+                                // Use the path as is
+                                pathComponent = file.path;
+                            }
+                            
+                            downloadUrl += encodeURIComponent(pathComponent);
+                            
+                            console.log(`Download URL for ${fileName}:`, downloadUrl);
+                            
+                            // Download the file
+                            const fileResponse = await fetch(downloadUrl);
+                            
+                            if (!fileResponse.ok) {
+                                throw new Error(`Error ${fileResponse.status} downloading ${file.path}`);
+                            }
+                            
+                            // Add the file to the ZIP
+                            const blob = await fileResponse.blob();
+                            console.log(`Added to ZIP: ${fileName}, size: ${blob.size} bytes`);
+                            zip.file(fileName, blob);
+                            
+                        } catch (fileError) {
+                            console.error(`Error with file ${fileName}:`, fileError);
+                            // Continue with other files even if one fails
+                        }
+                    }
+                    
+                    // Generate the zip file
+                    loadingMessage.textContent = 'Generating ZIP file...';
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    console.log(`ZIP file generated, size: ${zipBlob.size} bytes`);
+                    
+                    // Create download link
+                    const folderName = currentPath.split('/').filter(Boolean).pop() || 'files';
+                    const zipName = `${folderName}.zip`;
+                    const url = URL.createObjectURL(zipBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = zipName;
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        hideLoading();
+                    }, 100);
+                } catch (error) {
+                    hideLoading();
+                    console.error('Error creating zip:', error);
+                    alert('Error creating zip file: ' + error.message);
+                }
+            }
+            
+            // Settings panel toggle
+            const showSettingsBtn = document.getElementById('showSettingsBtn');
+            const settingsPanel = document.getElementById('settingsPanel');
+            
+            showSettingsBtn.addEventListener('click', function() {
+                // Toggle the settings panel
+                settingsPanel.classList.toggle('hidden');
+                
+                // Update button text
+                if (settingsPanel.classList.contains('hidden')) {
+                    showSettingsBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Settings
+                    `;
+                } else {
+                    showSettingsBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Close Settings
+                    `;
+                }
+            });
+            
+            // Event listeners
+            paramsForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                try {
+                    // Parse the input URL to extract parameters
+                    const inputUrl = new URL(connectionUrlInput.value.trim());
+                    const urlParams = inputUrl.searchParams;
+                    
+                    // Extract the parameters
+                    const storageUrl = urlParams.get('storageUrl');
+                    const collection = urlParams.get('collection') || '';
+                    const apiKey = urlParams.get('key') || '';
+                    const baseFolder = urlParams.get('base') || '';
+                    
+                    if (!storageUrl) {
+                        throw new Error('The URL must contain at least a storageUrl parameter');
+                    }
+                    
+                    storageConfig = {
+                        url: decodeURIComponent(storageUrl),
+                        collection: collection,
+                        key: apiKey,
+                        base: baseFolder,
+                        timestamp: new Date().getTime() // Add current timestamp
+                    };
+                    
+                    // Reset path when connecting to a new source
+                    currentPath = '';
+                    
+                    // Update the current URL with the parameters for easy sharing
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.set('storageUrl', storageConfig.url);
+                    newUrl.searchParams.set('collection', storageConfig.collection);
+                    newUrl.searchParams.set('key', storageConfig.key);
+                    newUrl.searchParams.set('base', storageConfig.base);
+                    newUrl.searchParams.set('t', storageConfig.timestamp);
+                    newUrl.searchParams.delete('path'); // Remove any path from previous sessions
+                    window.history.pushState({}, '', newUrl);
+                    
+                    // Update the input field with the new URL
+                    connectionUrlInput.value = window.location.href;
+                    
+                    fetchFiles();
+                } catch (error) {
+                    alert('Invalid URL: ' + error.message);
+                }
+            });
+            
+            copyUrlBtn.addEventListener('click', function() {
+                try {
+                    navigator.clipboard.writeText(window.location.href).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 2000);
+                    });
+                } catch (err) {
+                    console.error('Failed to copy URL: ', err);
+                    // Fallback method
+                    const tempInput = document.createElement('input');
+                    tempInput.value = window.location.href;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    
+                    const originalText = this.textContent;
+                    this.textContent = 'Copied!';
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                    }, 2000);
+                }
+            });
+            
+            downloadAllBtn.addEventListener('click', downloadAllFiles);
+            refreshBtn.addEventListener('click', function() {
+                if (storageConfig.url) {
+                    fetchFiles();
+                } else {
+                    renderUI(); // Just refresh the UI for sample data
+                }
+            });
+            
+            // Initialize with URL parameters or sample data
+            initFromUrl();
+        });
+    </script>
+</body>
+</html>
