@@ -414,6 +414,33 @@
         </div>
     </div>
 
+    <!-- Export Postfix Modal -->
+    <div id="export-postfix-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Collection Postfix</h3>
+            <p class="mb-4">Add a postfix to the collection name for this export. This will help identify different versions of the same collection.</p>
+            
+            <div class="mb-4">
+                <label for="collection-postfix" class="block text-sm font-medium mb-1">Postfix</label>
+                <div class="flex items-center gap-2">
+                    <div class="text-gray-500 dark:text-gray-400 font-medium flex-none">Collection_</div>
+                    <input type="text" id="collection-postfix" class="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base" placeholder="v1">
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Example: "ProductLaunch_v1" or "BrandAssets_2023Q4"</p>
+                <p id="postfix-error" class="text-xs text-red-500 dark:text-red-400 mt-1 hidden">Please enter a valid postfix (letters, numbers, underscores only)</p>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-postfix-btn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
+                    Cancel
+                </button>
+                <button id="apply-postfix-btn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
+                    Continue Export
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Progress Modal -->
     <div id="export-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
@@ -2889,6 +2916,19 @@
         async function exportToCloudflare() {
             console.log("=== EXPORT TO CLOUDFLARE STARTED ===");
             
+            // Show postfix input modal before proceeding
+            document.getElementById('collection-postfix').value = '';
+            document.getElementById('postfix-error').classList.add('hidden');
+            document.getElementById('export-postfix-modal').classList.remove('hidden');
+            
+            // Exit the current function - the actual export will be handled by the modal buttons
+            return;
+        }
+        
+        // Proceed with Cloudflare export after getting the postfix
+        async function proceedWithExport(postfix) {
+            console.log(`Proceeding with export with postfix: ${postfix}`);
+            
             // Log the Cloudflare configuration status
             const cloudflareConfigStatus = CloudflareConfig.isConfigured();
             console.log(`Cloudflare Configuration Status: ${cloudflareConfigStatus ? 'Configured' : 'Not Configured (Demo Mode)'}`);
@@ -3035,6 +3075,23 @@
                 // Set up progress tracking
                 let lastStatus = "";
                 let lastPercentage = 0;
+                
+                // Modify the collection name if postfix was provided
+                if (postfix && postfix.length > 0) {
+                    const activeCollection = CollectionManager.activeCollection;
+                    if (activeCollection) {
+                        // Make a copy of the active collection with the modified name
+                        const modifiedCollection = { ...activeCollection };
+                        modifiedCollection.name = `${activeCollection.name}_${postfix}`;
+                        
+                        // Temporarily replace the active collection
+                        const originalCollection = CollectionManager.activeCollection;
+                        CollectionManager.activeCollection = modifiedCollection;
+                        
+                        // Log the change
+                        console.log(`Collection name modified for export: ${originalCollection.name} -> ${modifiedCollection.name}`);
+                    }
+                }
                 
                 // Call export method with the assets we prepared in assetsToExport
                 await cloudflareService.exportAssets(assetsToExport, (percentage, status) => {
@@ -3217,12 +3274,39 @@
             });
             
             // Set up back to collections button
-            document.getElementById('back-to-collections-btn').addEventListener('click', () => {
+            document.getElementById('back-to-collections-btn').addEventListener('click', async () => {
                 clearCollectionSelection();
                 
-                // Reload collections list to ensure it's up to date
-                const collections = CollectionManager.getAllCollections();
-                populateWelcomeCollectionsList(collections);
+                // Show loading state for collections
+                const collectionsList = document.getElementById('collections-list-welcome');
+                collectionsList.innerHTML = '<li class="text-center p-4"><div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary/30 border-t-primary"></div><div class="mt-2">Loading collections...</div></li>';
+                
+                try {
+                    // Check if there's a search term in the search box
+                    const searchBox = document.getElementById('collection-search-welcome');
+                    const searchTerm = searchBox.value.trim();
+                    
+                    // Reload collections list with the current search term if any
+                    let collections;
+                    if (searchTerm) {
+                        collections = await CollectionManager.searchCollections(searchTerm);
+                    } else {
+                        collections = await CollectionManager.getAllCollections();
+                    }
+                    
+                    // Update the cache with these results
+                    CollectionManager.cacheCollections(collections);
+                    
+                    // Populate the UI with the updated collections
+                    populateWelcomeCollectionsList(collections);
+                } catch (error) {
+                    console.error('Error loading collections:', error);
+                    const collectionsList = document.getElementById('collections-list-welcome');
+                    collectionsList.innerHTML = '<li class="text-red-500 dark:text-red-400 p-4 text-center">Error loading collections. Please try again.</li>';
+                    
+                    // Show notification about the error
+                    showNotification('Failed to load collections: ' + error.message, 'error');
+                }
             });
             
             // Set up the Sign In button
@@ -3503,6 +3587,28 @@
         
         // Run initialization when DOM is ready
         document.addEventListener('DOMContentLoaded', init);
+
+// Event handlers for the export postfix modal
+document.getElementById('cancel-postfix-btn').addEventListener('click', () => {
+    document.getElementById('export-postfix-modal').classList.add('hidden');
+});
+
+document.getElementById('apply-postfix-btn').addEventListener('click', () => {
+    const postfixInput = document.getElementById('collection-postfix');
+    const postfix = postfixInput.value.trim();
+    
+    // Validate postfix - allow alphanumeric characters and underscores
+    if (postfix && !/^[a-zA-Z0-9_]+$/.test(postfix)) {
+        document.getElementById('postfix-error').classList.remove('hidden');
+        return;
+    }
+    
+    // Hide the modal
+    document.getElementById('export-postfix-modal').classList.add('hidden');
+    
+    // Proceed with the export using the postfix
+    proceedWithExport(postfix);
+});
     </script>
 </body>
 </html>
