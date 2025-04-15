@@ -102,8 +102,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6" style="height: 580px;">
                 <!-- Left Panel: Search and Filters -->
                 <div class="lg:col-span-3 space-y-6 flex flex-col">
-                    <!-- Authentication Status Panel -->
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+                    <!-- Authentication Status Panel - Hidden when authenticated -->
+                    <div id="auth-panel" class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
                         <h2 class="text-xl font-semibold mb-4">Authentication</h2>
                         
                         <div class="space-y-4">
@@ -2137,43 +2137,60 @@
         // Function to update the authentication status UI
         function updateAuthStatusUI(isAuthenticated) {
             const authStatus = document.getElementById('authStatus');
-            if (authStatus) {
-                if (isAuthenticated) {
-                    authStatus.innerHTML = `
-                        <span class="text-green-500 dark:text-green-400 flex items-center">
-                            <i class="fas fa-circle text-xs mr-2"></i>Signed in successfully
-                        </span>
-                    `;
-                    
-                    // Update the Adobe status in settings
-                    const adobeAuthStatus = document.getElementById('adobe-auth-status');
-                    if (adobeAuthStatus) {
-                        adobeAuthStatus.textContent = 'Authentication successful. You are now signed in.';
-                        adobeAuthStatus.className = 'mb-2 text-green-600 dark:text-green-400';
-                    }
-                    
-                    // Show user info if available
-                    document.getElementById('adobe-user-info').classList.remove('hidden');
-                    document.getElementById('adobe-username').textContent = 'Adobe User';
-                    document.getElementById('adobe-org').textContent = 'Your Organization';
-                    document.getElementById('adobe-token-expires').textContent = 'In 24 hours';
-                } else {
+            const authPanel = document.getElementById('auth-panel');
+            const signInBtn = document.getElementById('signInBtn');
+            
+            if (isAuthenticated) {
+                // Hide the authentication panel completely when authenticated
+                if (authPanel) {
+                    authPanel.classList.add('hidden');
+                }
+                
+                // Hide sign in button when authenticated
+                if (signInBtn) {
+                    signInBtn.classList.add('hidden');
+                }
+                
+                // Update the Adobe status in settings
+                const adobeAuthStatus = document.getElementById('adobe-auth-status');
+                if (adobeAuthStatus) {
+                    adobeAuthStatus.textContent = 'Authentication successful. You are now signed in.';
+                    adobeAuthStatus.className = 'mb-2 text-green-600 dark:text-green-400';
+                }
+                
+                // Show user info if available
+                document.getElementById('adobe-user-info').classList.remove('hidden');
+                document.getElementById('adobe-username').textContent = 'Adobe User';
+                document.getElementById('adobe-org').textContent = 'Your Organization';
+                document.getElementById('adobe-token-expires').textContent = 'In 24 hours';
+            } else {
+                // Show authentication panel when not authenticated
+                if (authPanel) {
+                    authPanel.classList.remove('hidden');
+                }
+                
+                // Show sign in button when not authenticated
+                if (signInBtn) {
+                    signInBtn.classList.remove('hidden');
+                }
+                
+                if (authStatus) {
                     authStatus.innerHTML = `
                         <span class="text-red-500 dark:text-red-400 flex items-center">
                             <i class="fas fa-circle text-xs mr-2"></i>Not signed in
                         </span>
                     `;
-                    
-                    // Update the Adobe status in settings
-                    const adobeAuthStatus = document.getElementById('adobe-auth-status');
-                    if (adobeAuthStatus) {
-                        adobeAuthStatus.textContent = 'Not authenticated. Use the "Sign in with Adobe" button to connect.';
-                        adobeAuthStatus.className = 'mb-2';
-                    }
-                    
-                    // Hide user info section
-                    document.getElementById('adobe-user-info').classList.add('hidden');
                 }
+                
+                // Update the Adobe status in settings
+                const adobeAuthStatus = document.getElementById('adobe-auth-status');
+                if (adobeAuthStatus) {
+                    adobeAuthStatus.textContent = 'Not authenticated. Use the "Sign in with Adobe" button to connect.';
+                    adobeAuthStatus.className = 'mb-2';
+                }
+                
+                // Hide user info section
+                document.getElementById('adobe-user-info').classList.add('hidden');
             }
         }
 
