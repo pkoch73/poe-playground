@@ -2494,27 +2494,25 @@
             const activeCollection = CollectionManager.activeCollection;
             const collectionName = activeCollection ? activeCollection.name : "Collection";
             
-            // Group assets by project, channel, countryLanguage, and variation
-            // This matches the structure we use when exporting to Cloudflare
+            // Group assets by channel, countryLanguage, and variation
+            // Use collection name as the "project" folder instead of asset.project
             const structure = {};
             
+            // Create a single project entry using the collection name
+            structure[collectionName] = {};
+            
             assets.forEach(asset => {
-                const { project, channel, countryLanguage, variation, name } = asset;
+                const { channel, countryLanguage, variation, name } = asset;
                 
-                // Use a default project name if one isn't provided
-                const projectName = project || "DefaultProject";
+                if (!structure[collectionName][channel]) structure[collectionName][channel] = {};
+                if (!structure[collectionName][channel][countryLanguage]) structure[collectionName][channel][countryLanguage] = {};
+                if (!structure[collectionName][channel][countryLanguage][variation]) structure[collectionName][channel][countryLanguage][variation] = [];
                 
-                if (!structure[projectName]) structure[projectName] = {};
-                if (!structure[projectName][channel]) structure[projectName][channel] = {};
-                if (!structure[projectName][channel][countryLanguage]) structure[projectName][channel][countryLanguage] = {};
-                if (!structure[projectName][channel][countryLanguage][variation]) structure[projectName][channel][countryLanguage][variation] = [];
-                
-                structure[projectName][channel][countryLanguage][variation].push(name);
+                structure[collectionName][channel][countryLanguage][variation].push(name);
             });
             
-            // Save the structure for sharing with collection name
-            // Convert to the format expected by sharing functions
-            currentFolderStructure = { [collectionName]: structure };
+            // Save the structure for sharing
+            currentFolderStructure = structure;
             
             // Generate HTML representation of the folder structure
             let html = '';
@@ -2525,30 +2523,27 @@
                 html += `<div class="mb-1">📁 <span class="font-semibold">${config.folder}</span></div>`;
             }
             
-            // Add collection as top level folder
-            html += `<div class="${config && config.folder ? 'ml-4' : ''} mb-1">📁 <span class="font-semibold">${collectionName}</span></div>`;
-            
-            // Loop through the structure - includes project level now
+            // Loop through the structure
             Object.entries(structure).sort().forEach(([project, channels]) => {
-                // Project level
-                html += `<div class="${config && config.folder ? 'ml-8' : 'ml-4'} mb-1">📁 <span class="font-semibold">${project}</span></div>`;
+                // Project/Collection level
+                html += `<div class="${config && config.folder ? 'ml-4' : ''} mb-1">📁 <span class="font-semibold">${project}</span></div>`;
                 
                 Object.entries(channels).sort().forEach(([channel, countryLanguages]) => {
                     // Channel level
-                    html += `<div class="${config && config.folder ? 'ml-12' : 'ml-8'} mb-1">📁 <span class="font-semibold">${channel}</span></div>`;
+                    html += `<div class="${config && config.folder ? 'ml-8' : 'ml-4'} mb-1">📁 <span class="font-semibold">${channel}</span></div>`;
                     
                     Object.entries(countryLanguages).sort().forEach(([countryLanguage, variations]) => {
                         // Country-language level
-                        html += `<div class="${config && config.folder ? 'ml-16' : 'ml-12'} mb-1">📁 <span class="font-semibold">${countryLanguage}</span></div>`;
+                        html += `<div class="${config && config.folder ? 'ml-12' : 'ml-8'} mb-1">📁 <span class="font-semibold">${countryLanguage}</span></div>`;
                         
                         Object.entries(variations).sort().forEach(([variation, assetNames]) => {
                             // Variation level
-                            html += `<div class="${config && config.folder ? 'ml-20' : 'ml-16'} mb-1">📁 <span class="font-semibold">${variation}</span></div>`;
+                            html += `<div class="${config && config.folder ? 'ml-16' : 'ml-12'} mb-1">📁 <span class="font-semibold">${variation}</span></div>`;
                             
                             // Asset files
                             assetNames.sort().forEach(name => {
                                 const icon = fileTypeIcons[getFileType(name)] || '📄';
-                                html += `<div class="${config && config.folder ? 'ml-24' : 'ml-20'} mb-1">${icon} ${name}</div>`;
+                                html += `<div class="${config && config.folder ? 'ml-20' : 'ml-16'} mb-1">${icon} ${name}</div>`;
                             });
                         });
                     });
