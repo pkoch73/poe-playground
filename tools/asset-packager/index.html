@@ -1914,12 +1914,16 @@
             const collectionName = activeCollection ? encodeURIComponent(activeCollection.name) : "collection";
             
             // Build the storage API URL - this is the actual Cloudflare storage URL
+            // IMPORTANT: Include the /list path segment for the Cloudflare Asset Viewer
             let storageApiUrl = "";
             if (config && config.url) {
-                storageApiUrl = encodeURIComponent(config.url);
+                // Ensure the URL doesn't already have /list at the end
+                const baseUrl = config.url.endsWith('/list') ? config.url : 
+                                (config.url.endsWith('/') ? config.url + 'list' : config.url + '/list');
+                storageApiUrl = encodeURIComponent(baseUrl);
             } else {
-                // Demo mode - use placeholder URL
-                storageApiUrl = encodeURIComponent("https://storage-demo.workers.dev");
+                // Demo mode - use placeholder URL with /list
+                storageApiUrl = encodeURIComponent("https://storage-demo.workers.dev/list");
             }
             
             // Build the URL with parameters
