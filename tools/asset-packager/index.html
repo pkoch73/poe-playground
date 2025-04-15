@@ -2870,7 +2870,21 @@
                 - Base Folder: ${config.folder || '(root)'}`);
             }
             
-            // First check if we have the filtered assets stored from a previous filter action
+            // Ensure we have a valid folder structure before attempting export
+            if (!currentFolderStructure) {
+                console.warn("No folder structure available. Regenerating before export...");
+                // Force regenerate the folder structure
+                const filteredAssets = filterAssets();
+                generateFolderStructure(filteredAssets);
+                
+                if (!currentFolderStructure) {
+                    console.error("ERROR: Failed to generate folder structure");
+                    showError('Could not create folder structure. Please try refreshing the page.');
+                    return;
+                }
+            }
+            
+            // Get assets to export based on the current filters
             let assetsToExport;
             
             const activeCollection = CollectionManager.activeCollection;
@@ -2913,7 +2927,7 @@
             
             if (assetsToExport.length === 0) {
                 console.log("ERROR: No assets to export");
-                showError('No assets to export. Please adjust your filters.');
+                showError('No assets to export. Please adjust your filters and try again.');
                 return;
             }
             
@@ -2933,6 +2947,11 @@
             const progressBar = document.getElementById('export-progress-bar');
             const percentageText = document.getElementById('export-percentage');
             const statusText = document.getElementById('export-status');
+            
+            // Reset progress display
+            progressBar.style.width = '0%';
+            percentageText.textContent = '0%';
+            statusText.textContent = 'Preparing to export assets...';
             
             exportModal.classList.remove('hidden');
             
@@ -3199,11 +3218,15 @@
                     // Show loading indicator
                     const assetsContainer = document.getElementById('assets-container');
                     const assetsCount = document.getElementById('assets-count');
+                    const folderStructureContainer = document.getElementById('folder-structure');
+                    
                     assetsContainer.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-8"><div class="animate-spin rounded-full h-10 w-10 border-4 border-primary/30 border-t-primary mb-4"></div><div>Updating assets...</div></div>';
                     assetsCount.textContent = 'Loading...';
+                    folderStructureContainer.innerHTML = '<div class="text-center py-4"><div class="inline-block animate-spin rounded-full h-6 w-6 border-4 border-primary/30 border-t-primary mb-2"></div><div>Updating folder structure...</div></div>';
                     
                     // Get collection ID and current filters
                     const activeCollection = CollectionManager.activeCollection;
+                    let filteredAssets = [];
                     
                     if (activeCollection && activeCollection.collectionId) {
                         // Real API collection - get filter values
@@ -3213,6 +3236,8 @@
                             language: document.getElementById('language').value,
                             variation: document.getElementById('variation').value
                         };
+                        
+                        console.log('Applying filters:', filters);
                         
                         // Fetch assets with these filters
                         const result = await CollectionManager.searchCollectionAssets(
@@ -3225,23 +3250,30 @@
                         
                         // *IMPORTANT* Store the filtered results in the currentCollectionAssets to ensure
                         // they can be exported properly later
-                        CollectionManager.currentCollectionAssets = result.assets;
-                        
-                        // Update the UI with filtered assets
-                        displayAssets(result.assets);
-                        generateFolderStructure(result.assets);
+                        filteredAssets = result.assets;
+                        CollectionManager.currentCollectionAssets = filteredAssets;
+                        console.log(`Fetched ${filteredAssets.length} assets from API with filters`);
                     } else {
                         // Demo data - use local filtering
-                        const filteredAssets = filterAssets();
+                        filteredAssets = filterAssets();
                         
-                        // Make sure we're storing the filtered assets for export later
-                        if (!activeCollection.collectionId) {
-                            // For demo data, we need to manually create a reference to filtered assets
-                            CollectionManager.currentFilteredDemoAssets = filteredAssets;
-                        }
-                        
-                        displayAssets(filteredAssets);
-                        generateFolderStructure(filteredAssets);
+                        // Store the filtered assets for export later
+                        CollectionManager.currentFilteredDemoAssets = filteredAssets;
+                        console.log(`Filtered demo assets: ${filteredAssets.length} assets`);
+                    }
+                    
+                    // Update the UI with filtered assets
+                    displayAssets(filteredAssets);
+                    generateFolderStructure(filteredAssets);
+                    
+                    // Log the folder structure for debugging
+                    console.log('Updated folder structure:', currentFolderStructure);
+                    
+                    // Show a notification about the filtering result
+                    if (filteredAssets.length === 0) {
+                        showNotification('No assets match the selected filters. Try adjusting your criteria.', 'warning');
+                    } else {
+                        showNotification(`Found ${filteredAssets.length} assets matching your filters`, 'success', 3000);
                     }
                 } catch (error) {
                     console.error('Error applying filters:', error);
