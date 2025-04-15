@@ -211,18 +211,9 @@
                         <!-- Folder structure will be populated here -->
                     </div>
                     
-                    <div class="mt-4 space-y-2">
+                    <div class="mt-4">
                         <button id="export-btn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition w-full">
                             Export to Cloudflare
-                        </button>
-                        
-                        <button id="share-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded transition w-full hidden">
-                            <span class="flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                                </svg>
-                                Share Folder Structure
-                            </span>
                         </button>
                     </div>
                 </div>
@@ -254,51 +245,7 @@
         </div>
     </div>
 
-    <!-- Share Modal -->
-    <div id="share-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-xl w-full">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold">Share Folder Structure</h3>
-                <button id="close-share-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="space-y-4">
-                <div>
-                    <label for="share-format" class="block text-sm font-medium mb-1">Format</label>
-                    <select id="share-format" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
-                        <option value="text">Plain Text</option>
-                        <option value="markdown">Markdown</option>
-                        <option value="json">JSON</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="share-content" class="block text-sm font-medium mb-1">Folder Structure</label>
-                    <textarea id="share-content" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base h-64 font-mono" readonly></textarea>
-                </div>
-
-                <div class="flex justify-between">
-                    <button id="copy-share-btn" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
-                        <span class="flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                            </svg>
-                            Copy to Clipboard
-                        </span>
-                    </button>
-                    
-                    <button id="close-share-btn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Share Modal Removed -->
 
     <!-- Settings Modal -->
     <div id="config-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
@@ -503,14 +450,6 @@
                             <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
                         </svg>
                         View Content
-                    </span>
-                </button>
-                <button id="share-after-export-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition">
-                    <span class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                        </svg>
-                        Share Structure
                     </span>
                 </button>
                 <button id="close-success-modal" class="bg-primary hover:bg-secondary text-white font-semibold py-2 px-4 rounded transition">
@@ -1832,12 +1771,60 @@
             }
         };
 
+        // Simple encryption/decryption functions for API key
+        const Crypto = {
+            // Simple encryption using base64 and character substitution
+            // This is not secure cryptography, but provides basic obfuscation
+            encrypt: function(text) {
+                if (!text) return '';
+                // First convert to base64
+                const base64 = btoa(text);
+                // Then perform a simple character substitution
+                return base64.split('').map(char => {
+                    const code = char.charCodeAt(0);
+                    return String.fromCharCode(code + 1); // shift each character by 1
+                }).join('');
+            },
+            
+            decrypt: function(encrypted) {
+                if (!encrypted) return '';
+                // Reverse the character substitution
+                const base64 = encrypted.split('').map(char => {
+                    const code = char.charCodeAt(0);
+                    return String.fromCharCode(code - 1); // shift back each character by 1
+                }).join('');
+                // Then decode base64
+                try {
+                    return atob(base64);
+                } catch (e) {
+                    console.error('Failed to decrypt value:', e);
+                    return '';
+                }
+            }
+        };
+
+        // Default configuration values
+        const DEFAULT_CONFIG = {
+            url: 'https://storage-srv.philipp-koch.workers.dev',
+            apiKey: 'super-secret-key',
+            folder: 'gmo-assets'
+        };
+        
         // Cloudflare configuration management
         const CloudflareConfig = {
             get: function() {
                 try {
                     const config = localStorage.getItem('cloudflareConfig');
-                    return config ? JSON.parse(config) : null;
+                    if (!config) return null;
+                    
+                    const parsedConfig = JSON.parse(config);
+                    
+                    // Decrypt the API key if it exists
+                    if (parsedConfig.apiKey) {
+                        parsedConfig.apiKey = Crypto.decrypt(parsedConfig.apiKey);
+                    }
+                    
+                    return parsedConfig;
                 } catch (error) {
                     console.error('Error retrieving Cloudflare config:', error);
                     return null;
@@ -1845,16 +1832,24 @@
             },
             
             save: function(config, remember = false) {
+                // Make a copy to avoid modifying the original
+                const configToSave = { ...config };
+                
+                // Encrypt the API key
+                if (configToSave.apiKey) {
+                    configToSave.apiKey = Crypto.encrypt(configToSave.apiKey);
+                }
+                
                 if (remember) {
                     try {
-                        localStorage.setItem('cloudflareConfig', JSON.stringify(config));
+                        localStorage.setItem('cloudflareConfig', JSON.stringify(configToSave));
                     } catch (error) {
                         console.error('Error saving Cloudflare config:', error);
                         showError('Failed to save configuration: ' + error.message);
                     }
                 } else {
                     // Store in memory only
-                    this.currentConfig = config;
+                    this.currentConfig = config; // Store unencrypted version in memory
                     try {
                         localStorage.removeItem('cloudflareConfig');
                     } catch (error) {
@@ -1881,6 +1876,10 @@
             isConfigured: function() {
                 const config = this.get() || this.currentConfig;
                 return !!(config && config.url && config.apiKey);
+            },
+            
+            getDefault: function() {
+                return { ...DEFAULT_CONFIG };
             },
             
             currentConfig: null
@@ -2025,16 +2024,16 @@
             // Get the current Cloudflare configuration
             const config = CloudflareConfig.get() || CloudflareConfig.currentConfig;
             
-            // Use Poe URL as the base instead of the storage worker
-            // This is a dedicated Poe app that will serve as the viewer UI
-            const poeViewerUrl = "https://poe.com/CloudflareAssetViewer";
+            // Use AEM page URL as the base instead of the Poe URL
+            // This is the dedicated AEM page that will serve as the viewer UI
+            const viewerUrl = "https://main--poe-playground--pkoch73.aem.page/tools/asset-packager-share/index.html";
             
             // Get collection info
             const activeCollection = CollectionManager.activeCollection;
             const collectionName = activeCollection ? encodeURIComponent(activeCollection.name) : "collection";
             
             // Build the storage API URL - this is the actual Cloudflare storage URL
-            // IMPORTANT: Include the /list path segment for the Cloudflare Asset Viewer
+            // IMPORTANT: Include the /list path segment for the Asset Viewer
             let storageApiUrl = "";
             if (config && config.url) {
                 // Ensure the URL doesn't already have /list at the end
@@ -2047,7 +2046,7 @@
             }
             
             // Build the URL with parameters
-            let viewUrl = `${poeViewerUrl}?storageUrl=${storageApiUrl}`;
+            let viewUrl = `${viewerUrl}?storageUrl=${storageApiUrl}`;
             viewUrl += `&collection=${collectionName}`;
             
             // Add API key (encrypted or hashed in a real implementation)
@@ -3208,11 +3207,29 @@
 
         // Initialize the application
         async function init() {
-            // Load saved Cloudflare configuration
+            // Check if we should use default Cloudflare configuration
             const config = CloudflareConfig.get();
+            
             if (config) {
+                // Use saved config if it exists
                 CloudflareConfig.currentConfig = config;
+            } else {
+                // Use default config if no saved config exists
+                CloudflareConfig.currentConfig = CloudflareConfig.getDefault();
+                
+                // Auto-save the default config (not remembering it in localStorage)
+                CloudflareConfig.save(CloudflareConfig.getDefault(), false);
+                
+                // Show a notification that we're using default settings
+                setTimeout(() => {
+                    showNotification('Using default Cloudflare configuration. You can adjust settings from the Settings menu.', 'info', 7000);
+                }, 1500);
             }
+            
+            // Prepopulate the settings form with the default values for the next time it's opened
+            document.getElementById('api-url').value = DEFAULT_CONFIG.url;
+            document.getElementById('api-key').value = DEFAULT_CONFIG.apiKey;
+            document.getElementById('base-folder').value = DEFAULT_CONFIG.folder;
             
             // Update mode indicator
             updateModeIndicator();
@@ -3321,14 +3338,7 @@
                 loginWithIMS();
             });
             
-            // Set up share folder structure button
-            document.getElementById('share-btn').addEventListener('click', showShareModal);
-            
-            // Set up share folder structure button in success modal
-            document.getElementById('share-after-export-btn').addEventListener('click', () => {
-                document.getElementById('success-modal').classList.add('hidden');
-                showShareModal();
-            });
+            // Remove share button event listeners since the button is no longer present
             
             // Set up share format change
             document.getElementById('share-format').addEventListener('change', () => {
