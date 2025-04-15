@@ -423,10 +423,10 @@
             <div class="mb-4">
                 <label for="collection-postfix" class="block text-sm font-medium mb-1">Postfix</label>
                 <div class="flex items-center gap-2">
-                    <div class="text-gray-500 dark:text-gray-400 font-medium flex-none">Collection_</div>
+                    <div id="collection-prefix" class="text-gray-500 dark:text-gray-400 font-medium flex-none truncate max-w-[50%]">Collection_</div>
                     <input type="text" id="collection-postfix" class="flex-1 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base" placeholder="v1">
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Example: "ProductLaunch_v1" or "BrandAssets_2023Q4"</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Final name will be: <span id="final-name-preview">Collection_v1</span></p>
                 <p id="postfix-error" class="text-xs text-red-500 dark:text-red-400 mt-1 hidden">Please enter a valid postfix (letters, numbers, underscores only)</p>
             </div>
             
@@ -2919,6 +2919,13 @@
             // Show postfix input modal before proceeding
             document.getElementById('collection-postfix').value = '';
             document.getElementById('postfix-error').classList.add('hidden');
+            
+            // Update the collection prefix display and preview with the current collection name
+            const activeCollection = CollectionManager.activeCollection;
+            const collectionName = activeCollection ? activeCollection.name : "Collection";
+            document.getElementById('collection-prefix').textContent = `${collectionName}_`;
+            document.getElementById('final-name-preview').textContent = `${collectionName}_v1`;
+            
             document.getElementById('export-postfix-modal').classList.remove('hidden');
             
             // Exit the current function - the actual export will be handled by the modal buttons
@@ -3591,6 +3598,17 @@
 // Event handlers for the export postfix modal
 document.getElementById('cancel-postfix-btn').addEventListener('click', () => {
     document.getElementById('export-postfix-modal').classList.add('hidden');
+});
+
+// Update the final name preview when user types in the postfix input
+document.getElementById('collection-postfix').addEventListener('input', (e) => {
+    const postfix = e.target.value.trim();
+    const activeCollection = CollectionManager.activeCollection;
+    const collectionName = activeCollection ? activeCollection.name : "Collection";
+    document.getElementById('final-name-preview').textContent = postfix ? `${collectionName}_${postfix}` : collectionName;
+    
+    // Hide any previous error when user starts typing again
+    document.getElementById('postfix-error').classList.add('hidden');
 });
 
 document.getElementById('apply-postfix-btn').addEventListener('click', () => {
