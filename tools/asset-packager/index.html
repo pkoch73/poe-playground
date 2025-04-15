@@ -3320,24 +3320,45 @@
             
             // Remove share button event listeners since the button is no longer present
             
-            // Set up share format change
-            document.getElementById('share-format').addEventListener('change', () => {
-                const format = document.getElementById('share-format').value;
-                const structureText = getFolderStructureForSharing(format);
-                document.getElementById('share-content').value = structureText;
-            });
+            // Set up share format change - ONLY if element exists
+            const shareFormat = document.getElementById('share-format');
+            if (shareFormat) {
+                shareFormat.addEventListener('change', () => {
+                    const format = shareFormat.value;
+                    const structureText = getFolderStructureForSharing(format);
+                    const shareContent = document.getElementById('share-content');
+                    if (shareContent) {
+                        shareContent.value = structureText;
+                    }
+                });
+            }
             
-            // Set up copy to clipboard button
-            document.getElementById('copy-share-btn').addEventListener('click', copyShareContentToClipboard);
+            // Set up copy to clipboard button - ONLY if element exists
+            const copyShareBtn = document.getElementById('copy-share-btn');
+            if (copyShareBtn) {
+                copyShareBtn.addEventListener('click', copyShareContentToClipboard);
+            }
             
-            // Set up close share modal buttons
-            document.getElementById('close-share-modal').addEventListener('click', () => {
-                document.getElementById('share-modal').classList.add('hidden');
-            });
+            // Set up close share modal buttons - ONLY if elements exist
+            const closeShareModal = document.getElementById('close-share-modal');
+            if (closeShareModal) {
+                closeShareModal.addEventListener('click', () => {
+                    const shareModal = document.getElementById('share-modal');
+                    if (shareModal) {
+                        shareModal.classList.add('hidden');
+                    }
+                });
+            }
             
-            document.getElementById('close-share-btn').addEventListener('click', () => {
-                document.getElementById('share-modal').classList.add('hidden');
-            });
+            const closeShareBtn = document.getElementById('close-share-btn');
+            if (closeShareBtn) {
+                closeShareBtn.addEventListener('click', () => {
+                    const shareModal = document.getElementById('share-modal');
+                    if (shareModal) {
+                        shareModal.classList.add('hidden');
+                    }
+                });
+            }
             
             // Set up tab functionality in settings modal
             document.querySelectorAll('.tab-btn').forEach(button => {
