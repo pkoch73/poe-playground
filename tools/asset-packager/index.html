@@ -3589,6 +3589,60 @@
         // Run initialization when DOM is ready
         document.addEventListener('DOMContentLoaded', init);
 
+// Make sure these event listeners are attached even if the page is already loaded
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    // Reattach critical event listeners to ensure buttons work
+    try {
+        console.log("Reattaching critical event listeners");
+        
+        // Apply Filters button
+        const applyFiltersBtn = document.getElementById('apply-filters');
+        if (applyFiltersBtn) {
+            console.log("Reattaching apply-filters button listener");
+            applyFiltersBtn.addEventListener('click', async () => {
+                console.log("Apply filters clicked");
+                try {
+                    // Show loading indicator
+                    const assetsContainer = document.getElementById('assets-container');
+                    const assetsCount = document.getElementById('assets-count');
+                    const folderStructureContainer = document.getElementById('folder-structure');
+                    
+                    assetsContainer.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-8"><div class="animate-spin rounded-full h-10 w-10 border-4 border-primary/30 border-t-primary mb-4"></div><div>Updating assets...</div></div>';
+                    assetsCount.textContent = 'Loading...';
+                    folderStructureContainer.innerHTML = '<div class="text-center py-4"><div class="inline-block animate-spin rounded-full h-6 w-6 border-4 border-primary/30 border-t-primary mb-2"></div><div>Updating folder structure...</div></div>';
+                    
+                    // Get fresh filtered assets
+                    const filteredAssets = filterAssets();
+                    
+                    // Update the UI with filtered assets
+                    displayAssets(filteredAssets);
+                    generateFolderStructure(filteredAssets);
+                    
+                    // Show notification about result
+                    if (filteredAssets.length === 0) {
+                        showNotification('No assets match the selected filters. Try adjusting your criteria.', 'warning');
+                    } else {
+                        showNotification(`Found ${filteredAssets.length} assets matching your filters`, 'success', 3000);
+                    }
+                } catch (error) {
+                    console.error('Error applying filters:', error);
+                    showNotification('Error applying filters: ' + error.message, 'error');
+                }
+            });
+        }
+        
+        // Export to Cloudflare button
+        const exportBtn = document.getElementById('export-btn');
+        if (exportBtn) {
+            console.log("Reattaching export-btn button listener");
+            exportBtn.addEventListener('click', exportToCloudflare);
+        }
+        
+    } catch (error) {
+        console.error("Error reattaching event listeners:", error);
+    }
+}
+
 // Event handlers for the export postfix modal
 document.getElementById('cancel-postfix-btn').addEventListener('click', () => {
     document.getElementById('export-postfix-modal').classList.add('hidden');
