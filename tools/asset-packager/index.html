@@ -2111,14 +2111,15 @@
                         document.getElementById('limitResults').value = window.imsState.limitResults;
                     }
                     
-                    // Update auth status in settings panel if needed
-                    updateAuthStatusUI(true);
-                    
-                    // Update sign in button to show signed in state
+                    // IMMEDIATELY hide auth panel and sign-in button
+                    const authPanel = document.getElementById('auth-panel');
                     const signInBtn = document.getElementById('signInBtn');
-                    signInBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Signed In';
-                    signInBtn.classList.remove('bg-primary', 'hover:bg-secondary');
-                    signInBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    
+                    if (authPanel) authPanel.classList.add('hidden');
+                    if (signInBtn) signInBtn.classList.add('hidden');
+                    
+                    // Update auth status in settings panel
+                    updateAuthStatusUI(true);
                     
                     // Show a success message
                     showNotification('Successfully authenticated with Adobe IMS', 'success');
@@ -2210,8 +2211,18 @@
                         // Set token in the field
                         document.getElementById('imsToken').value = token;
                         
+                        // IMMEDIATELY hide auth panel and sign-in button
+                        const authPanel = document.getElementById('auth-panel');
+                        const signInBtn = document.getElementById('signInBtn');
+                        
+                        if (authPanel) authPanel.classList.add('hidden');
+                        if (signInBtn) signInBtn.classList.add('hidden');
+                        
                         // Clear the hash from the URL
                         history.replaceState(null, null, ' ');
+                        
+                        // Update auth status in settings
+                        updateAuthStatusUI(true);
                         
                         // Show success message
                         showNotification('Successfully authenticated with Adobe IMS', 'success');
@@ -2279,17 +2290,19 @@
                     // Format the token with Bearer prefix if it doesn't have it
                     const token = manualToken.startsWith('Bearer ') ? manualToken : `Bearer ${manualToken}`;
                     document.getElementById('imsToken').value = token;
+                    
+                    // IMMEDIATELY hide auth panel and sign-in button
+                    const authPanel = document.getElementById('auth-panel');
+                    const signInBtn = document.getElementById('signInBtn');
+                    
+                    if (authPanel) authPanel.classList.add('hidden');
+                    if (signInBtn) signInBtn.classList.add('hidden');
+                    
                     showNotification('Token applied successfully!', 'success');
                     document.body.removeChild(helper);
                     
                     // Update auth status UI
                     updateAuthStatusUI(true);
-                    
-                    // Update sign in button to show signed in state
-                    const signInBtn = document.getElementById('signInBtn');
-                    signInBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Signed In';
-                    signInBtn.classList.remove('bg-primary', 'hover:bg-secondary');
-                    signInBtn.classList.add('bg-green-600', 'hover:bg-green-700');
                 } else {
                     showNotification('Please enter a valid token', 'error');
                 }
