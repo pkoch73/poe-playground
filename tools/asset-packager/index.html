@@ -679,6 +679,39 @@
             }
             
             /**
+             * Get the appropriate file extension for a given asset type
+             * @param {string} assetType - Type of the asset (e.g., "image", "document")
+             * @param {string} formatHint - Optional format hint from metadata
+             * @returns {string} Appropriate file extension without the dot
+             */
+            getFileExtensionForType(assetType, formatHint) {
+                // If we have a format hint that's already an extension, use it
+                if (formatHint && typeof formatHint === 'string' && !formatHint.includes('/')) {
+                    return formatHint.toLowerCase();
+                }
+                
+                // Otherwise determine by asset type
+                switch(assetType) {
+                    case 'image':
+                        return 'jpg';
+                    case 'video':
+                        return 'mp4';
+                    case 'audio':
+                        return 'mp3';
+                    case 'document':
+                        return 'pdf';
+                    case 'archive':
+                        return 'zip';
+                    case 'code':
+                        return 'html';
+                    case 'design':
+                        return 'psd';
+                    default:
+                        return 'txt';
+                }
+            }
+            
+            /**
              * Get headers for API requests
              * @returns {Object} Headers with API key
              */
@@ -954,34 +987,86 @@
                                         try {
                                             // Check if this is a demo mode or if we have a real asset with ID
                                             let fileContent;
+                                            let fileName = asset.name;
+                                            
+                                            // Ensure the file has an extension based on its type
+                                            if (!fileName.includes('.')) {
+                                                // Add appropriate extension based on asset type
+                                                const extension = this.getFileExtensionForType(asset.type, asset.format);
+                                                fileName = `${fileName}.${extension}`;
+                                                console.log(`Added extension to file: ${fileName}`);
+                                            }
                                             
                                             if (asset.id && typeof asset.id === 'string' && asset.id.includes('urn:aaid:aem:')) {
                                                 // Download the real asset binary from AEM
-                                                progressCallback(completedOperations / totalOperations * 100, `Downloading: ${asset.name}`);
+                                                progressCallback(completedOperations / totalOperations * 100, `Downloading: ${fileName}`);
                                                 
                                                 try {
                                                     fileContent = await this.downloadAssetBinary(asset);
                                                     completedOperations++; // Count download as an operation
-                                                    progressCallback(completedOperations / totalOperations * 100, `Downloaded: ${asset.name}`);
+                                                    progressCallback(completedOperations / totalOperations * 100, `Downloaded: ${fileName}`);
                                                 } catch (downloadError) {
-                                                    console.error(`Download failed for ${asset.name}:`, downloadError);
-                                                    progressCallback(completedOperations / totalOperations * 100, `Download failed for ${asset.name}: ${downloadError.message}`);
+                                                    console.error(`Download failed for ${fileName}:`, downloadError);
+                                                    progressCallback(completedOperations / totalOperations * 100, `Download failed for ${fileName}: ${downloadError.message}`);
                                                     
                                                     // Create a placeholder binary for failed downloads
-                                                    fileContent = new TextEncoder().encode(`Failed to download ${asset.name}: ${downloadError.message}`).buffer;
+                                                    const errorMessage = `Failed to download ${fileName}: ${downloadError.message}`;
+                                                    fileContent = new TextEncoder().encode(errorMessage).buffer;
+                                                    
+                                                    // For text error placeholders, ensure they have a .txt extension
+                                                    if (!fileName.endsWith('.txt')) {
+                                                        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+                                                        fileName = `${nameWithoutExt}.txt`;
+                                                    }
+                                                    
                                                     completedOperations++; // Still count the operation even though it failed
                                                 }
                                             } else {
-                                                // For demo assets without real IDs, create a placeholder
-                                                fileContent = new Uint8Array([0, 1, 2, 3, 4]).buffer;
+                                                // For demo assets without real IDs, create a placeholder appropriate for the file type
+                                                const extension = fileName.split('.').pop().toLowerCase();
+                                                
+                                                // Create appropriate placeholder content based on file type
+                                                if (extension === 'txt' || extension === 'html' || extension === 'css' || extension === 'js') {
+                                                    // Text files get a simple demo text
+                                                    const demoText = `This is a placeholder for ${fileName}.\nGenerated by Asset Organization Tool as a demo.\nFile type: ${asset.type || 'unknown'}\nFormat: ${asset.format || extension}`;
+                                                    fileContent = new TextEncoder().encode(demoText).buffer;
+                                                } else if (extension === 'json') {
+                                                    // JSON files get valid JSON
+                                                    const demoJson = JSON.stringify({
+                                                        fileName: fileName,
+                                                        description: "Demo placeholder file",
+                                                        type: asset.type || "unknown",
+                                                        format: asset.format || extension,
+                                                        createdAt: new Date().toISOString()
+                                                    }, null, 2);
+                                                    fileContent = new TextEncoder().encode(demoJson).buffer;
+                                                } else {
+                                                    // Binary files get a minimal binary placeholder
+                                                    // This creates a minimal valid file for common formats
+                                                    if (extension === 'png') {
+                                                        // Minimal valid PNG header (8 bytes)
+                                                        fileContent = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]).buffer;
+                                                    } else if (extension === 'jpg' || extension === 'jpeg') {
+                                                        // Minimal JPEG header
+                                                        fileContent = new Uint8Array([255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0]).buffer;
+                                                    } else if (extension === 'pdf') {
+                                                        // Minimal PDF header
+                                                        const pdfHeader = "%PDF-1.4\n%¿½¿½¿½¿½\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Kids[]/Count 0>>\nendobj\nxref\n0 3\n0000000000 65535 f \n0000000015 00000 n \n0000000063 00000 n \ntrailer\n<</Size 3/Root 1 0 R>>\nstartxref\n113\n%%EOF\n";
+                                                        fileContent = new TextEncoder().encode(pdfHeader).buffer;
+                                                    } else {
+                                                        // Generic binary placeholder for other formats
+                                                        fileContent = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).buffer;
+                                                    }
+                                                }
+                                                
                                                 completedOperations++; // Count the simulated download
-                                                progressCallback(completedOperations / totalOperations * 100, `Created placeholder for: ${asset.name}`);
+                                                progressCallback(completedOperations / totalOperations * 100, `Created placeholder for: ${fileName}`);
                                             }
                                             
-                                            // Upload the file to Cloudflare
-                                            await this.uploadFile(variationPath, asset.name, fileContent);
+                                            // Upload the file to Cloudflare with the correct filename
+                                            await this.uploadFile(variationPath, fileName, fileContent);
                                             completedOperations++; // Count the upload operation
-                                            progressCallback(completedOperations / totalOperations * 100, `Uploaded file: ${asset.name}`);
+                                            progressCallback(completedOperations / totalOperations * 100, `Uploaded file: ${fileName}`);
                                         } catch (assetError) {
                                             console.error(`Error processing asset ${asset.name}:`, assetError);
                                             progressCallback(completedOperations / totalOperations * 100, `Error with asset ${asset.name}: ${assetError.message}`);
