@@ -2870,42 +2870,82 @@
                 - Base Folder: ${config.folder || '(root)'}`);
             }
             
-            // Ensure we have a valid folder structure before attempting export
+            // SIMPLIFY: Use the currently displayed assets that match our folder structure
+            // This directly uses what's shown in the UI, which matches the folder structure
+            
+            // Get the current folder structure info
             if (!currentFolderStructure) {
-                console.warn("No folder structure available. Regenerating before export...");
-                // Force regenerate the folder structure
-                const filteredAssets = filterAssets();
-                generateFolderStructure(filteredAssets);
-                
-                if (!currentFolderStructure) {
-                    console.error("ERROR: Failed to generate folder structure");
-                    showError('Could not create folder structure. Please try refreshing the page.');
-                    return;
+                console.error("ERROR: No folder structure available");
+                showError('No folder structure available. Please apply filters first.');
+                return;
+            }
+            
+            // Extract the actual assets from the folder structure
+            // This ensures we're using exactly what's used to generate the structure
+            let assetsToExport = [];
+            
+            try {
+                // First try to get assets directly from the asset panels
+                const assetContainer = document.getElementById('assets-container');
+                if (assetContainer) {
+                    // Count displayed assets to verify we have something
+                    const assetCards = assetContainer.querySelectorAll('.bg-gray-50, .dark\\:bg-gray-700');
+                    console.log(`Found ${assetCards.length} asset cards in the UI`);
                 }
+                
+                // Get the actual assets that match our filters
+                const activeCollection = CollectionManager.activeCollection;
+                console.log(`Active Collection: ${activeCollection ? activeCollection.name : 'None'}`);
+                
+                // IMPORTANT: Get a fresh set of filtered assets to ensure we have the latest
+                assetsToExport = filterAssets();
+                console.log(`Fresh filter returned ${assetsToExport.length} assets`);
+                
+                // Fall back to currentCollectionAssets if filter returns nothing
+                if (assetsToExport.length === 0 && CollectionManager.currentCollectionAssets.length > 0) {
+                    console.log("Using currentCollectionAssets as fallback");
+                    assetsToExport = CollectionManager.currentCollectionAssets;
+                }
+                
+                // Try another fallback for demo assets
+                if (assetsToExport.length === 0 && CollectionManager.currentFilteredDemoAssets && 
+                    CollectionManager.currentFilteredDemoAssets.length > 0) {
+                    console.log("Using currentFilteredDemoAssets as fallback");
+                    assetsToExport = CollectionManager.currentFilteredDemoAssets;
+                }
+                
+                // Last resort: If we have a collection but no assets, try a more generic filter
+                if (assetsToExport.length === 0 && activeCollection) {
+                    console.log("Attempting to get all assets from current collection");
+                    
+                    // For API collections
+                    if (activeCollection.collectionId) {
+                        try {
+                            const result = await CollectionManager.searchCollectionAssets(
+                                activeCollection.collectionId,
+                                {} // Empty filter to get all assets
+                            );
+                            assetsToExport = result.assets;
+                            console.log(`Retrieved ${assetsToExport.length} assets from collection without filters`);
+                        } catch (err) {
+                            console.error("Failed to get collection assets:", err);
+                        }
+                    } 
+                    // For demo collections
+                    else if (activeCollection.filters && activeCollection.filters.project) {
+                        const project = activeCollection.filters.project;
+                        assetsToExport = contentHubAssets.filter(asset => 
+                            asset.project === project
+                        );
+                        console.log(`Retrieved ${assetsToExport.length} demo assets for project ${project}`);
+                    }
+                }
+            } catch (error) {
+                console.error("Error preparing assets for export:", error);
+                // Continue with whatever assets we have, the zero-check below will catch if there are none
             }
             
-            // Get assets to export based on the current filters
-            let assetsToExport;
-            
-            const activeCollection = CollectionManager.activeCollection;
-            console.log(`Active Collection: ${activeCollection ? activeCollection.name : 'None'}`);
-            
-            // Check if we're using API-fetched assets or demo assets with stored filter results
-            if (activeCollection && activeCollection.collectionId && CollectionManager.currentCollectionAssets.length > 0) {
-                console.log("Source: API-fetched assets with current filters");
-                // For API assets, get the already filtered set from the current filter criteria
-                assetsToExport = filterAssets();
-            } else if (CollectionManager.currentFilteredDemoAssets && CollectionManager.currentFilteredDemoAssets.length > 0) {
-                console.log("Source: Previously filtered demo assets");
-                // For demo assets that have been filtered and stored
-                assetsToExport = CollectionManager.currentFilteredDemoAssets;
-            } else {
-                console.log("Source: Current filter criteria");
-                // Otherwise use the normal filter function
-                assetsToExport = filterAssets();
-            }
-            
-            console.log(`Assets to export: ${assetsToExport.length}`);
+            console.log(`Final assets to export: ${assetsToExport.length}`);
             
             // Log some details about the assets being exported
             if (assetsToExport.length > 0) {
@@ -2926,8 +2966,8 @@
             }
             
             if (assetsToExport.length === 0) {
-                console.log("ERROR: No assets to export");
-                showError('No assets to export. Please adjust your filters and try again.');
+                console.error("ERROR: No assets to export");
+                showError('No assets to export. Please adjust your filters and try again or reload the page.');
                 return;
             }
             
