@@ -1771,37 +1771,15 @@
             }
         };
 
-        // Simple encryption/decryption functions for API key
+        // Simple storage functions without encryption
         const Crypto = {
-            // Simple encryption using a more reliable approach
-            // This is not secure cryptography, but provides basic obfuscation
+            // For future compatibility, we keep the same API but don't actually encrypt
             encrypt: function(text) {
-                if (!text) return '';
-                try {
-                    // Use simple base64 encoding
-                    return btoa(encodeURIComponent(text));
-                } catch (e) {
-                    console.error('Failed to encrypt value:', e);
-                    // Fallback to direct string
-                    return text;
-                }
+                return text || '';
             },
             
             decrypt: function(encrypted) {
-                if (!encrypted) return '';
-                try {
-                    // First check if it's encrypted with our new method
-                    try {
-                        return decodeURIComponent(atob(encrypted));
-                    } catch (innerError) {
-                        // If it fails, it might be encrypted with the old method or not encrypted at all
-                        console.warn('Could not decrypt with primary method. Trying fallback or returning as-is.');
-                        return encrypted;
-                    }
-                } catch (e) {
-                    console.error('Failed to decrypt value:', e);
-                    return encrypted; // Return original value if decryption fails
-                }
+                return encrypted || '';
             }
         };
 
