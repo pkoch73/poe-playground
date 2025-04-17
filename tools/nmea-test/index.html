@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apparent Wind Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        portside: '#e74c3c',
+                        starboard: '#2ecc71'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 min-h-screen font-sans">
+    <!-- Check for dark mode -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="container mx-auto px-4 py-8 max-w-xl">
+        <h1 class="text-2xl font-bold text-center mb-6 text-gray-800 dark:text-white">Apparent Wind Monitor</h1>
+        
+        <!-- Connection form -->
+        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6 shadow-md">
+            <div class="flex flex-col md:flex-row gap-2">
+                <input 
+                    type="text" 
+                    id="wsUrl" 
+                    placeholder="WebSocket URL (ws://host:port)" 
+                    class="flex-1 rounded px-3 py-2 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-white"
+                    value="ws://">
+                <button 
+                    id="connectBtn" 
+                    class="bg-primary hover:bg-opacity-90 text-white rounded px-4 py-2 font-medium">
+                    Connect
+                </button>
+            </div>
+            <div id="status" class="mt-2 text-sm text-gray-600 dark:text-gray-300">Disconnected</div>
+        </div>
+        
+        <!-- Data displays -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Wind angle box -->
+            <div class="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <div class="bg-primary px-4 py-2 text-white font-medium">
+                    Wind Angle
+                </div>
+                <div class="p-4 flex flex-col items-center">
+                    <div id="windDirectionDisplay" class="mb-4 text-center">
+                        <div class="text-6xl font-bold text-gray-800 dark:text-white"><span id="windAngle">--</span>&deg;</div>
+                        <div class="mt-1 text-lg" id="windSide">--</div>
+                    </div>
+                    <div class="relative w-40 h-40">
+                        <div class="absolute inset-0 rounded-full border-2 border-gray-300 dark:border-gray-600"></div>
+                        <div class="absolute top-1/2 left-1/2 w-1 h-20 bg-gray-400 dark:bg-gray-500 transform -translate-x-1/2 -translate-y-full origin-bottom" id="windPointer"></div>
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm text-gray-600 dark:text-gray-400">0°</div>
+                        <div class="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 text-sm text-gray-600 dark:text-gray-400">90°</div>
+                        <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 text-sm text-gray-600 dark:text-gray-400">180°</div>
+                        <div class="absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 text-sm text-gray-600 dark:text-gray-400">270°</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Wind speed box -->
+            <div class="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <div class="bg-primary px-4 py-2 text-white font-medium">
+                    Wind Speed
+                </div>
+                <div class="p-4 flex flex-col items-center justify-center" style="min-height: 16rem;">
+                    <div class="text-7xl font-bold text-gray-800 dark:text-white"><span id="windSpeed">--</span></div>
+                    <div class="text-xl mt-2 text-gray-600 dark:text-gray-300">knots</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Log -->
+        <div class="mt-6 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <h2 class="font-medium mb-2 text-gray-700 dark:text-gray-300">NMEA Log</h2>
+            <div id="nmealog" class="h-24 overflow-y-auto bg-white dark:bg-gray-700 p-2 rounded text-sm font-mono dark:text-gray-300">
+                Waiting for data...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const connectBtn = document.getElementById('connectBtn');
+        const wsUrlInput = document.getElementById('wsUrl');
+        const statusEl = document.getElementById('status');
+        const windAngleEl = document.getElementById('windAngle');
+        const windSideEl = document.getElementById('windSide');
+        const windSpeedEl = document.getElementById('windSpeed');
+        const windPointerEl = document.getElementById('windPointer');
+        const nmeaLogEl = document.getElementById('nmealog');
+        
+        // WebSocket connection
+        let socket = null;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        
+        // Connect to the WebSocket server
+        function connect() {
+            const url = wsUrlInput.value.trim();
+            
+            if (!url.startsWith('ws://') && !url.startsWith('wss://')) {
+                updateStatus('Invalid WebSocket URL (must start with ws:// or wss://)', true);
+                return;
+            }
+            
+            updateStatus('Connecting...', false);
+            
+            try {
+                socket = new WebSocket(url);
+                
+                socket.onopen = () => {
+                    updateStatus('Connected', false);
+                    connectBtn.textContent = 'Disconnect';
+                    reconnectAttempts = 0;
+                    logMessage('Connected to ' + url);
+                };
+                
+                socket.onmessage = (event) => {
+                    const data = event.data;
+                    processNMEAData(data);
+                };
+                
+                socket.onclose = () => {
+                    updateStatus('Disconnected', true);
+                    connectBtn.textContent = 'Connect';
+                    logMessage('Connection closed');
+                    socket = null;
+                };
+                
+                socket.onerror = (error) => {
+                    updateStatus('Connection error', true);
+                    logMessage('Connection error');
+                    
+                    // Try to reconnect
+                    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        reconnectAttempts++;
+                        setTimeout(connect, 3000);
+                        updateStatus(`Connection error, retrying (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`, true);
+                    }
+                };
+            } catch (error) {
+                updateStatus(`Error: ${error.message}`, true);
+            }
+        }
+        
+        // Disconnect from the WebSocket server
+        function disconnect() {
+            if (socket) {
+                socket.close();
+                socket = null;
+                updateStatus('Disconnected', true);
+                connectBtn.textContent = 'Connect';
+            }
+        }
+        
+        // Toggle connection
+        connectBtn.addEventListener('click', () => {
+            if (socket) {
+                disconnect();
+            } else {
+                connect();
+            }
+        });
+        
+        // Update connection status
+        function updateStatus(message, isError) {
+            statusEl.textContent = message;
+            statusEl.className = `mt-2 text-sm ${isError ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`;
+        }
+        
+        // Process NMEA0183 data
+        function processNMEAData(data) {
+            if (typeof data !== 'string') return;
+            
+            // Log the raw data
+            logMessage(data.trim());
+            
+            // Split multiple sentences if they come together
+            const sentences = data.split(/\r?\n/);
+            
+            for (const sentence of sentences) {
+                // Look for MWV (Wind Speed and Angle) sentences
+                if (sentence.includes('MWV')) {
+                    // Parse the MWV sentence
+                    const parts = sentence.split(',');
+                    
+                    if (parts.length >= 5) {
+                        // Check if it's apparent wind (Reference = R)
+                        if (parts[2] === 'R') {
+                            // Wind angle
+                            const windAngle = parseFloat(parts[1]);
+                            
+                            // Wind speed
+                            const windSpeed = parseFloat(parts[3]);
+                            
+                            // Wind speed units
+                            const windSpeedUnit = parts[4].charAt(0);
+                            
+                            // Convert to knots if needed
+                            let speedInKnots = windSpeed;
+                            if (windSpeedUnit === 'K') { // km/h
+                                speedInKnots = windSpeed * 0.539957;
+                            } else if (windSpeedUnit === 'M') { // m/s
+                                speedInKnots = windSpeed * 1.94384;
+                            }
+                            
+                            // Update the UI
+                            updateWindDisplay(windAngle, speedInKnots);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update the wind display
+        function updateWindDisplay(angle, speed) {
+            // Update wind angle
+            windAngleEl.textContent = Math.round(angle);
+            
+            // Determine if port or starboard
+            let side;
+            let sideColor;
+            
+            if (angle > 0 && angle < 180) {
+                side = "STARBOARD";
+                sideColor = "text-starboard dark:text-green-400";
+            } else {
+                side = "PORT";
+                sideColor = "text-portside dark:text-red-400";
+            }
+            
+            windSideEl.textContent = side;
+            windSideEl.className = `mt-1 text-lg font-semibold ${sideColor}`;
+            
+            // Update wind speed (rounded to 1 decimal place)
+            windSpeedEl.textContent = speed.toFixed(1);
+            
+            // Update the pointer
+            const pointerAngle = angle;
+            windPointerEl.style.transform = `rotate(${pointerAngle}deg) translate(-50%, -100%)`;
+            windPointerEl.style.transformOrigin = "top left";
+        }
+        
+        // Log NMEA messages
+        function logMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            nmeaLogEl.appendChild(logEntry);
+            
+            // Auto-scroll to the bottom
+            nmeaLogEl.scrollTop = nmeaLogEl.scrollHeight;
+            
+            // Limit log entries
+            while (nmeaLogEl.children.length > 50) {
+                nmeaLogEl.removeChild(nmeaLogEl.firstChild);
+            }
+        }
+        
+        // For testing - simulate NMEA data
+        function simulateNMEAData() {
+            const angle = Math.floor(Math.random() * 360);
+            const speed = Math.random() * 30;
+            const nmeaString = `$INMWV,${angle},R,${speed},N,A*FF`;
+            processNMEAData(nmeaString);
+        }
+        
+        // Uncomment for testing
+        // setInterval(simulateNMEAData, 2000);
+    </script>
+</body>
+</html>
