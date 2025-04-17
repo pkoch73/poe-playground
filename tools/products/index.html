@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Excel SKU Splitter</title>
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
@@ -86,7 +87,24 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <div class="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 rounded-lg bg-gray-800 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                                    The name of the column that contains multiple SKUs separated by '|' characters.
+                                    The name of the column that contains multiple SKUs.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <label for="separators" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            SKU Separators:
+                        </label>
+                        <div class="flex items-center">
+                            <input type="text" id="separators" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary" value="|;" placeholder="Enter separator characters">
+                            <div class="ml-2 relative group">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 rounded-lg bg-gray-800 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                                    Characters that separate SKUs (e.g., "|;"). Enter multiple characters without spaces.
                                 </div>
                             </div>
                         </div>
@@ -489,6 +507,24 @@
                 throw new Error(`Column '${columnToProcess}' not found in the Excel file. Please check the column name and try again.`);
             }
             
+            // Get the separator characters from input
+            const separatorChars = document.getElementById('separators').value || '|;';
+            
+            // Create a regular expression for splitting with any of the separators
+            const separatorRegex = new RegExp(`[${separatorChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`);
+            
+            // Function to check if string contains any of the separators
+            function containsSeparator(str) {
+                if (!str || typeof str !== 'string') return false;
+                return separatorChars.split('').some(sep => str.includes(sep));
+            }
+            
+            // Function to split string by any of the separators
+            function splitBySeparators(str) {
+                if (!str || typeof str !== 'string') return [];
+                return str.split(separatorRegex).map(sku => sku.trim()).filter(sku => sku);
+            }
+            
             // First pass: Count rows with multiple SKUs
             let maxSkuCount = 1;
             let rowsWithMultipleSKUs = 0;
@@ -499,9 +535,9 @@
                 if (!row || row.length === 0) return;
                 
                 const cellValue = row[columnIndex];
-                if (!cellValue || typeof cellValue !== 'string' || !cellValue.includes('|')) return;
+                if (!cellValue || !containsSeparator(cellValue)) return;
                 
-                const skus = cellValue.split('|').map(sku => sku.trim()).filter(sku => sku);
+                const skus = splitBySeparators(cellValue);
                 if (skus.length > 1) {
                     rowsWithMultipleSKUs++;
                     totalSKUsAdded += skus.length - 1; // Count additional SKUs
@@ -555,9 +591,9 @@
                         header && typeof header === 'string' && header.trim().toUpperCase() === primarySkuColumnName
                     );
                 
-                    // Handle cells with multiple SKUs
-                    if (cellValue && typeof cellValue === 'string' && cellValue.includes('|')) {
-                        const skus = cellValue.split('|').map(sku => sku.trim()).filter(sku => sku);
+                    // Handle cells with multiple SKUs (using configured separators)
+                    if (cellValue && typeof cellValue === 'string' && containsSeparator(cellValue)) {
+                        const skus = splitBySeparators(cellValue);
                         
                         if (skus.length > 0) {
                             if (mode === 'columns') {
