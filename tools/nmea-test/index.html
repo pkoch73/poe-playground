@@ -40,13 +40,23 @@
         
         <!-- Connection form -->
         <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6 shadow-md">
-            <div class="flex flex-col md:flex-row gap-2">
-                <input 
-                    type="text" 
-                    id="wsUrl" 
-                    placeholder="WebSocket URL (ws://host:port)" 
-                    class="flex-1 rounded px-3 py-2 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-white"
-                    value="ws://">
+            <div class="flex flex-col gap-2">
+                <div class="flex flex-col md:flex-row gap-2">
+                    <input 
+                        type="text" 
+                        id="wsHost" 
+                        placeholder="Host (e.g. 192.168.1.1)" 
+                        class="flex-1 rounded px-3 py-2 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-white">
+                    <input 
+                        type="text" 
+                        id="wsPort" 
+                        placeholder="Port (e.g. 2000)" 
+                        class="w-24 rounded px-3 py-2 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div class="flex items-center mb-1">
+                    <input type="checkbox" id="useSecureWs" class="mr-2">
+                    <label for="useSecureWs" class="text-sm text-gray-700 dark:text-gray-300">Use secure WebSocket (wss://)</label>
+                </div>
                 <button 
                     id="connectBtn" 
                     class="bg-primary hover:bg-opacity-90 text-white rounded px-4 py-2 font-medium">
@@ -54,6 +64,9 @@
                 </button>
             </div>
             <div id="status" class="mt-2 text-sm text-gray-600 dark:text-gray-300">Disconnected</div>
+            <div id="securityWarning" class="hidden mt-2 text-sm text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900 dark:bg-opacity-30 p-2 rounded">
+                This page is loaded over HTTPS. For security reasons, browsers require secure WebSocket connections (wss://) in this case. Either use a secure WebSocket server or load this app in a non-secure context.
+            </div>
         </div>
         
         <!-- Data displays -->
@@ -103,7 +116,10 @@
     <script>
         // DOM elements
         const connectBtn = document.getElementById('connectBtn');
-        const wsUrlInput = document.getElementById('wsUrl');
+        const wsHostInput = document.getElementById('wsHost');
+        const wsPortInput = document.getElementById('wsPort');
+        const useSecureWsCheckbox = document.getElementById('useSecureWs');
+        const securityWarningEl = document.getElementById('securityWarning');
         const statusEl = document.getElementById('status');
         const windAngleEl = document.getElementById('windAngle');
         const windSideEl = document.getElementById('windSide');
@@ -116,12 +132,39 @@
         let reconnectAttempts = 0;
         const MAX_RECONNECT_ATTEMPTS = 5;
         
+        // Check if page is loaded over HTTPS
+        const isHttps = window.location.protocol === 'https:';
+        
+        // Update UI based on HTTPS status
+        if (isHttps) {
+            useSecureWsCheckbox.checked = true;
+            securityWarningEl.classList.remove('hidden');
+        }
+        
         // Connect to the WebSocket server
         function connect() {
-            const url = wsUrlInput.value.trim();
+            const host = wsHostInput.value.trim();
+            const port = wsPortInput.value.trim();
+            const useSecure = useSecureWsCheckbox.checked;
             
-            if (!url.startsWith('ws://') && !url.startsWith('wss://')) {
-                updateStatus('Invalid WebSocket URL (must start with ws:// or wss://)', true);
+            if (!host) {
+                updateStatus('Please enter a host', true);
+                return;
+            }
+            
+            if (!port || isNaN(parseInt(port))) {
+                updateStatus('Please enter a valid port number', true);
+                return;
+            }
+            
+            // Construct WebSocket URL
+            const protocol = useSecure ? 'wss://' : 'ws://';
+            const url = `${protocol}${host}:${port}`;
+            
+            // Check for security issues
+            if (isHttps && !useSecure) {
+                updateStatus('Secure pages require secure WebSocket connections (wss://)', true);
+                securityWarningEl.classList.remove('hidden');
                 return;
             }
             
