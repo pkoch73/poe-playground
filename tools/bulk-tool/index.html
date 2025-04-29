@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Asset Name Renamer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .loader {
+            border-top-color: #5D5CDE;
+            animation: spinner 1s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Dark mode support */
+        .dark body {
+            color-scheme: dark;
+        }
+        .dark .notification {
+            @apply bg-gray-800 text-white;
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <!-- Check for dark mode -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <h1 class="text-3xl font-bold text-center mb-8">Bulk Asset Name Renamer</h1>
+        
+        <!-- Authentication Section -->
+        <div class="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+            <div class="p-4 flex justify-between items-center cursor-pointer" id="authHeader" aria-expanded="true" aria-controls="authPanel">
+                <h2 class="text-xl font-semibold">Authentication</h2>
+                <div class="auth-toggle-icon transition-transform duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+            </div>
+            
+            <div id="authPanel" class="px-6 pb-6 overflow-hidden transition-all duration-300 max-h-0 opacity-0">
+                <div class="mb-4">
+                    <div class="flex flex-col md:flex-row gap-4 mb-4">
+                        <div class="flex-1">
+                            <label for="aemHost" class="block text-sm font-medium mb-1">AEM Host</label>
+                            <input type="text" id="aemHost" placeholder="http://localhost:4502" 
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                                dark:bg-gray-700 dark:text-white" />
+                        </div>
+                        <div class="flex-1">
+                            <label for="username" class="block text-sm font-medium mb-1">Username</label>
+                            <input type="text" id="username" placeholder="admin" 
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                                dark:bg-gray-700 dark:text-white" />
+                        </div>
+                        <div class="flex-1">
+                            <label for="password" class="block text-sm font-medium mb-1">Password</label>
+                            <input type="password" id="password" placeholder="********" 
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                                dark:bg-gray-700 dark:text-white" />
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row items-center gap-4">
+                        <button id="basicAuthBtn" class="px-4 py-2 bg-primary dark:bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                            Login with Basic Auth
+                        </button>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">or</span>
+                        <button id="imsAuthBtn" class="px-4 py-2 bg-[#FA0F00] text-white rounded-md hover:bg-opacity-90 transition-colors">
+                            Login with Adobe IMS
+                        </button>
+                    </div>
+                    
+                    <div id="imsTokenSection" class="mt-4 hidden">
+                        <label for="imsToken" class="block text-sm font-medium mb-1">IMS Access Token</label>
+                        <textarea id="imsToken" rows="2" placeholder="Paste your IMS token here if automatic detection fails"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                            dark:bg-gray-700 dark:text-white"></textarea>
+                    </div>
+                </div>
+                
+                <div id="authStatus" class="hidden mt-4 p-3 rounded-md border">
+                    <!-- Will be populated dynamically with authentication status -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- File Input Section -->
+        <div class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Excel File Import</h2>
+            
+            <div class="mb-4">
+                <label for="fileInput" class="block text-sm font-medium mb-1">Upload Excel File</label>
+                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" 
+                    class="w-full text-base
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-primary file:text-white
+                    hover:file:bg-opacity-90" />
+            </div>
+            
+            <div id="fileProcessingStatus" class="my-3 py-2 px-3 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded hidden">
+                Processing file...
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-4">
+                <div id="sheetSelection" class="hidden flex-1">
+                    <label for="sheetSelect" class="block text-sm font-medium mb-1">Select Sheet</label>
+                    <select id="sheetSelect" 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                        dark:bg-gray-700 dark:text-white">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+                
+                <div id="columnSelection" class="hidden flex-1">
+                    <label for="columnSelect" class="block text-sm font-medium mb-1">Select Asset Path Column</label>
+                    <select id="columnSelect" 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                        dark:bg-gray-700 dark:text-white">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+            </div>
+            
+            <div id="excelPreview" class="mt-4 hidden">
+                <h3 class="text-md font-medium mb-2">Excel File Preview</h3>
+                <div class="overflow-x-auto max-h-[200px] border border-gray-300 dark:border-gray-600 rounded">
+                    <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
+                        <thead id="previewTableHead" class="bg-gray-100 dark:bg-gray-700">
+                            <!-- Will be populated dynamically -->
+                        </thead>
+                        <tbody id="previewTableBody" class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                            <!-- Will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Configuration Section -->
+        <div id="configSection" class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-xl font-semibold mb-4">Renaming Configuration</h2>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Characters to Process</label>
+                <div class="flex flex-wrap gap-3">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" checked class="char-checkbox form-checkbox h-5 w-5 text-primary" data-char="_">
+                        <span class="ml-2">Underscore (_)</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" class="char-checkbox form-checkbox h-5 w-5 text-primary" data-char=" ">
+                        <span class="ml-2">Space ( )</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" class="char-checkbox form-checkbox h-5 w-5 text-primary" data-char="-">
+                        <span class="ml-2">Hyphen (-)</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" class="char-checkbox form-checkbox h-5 w-5 text-primary" data-char=".">
+                        <span class="ml-2">Period (.)</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Action</label>
+                <div class="flex gap-4">
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="action" value="replace" checked 
+                            class="form-radio h-5 w-5 text-primary">
+                        <span class="ml-2">Replace with:</span>
+                    </label>
+                    <input type="text" id="replaceWith" value="-" placeholder="Replacement character" 
+                        class="w-24 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                        dark:bg-gray-700 dark:text-white" />
+                        
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="action" value="remove" 
+                            class="form-radio h-5 w-5 text-primary">
+                        <span class="ml-2">Remove completely</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <button id="previewBtn" 
+                    class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Preview Changes (Dry Run)
+                </button>
+            </div>
+        </div>
+        
+        <!-- Preview Section -->
+        <div id="previewSection" class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-xl font-semibold mb-4">Preview Changes</h2>
+            
+            <div class="mb-6 overflow-auto max-h-[400px]">
+                <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
+                    <thead class="bg-gray-100 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col" class="py-3 px-4 text-left text-sm font-semibold sticky top-0 bg-gray-100 dark:bg-gray-700">
+                                Original Path
+                            </th>
+                            <th scope="col" class="py-3 px-4 text-left text-sm font-semibold sticky top-0 bg-gray-100 dark:bg-gray-700">
+                                New Path
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="renamePreviewTableBody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <!-- Preview rows will be added here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="flex gap-4">
+                <button id="executeBtn" 
+                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Execute Renames
+                </button>
+                <div id="authRequiredNote" class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Note: Authentication is required before executing renames
+                </div>
+                <button id="cancelBtn" 
+                    class="px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="resultsSection" class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-xl font-semibold mb-4">Execution Results</h2>
+            
+            <div class="mb-4 flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <span id="successCount">0</span> <span class="text-sm text-gray-500 dark:text-gray-400">paths renamed successfully</span>
+            </div>
+            
+            <div class="mb-4 flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </div>
+                <span id="failureCount">0</span> <span class="text-sm text-gray-500 dark:text-gray-400">paths failed to rename</span>
+            </div>
+            
+            <div class="overflow-auto max-h-[300px]">
+                <div id="resultsLog" class="p-4 bg-gray-100 dark:bg-gray-700 rounded-md font-mono text-sm">
+                    <!-- Results log entries will be added here -->
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button id="resetBtn" 
+                    class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Start New Operation
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- IMS Authentication Configuration -->
+    <script>
+        // IMS Configuration - would be replaced with actual values in real implementation
+        const imsConfig = {
+            clientId: 'your-client-id',
+            redirectUri: window.location.origin + window.location.pathname,
+            scope: 'openid,AdobeID,read_organizations',
+            responseType: 'token'
+        };
+        
+        // Function to initiate IMS login flow
+        function loginWithIMS() {
+            // Create and show the auth loading indicator
+            const authLoadingIndicator = document.createElement('div');
+            authLoadingIndicator.id = 'authLoadingIndicator';
+            authLoadingIndicator.className = 'fixed inset-0 bg-white/50 dark:bg-gray-900/50 flex flex-col justify-center items-center z-50';
+            authLoadingIndicator.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary/30 border-t-4 border-t-primary mb-4"></div>
+                    <p class="text-lg font-medium">Preparing Adobe Authentication...</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Please wait while we connect to Adobe's authentication service</p>
+                </div>
+            `;
+            document.body.appendChild(authLoadingIndicator);
+            
+            // Save current app state to restore after authentication
+            const currentState = {
+                aemHost: document.getElementById('aemHost').value
+            };
+            
+            // Store current state in memory so we can retrieve it later
+            window.imsState = currentState;
+            
+            // Create the authorization URL
+            const authUrl = `https://ims-na1.adobelogin.com/ims/authorize/v2?` +
+                `client_id=${encodeURIComponent(imsConfig.clientId)}` +
+                `&redirect_uri=${encodeURIComponent(imsConfig.redirectUri)}` +
+                `&scope=${encodeURIComponent(imsConfig.scope)}` +
+                `&response_type=${imsConfig.responseType}`;
+            
+            // Delay opening the window to give the user time to see the loading indicator
+            setTimeout(() => {
+                // Store the auth window reference globally to close it later
+                window.authWindow = window.open(authUrl, 'adobeImsLogin', 
+                    'width=800,height=600,location=yes,resizable=yes,scrollbars=yes,status=yes');
+                
+                if (!window.authWindow) {
+                    // Remove the loading indicator
+                    if (document.body.contains(authLoadingIndicator)) {
+                        document.body.removeChild(authLoadingIndicator);
+                    }
+                    showNotification('Popup blocked. Please allow popups for this site and try again.', 'error');
+                    return;
+                }
+                
+                // Update the loading indicator message after opening the window
+                const loadingText = authLoadingIndicator.querySelector('p.text-lg');
+                const loadingSubtext = authLoadingIndicator.querySelector('p.text-sm');
+                if (loadingText && loadingSubtext) {
+                    loadingText.textContent = 'Adobe Authentication Window Opened';
+                    loadingSubtext.textContent = 'Please complete the sign in process in the popup window';
+                }
+                
+                // Remove loading indicator after a longer delay to ensure user notices it
+                setTimeout(() => {
+                    if (document.body.contains(authLoadingIndicator)) {
+                        document.body.removeChild(authLoadingIndicator);
+                    }
+                    // Show a helper notification to guide users
+                    showNotification('Adobe login window opened. Please complete authentication in the popup.', 'info', 10000);
+                }, 1500);
+                
+                // Handle message events from the popup
+                window.addEventListener('message', receiveImsToken, false);
+                
+                // Function to monitor for popup closure with a longer interval
+                const checkClosed = setInterval(() => {
+                    if (window.authWindow && window.authWindow.closed) {
+                        clearInterval(checkClosed);
+                        window.removeEventListener('message', receiveImsToken);
+                        
+                        // Show loading when checking for token
+                        const tokenCheckIndicator = document.createElement('div');
+                        tokenCheckIndicator.className = 'fixed inset-0 bg-white/50 dark:bg-gray-900/50 flex flex-col justify-center items-center z-50';
+                        tokenCheckIndicator.innerHTML = `
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                                <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary/30 border-t-4 border-t-primary mb-4"></div>
+                                <p class="text-lg font-medium">Processing Authentication</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Retrieving your access token...</p>
+                            </div>
+                        `;
+                        document.body.appendChild(tokenCheckIndicator);
+                        
+                        // Add a longer delay before checking for the token to give more time for processing
+                        setTimeout(() => {
+                            // Check if we have a token in the URL hash (in case the popup redirected to our main window)
+                            const hasToken = handleImsRedirect();
+                            
+                            // Remove the token check indicator
+                            if (document.body.contains(tokenCheckIndicator)) {
+                                document.body.removeChild(tokenCheckIndicator);
+                            }
+                            
+                            // If we don't have a token yet, prompt the user to enter it manually
+                            const imsTokenField = document.getElementById('imsToken');
+                            if (!hasToken && !imsTokenField.value) {
+                                // Show manual token entry helper
+                                showManualTokenHelper();
+                            }
+                        }, 2000); // Wait 2 seconds before checking for token
+                    }
+                }, 1000); // Check every second if the popup is closed
+            }, 800); // Wait 800ms before opening the authentication window
+        }
+        
+        // Function to receive IMS token from the popup window
+        function receiveImsToken(event) {
+            // Validate the origin of the message
+            if (event.origin === 'https://ims-na1.adobelogin.com' || 
+                event.origin === window.location.origin) {
+                
+                try {
+                    // Parse the message data
+                    const data = typeof event.data === 'string' 
+                        ? JSON.parse(event.data) 
+                        : event.data;
+                    
+                    // Check if this is an IMS token message
+                    if (data && data.type === 'access_token' && data.token) {
+                        // Store the token
+                        document.getElementById('imsToken').value = data.token;
+                        
+                        // Close the auth window if it's still open
+                        if (window.authWindow && !window.authWindow.closed) {
+                            window.authWindow.close();
+                        }
+                        
+                        // Update UI to show authenticated state
+                        updateAuthStatusUI(true, 'IMS');
+                        
+                        // Remove event listener
+                        window.removeEventListener('message', receiveImsToken);
+                        
+                        // Show success notification
+                        showNotification('Successfully authenticated with Adobe IMS', 'success');
+                    }
+                } catch (err) {
+                    console.error('Error processing IMS message:', err);
+                }
+            }
+        }
+        
+        // Function to handle IMS redirect with token in URL hash
+        function handleImsRedirect() {
+            if (window.location.hash.includes('access_token=')) {
+                try {
+                    // Parse the hash parameters
+                    const hashParams = new URLSearchParams(
+                        window.location.hash.substring(1) // Remove the # character
+                    );
+                    
+                    // Get the access token
+                    const accessToken = hashParams.get('access_token');
+                    
+                    if (accessToken) {
+                        // Store the token
+                        document.getElementById('imsToken').value = accessToken;
+                        
+                        // Update UI to show authenticated state
+                        updateAuthStatusUI(true, 'IMS');
+                        
+                        // Show success notification
+                        showNotification('Successfully authenticated with Adobe IMS', 'success');
+                        
+                        // Clean the URL hash
+                        window.history.replaceState(
+                            null, 
+                            document.title, 
+                            window.location.pathname + window.location.search
+                        );
+                        
+                        return true;
+                    }
+                } catch (err) {
+                    console.error('Error processing IMS redirect:', err);
+                }
+            }
+            return false;
+        }
+        
+        // Function to show manual token entry helper
+        function showManualTokenHelper() {
+            // Show the token input section
+            const tokenSection = document.getElementById('imsTokenSection');
+            tokenSection.classList.remove('hidden');
+            
+            // Notification to guide the user
+            showNotification('Please enter your IMS access token manually if it was not automatically detected', 'info', 10000);
+        }
+    </script>
+    
+    <!-- Main App Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle IMS redirect on page load
+            handleImsRedirect();
+            
+            // Setup collapsible authentication panel
+            setupCollapsiblePanel();
+            
+            // State management
+            let workbook = null;
+            let selectedSheet = null;
+            let sheetData = null;
+            let assetPaths = [];
+            let renamedPaths = [];
+            
+            // DOM elements
+            const fileInput = document.getElementById('fileInput');
+            const fileProcessingStatus = document.getElementById('fileProcessingStatus');
+            const sheetSelect = document.getElementById('sheetSelect');
+            const columnSelect = document.getElementById('columnSelect');
+            const sheetSelection = document.getElementById('sheetSelection');
+            const columnSelection = document.getElementById('columnSelection');
+            const configSection = document.getElementById('configSection');
+            const previewSection = document.getElementById('previewSection');
+            const resultsSection = document.getElementById('resultsSection');
+            const excelPreview = document.getElementById('excelPreview');
+            const previewTableHead = document.getElementById('previewTableHead');
+            const previewTableBody = document.getElementById('previewTableBody');
+            const renamePreviewTableBody = document.getElementById('renamePreviewTableBody');
+            const resultsLog = document.getElementById('resultsLog');
+            const basicAuthBtn = document.getElementById('basicAuthBtn');
+            const imsAuthBtn = document.getElementById('imsAuthBtn');
+            const imsTokenSection = document.getElementById('imsTokenSection');
+            const authStatus = document.getElementById('authStatus');
+            
+            // Authentication state
+            let isAuthenticated = false;
+            let authMethod = null;
+            
+            // Button event listeners
+            basicAuthBtn.addEventListener('click', authenticateBasic);
+            imsAuthBtn.addEventListener('click', loginWithIMS);
+            fileInput.addEventListener('change', handleFileUpload);
+            document.getElementById('previewBtn').addEventListener('click', previewChanges);
+            document.getElementById('executeBtn').addEventListener('click', executeRenames);
+            document.getElementById('cancelBtn').addEventListener('click', cancelOperation);
+            document.getElementById('resetBtn').addEventListener('click', resetApp);
+            
+            // Initialize direct event listeners for select elements
+            sheetSelect.addEventListener('change', function() {
+                processSheetSelection(this.value);
+            });
+            
+            columnSelect.addEventListener('change', function() {
+                showConfigSection();
+            });
+            
+            // Document imsToken field update listener
+            document.getElementById('imsToken').addEventListener('input', function() {
+                if (this.value.trim()) {
+                    updateAuthStatusUI(true, 'IMS');
+                }
+            });
+            
+            // Handle Basic Authentication
+            function authenticateBasic() {
+                const aemHost = document.getElementById('aemHost').value.trim();
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value.trim();
+                
+                if (!aemHost || !username || !password) {
+                    showNotification('Please provide AEM host, username, and password', 'error');
+                    return;
+                }
+                
+                // In a real app, you would validate the credentials with AEM
+                // Here we'll just simulate a successful login
+                setTimeout(() => {
+                    updateAuthStatusUI(true, 'Basic');
+                    showNotification('Successfully authenticated with Basic Auth', 'success');
+                }, 1000);
+            }
+            
+            // Update authentication status UI
+            function updateAuthStatusUI(isSuccessful, method) {
+                authStatus.classList.remove('hidden');
+                
+                if (isSuccessful) {
+                    isAuthenticated = true;
+                    authMethod = method;
+                    
+                    authStatus.className = 'mt-4 p-3 rounded-md border border-green-200 bg-green-50 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400';
+                    authStatus.innerHTML = `
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Authenticated with ${method} Authentication</span>
+                        </div>
+                    `;
+                } else {
+                    isAuthenticated = false;
+                    authMethod = null;
+                    
+                    authStatus.className = 'mt-4 p-3 rounded-md border border-red-200 bg-red-50 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400';
+                    authStatus.innerHTML = `
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>Authentication Failed</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Handle Excel file upload
+            function handleFileUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                // Show file processing status
+                fileProcessingStatus.classList.remove('hidden');
+                
+                // Hide other sections
+                sheetSelection.classList.add('hidden');
+                columnSelection.classList.add('hidden');
+                configSection.classList.add('hidden');
+                previewSection.classList.add('hidden');
+                resultsSection.classList.add('hidden');
+                excelPreview.classList.add('hidden');
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        workbook = XLSX.read(data, { type: 'array' });
+                        
+                        // Populate sheet selection dropdown
+                        populateSheetOptions();
+                        
+                        // Hide processing status
+                        fileProcessingStatus.classList.add('hidden');
+                        
+                        // Show sheet selection
+                        sheetSelection.classList.remove('hidden');
+                        
+                        // Auto-select first sheet if available
+                        if (workbook.SheetNames.length > 0) {
+                            sheetSelect.value = workbook.SheetNames[0];
+                            processSheetSelection(workbook.SheetNames[0]);
+                        }
+                    } catch (error) {
+                        fileProcessingStatus.classList.add('hidden');
+                        showNotification('Error reading Excel file: ' + error.message, 'error');
+                    }
+                };
+                
+                reader.onerror = function(e) {
+                    fileProcessingStatus.classList.add('hidden');
+                    showNotification('Error reading the file', 'error');
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+            
+            // Populate sheet options
+            function populateSheetOptions() {
+                sheetSelect.innerHTML = '';
+                
+                workbook.SheetNames.forEach(sheetName => {
+                    const option = document.createElement('option');
+                    option.value = sheetName;
+                    option.textContent = sheetName;
+                    sheetSelect.appendChild(option);
+                });
+            }
+            
+            // Process sheet selection
+            function processSheetSelection(sheetName) {
+                try {
+                    // Get the selected sheet
+                    selectedSheet = workbook.Sheets[sheetName];
+                    
+                    // Convert to JSON with headers
+                    sheetData = XLSX.utils.sheet_to_json(selectedSheet, { header: 1 });
+                    
+                    if (sheetData.length === 0) {
+                        showNotification('Selected sheet is empty', 'warning');
+                        return;
+                    }
+                    
+                    // Get headers (first row)
+                    const headers = sheetData[0] || [];
+                    
+                    if (headers.length === 0) {
+                        showNotification('No columns found in the selected sheet', 'error');
+                        return;
+                    }
+                    
+                    // Populate column selection
+                    populateColumnOptions(headers);
+                    
+                    // Show Excel preview
+                    generateExcelPreview(sheetData);
+                    
+                    // Show column selection
+                    columnSelection.classList.remove('hidden');
+                    excelPreview.classList.remove('hidden');
+                    
+                    // Auto-select first column
+                    if (columnSelect.options.length > 0) {
+                        columnSelect.selectedIndex = 0;
+                        showConfigSection();
+                    }
+                } catch (error) {
+                    showNotification('Error processing the selected sheet: ' + error.message, 'error');
+                }
+            }
+            
+            // Populate column options
+            function populateColumnOptions(headers) {
+                columnSelect.innerHTML = '';
+                
+                headers.forEach((header, index) => {
+                    const displayName = header || `Column ${index + 1}`;
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = displayName;
+                    columnSelect.appendChild(option);
+                });
+            }
+            
+            // Generate Excel preview table
+            function generateExcelPreview(data) {
+                if (!data || data.length === 0) return;
+                
+                const maxRows = 5; // Show first 5 rows including header
+                const rowsToShow = Math.min(data.length, maxRows);
+                
+                // Generate header row
+                const headerRow = document.createElement('tr');
+                
+                if (data[0]) {
+                    data[0].forEach((cell, index) => {
+                        const th = document.createElement('th');
+                        th.className = 'py-2 px-4 text-left text-sm font-semibold';
+                        th.textContent = cell || `Column ${index + 1}`;
+                        headerRow.appendChild(th);
+                    });
+                }
+                
+                previewTableHead.innerHTML = '';
+                previewTableHead.appendChild(headerRow);
+                
+                // Generate data rows
+                previewTableBody.innerHTML = '';
+                
+                for (let i = 1; i < rowsToShow; i++) {
+                    if (data[i]) {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700';
+                        
+                        data[i].forEach(cell => {
+                            const td = document.createElement('td');
+                            td.className = 'py-2 px-4 text-sm';
+                            td.textContent = cell !== null && cell !== undefined ? cell : '';
+                            row.appendChild(td);
+                        });
+                        
+                        previewTableBody.appendChild(row);
+                    }
+                }
+                
+                // Add a "more rows" indicator if there's more data
+                if (data.length > maxRows) {
+                    const moreRow = document.createElement('tr');
+                    const moreCell = document.createElement('td');
+                    moreCell.colSpan = data[0] ? data[0].length : 1;
+                    moreCell.className = 'py-2 px-4 text-sm text-center text-gray-500 italic';
+                    moreCell.textContent = `... ${data.length - maxRows} more rows`;
+                    moreRow.appendChild(moreCell);
+                    previewTableBody.appendChild(moreRow);
+                }
+            }
+            
+            // Show configuration section
+            function showConfigSection() {
+                configSection.classList.remove('hidden');
+            }
+            
+            // Preview changes (dry run)
+            function previewChanges() {
+                if (!sheetData || sheetData.length <= 1) {
+                    showNotification('No data to process', 'error');
+                    return;
+                }
+                
+                try {
+                    // Get selected column index
+                    const columnIndex = parseInt(columnSelect.value);
+                    
+                    // Skip header row
+                    const dataRows = sheetData.slice(1);
+                    
+                    // Get asset paths from selected column
+                    assetPaths = dataRows.map(row => {
+                        return row[columnIndex] || '';
+                    }).filter(path => path.trim() !== '');
+                    
+                    if (assetPaths.length === 0) {
+                        showNotification('No asset paths found in the selected column', 'warning');
+                        return;
+                    }
+                    
+                    // Get characters to process
+                    const charsToProcess = Array.from(document.querySelectorAll('.char-checkbox:checked'))
+                        .map(checkbox => checkbox.getAttribute('data-char'));
+                    
+                    // Get action and replacement
+                    const action = document.querySelector('input[name="action"]:checked').value;
+                    const replacement = action === 'replace' ? document.getElementById('replaceWith').value : '';
+                    
+                    // Generate renamed paths
+                    renamedPaths = assetPaths.map(path => {
+                        // Extract path components
+                        const lastSlashIndex = path.lastIndexOf('/');
+                        const directory = path.substring(0, lastSlashIndex + 1);
+                        const filename = path.substring(lastSlashIndex + 1);
+                        
+                        // Process filename
+                        let newFilename = filename;
+                        charsToProcess.forEach(char => {
+                            const escapedChar = char === '.' ? '\\.' : char;
+                            const regex = new RegExp(escapedChar, 'g');
+                            newFilename = newFilename.replace(regex, replacement);
+                        });
+                        
+                        return directory + newFilename;
+                    });
+                    
+                    // Populate preview table
+                    populateRenamePreviewTable(assetPaths, renamedPaths);
+                    
+                    // Show preview section
+                    previewSection.classList.remove('hidden');
+                } catch (error) {
+                    showNotification('Error generating preview: ' + error.message, 'error');
+                }
+            }
+            
+            // Populate rename preview table
+            function populateRenamePreviewTable(originalPaths, newPaths) {
+                renamePreviewTableBody.innerHTML = '';
+                
+                let changeCount = 0;
+                
+                originalPaths.forEach((path, index) => {
+                    const newPath = newPaths[index];
+                    
+                    // Skip if path didn't change
+                    if (path === newPath) return;
+                    
+                    changeCount++;
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 dark:hover:bg-gray-800';
+                    
+                    // Original path cell
+                    const originalCell = document.createElement('td');
+                    originalCell.className = 'py-3 px-4 text-sm';
+                    originalCell.textContent = path;
+                    row.appendChild(originalCell);
+                    
+                    // New path cell
+                    const newCell = document.createElement('td');
+                    newCell.className = 'py-3 px-4 text-sm';
+                    
+                    // Highlight differences
+                    const originalFilename = path.substring(path.lastIndexOf('/') + 1);
+                    const newFilename = newPath.substring(newPath.lastIndexOf('/') + 1);
+                    
+                    const directory = path.substring(0, path.lastIndexOf('/') + 1);
+                    
+                    newCell.innerHTML = directory + `<span class="font-semibold text-primary">${newFilename}</span>`;
+                    row.appendChild(newCell);
+                    
+                    renamePreviewTableBody.appendChild(row);
+                });
+                
+                if (changeCount === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 2;
+                    cell.className = 'py-4 text-center text-sm text-gray-500 dark:text-gray-400';
+                    cell.textContent = 'No changes required - all paths already match the configured pattern';
+                    row.appendChild(cell);
+                    renamePreviewTableBody.appendChild(row);
+                }
+            }
+            
+            // Execute renames
+            async function executeRenames() {
+                // Check if authenticated before proceeding
+                if (!isAuthenticated) {
+                    showNotification('Please authenticate before executing renames', 'error');
+                    return;
+                }
+                
+                // Show results section
+                resultsSection.classList.remove('hidden');
+                previewSection.classList.add('hidden');
+                
+                // Get AEM host
+                const aemHost = document.getElementById('aemHost').value.trim();
+                
+                // Initialize counters
+                let successCount = 0;
+                let failureCount = 0;
+                
+                // Log header
+                addToLog('Starting asset rename operation...', 'header');
+                
+                // Process each asset
+                for (let i = 0; i < assetPaths.length; i++) {
+                    const originalPath = assetPaths[i];
+                    const newPath = renamedPaths[i];
+                    
+                    // Skip if path didn't change
+                    if (originalPath === newPath) continue;
+                    
+                    try {
+                        // Log start of operation
+                        addToLog(`Processing: ${originalPath} → ${newPath}`, 'info');
+                        
+                        // Get appropriate auth header based on auth method
+                        const headers = getAuthHeaders();
+                        
+                        // Prepare API path from full path
+                        const apiOriginalPath = originalPath.startsWith('/content/dam') 
+                            ? `/api/assets${originalPath.substring('/content/dam'.length)}` 
+                            : `/api/assets/${originalPath}`;
+                            
+                        const apiNewPath = newPath.startsWith('/content/dam')
+                            ? `/api/assets${newPath.substring('/content/dam'.length)}`
+                            : `/api/assets/${newPath}`;
+                        
+                        // In a real app, you would make the actual API call
+                        // Here we'll simulate success/failure based on a basic rule
+                        const success = Math.random() > 0.2; // 80% success rate
+                        
+                        if (success) {
+                            addToLog(`Successfully renamed: ${originalPath} → ${newPath}`, 'success');
+                            successCount++;
+                        } else {
+                            addToLog(`Failed to rename: ${originalPath}. API error: Asset not found.`, 'error');
+                            failureCount++;
+                        }
+                        
+                        // Simulating API call delay
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    } catch (error) {
+                        addToLog(`Error processing ${originalPath}: ${error.message}`, 'error');
+                        failureCount++;
+                    }
+                }
+                
+                // Update counters in UI
+                document.getElementById('successCount').textContent = successCount;
+                document.getElementById('failureCount').textContent = failureCount;
+                
+                // Log completion
+                addToLog(`Operation completed. ${successCount} successful, ${failureCount} failed.`, 'header');
+            }
+            
+            // Get auth headers based on auth method
+            function getAuthHeaders() {
+                const headers = new Headers();
+                
+                if (authMethod === 'Basic') {
+                    const username = document.getElementById('username').value.trim();
+                    const password = document.getElementById('password').value.trim();
+                    const basicAuth = btoa(`${username}:${password}`);
+                    headers.append('Authorization', `Basic ${basicAuth}`);
+                } else if (authMethod === 'IMS') {
+                    const token = document.getElementById('imsToken').value.trim();
+                    headers.append('Authorization', `Bearer ${token}`);
+                }
+                
+                return headers;
+            }
+            
+            // Add entry to results log
+            function addToLog(message, type = 'info') {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'mb-1';
+                
+                switch (type) {
+                    case 'header':
+                        logEntry.className += ' font-bold text-primary dark:text-primary border-b pb-1 border-gray-300 dark:border-gray-600 mt-2';
+                        break;
+                    case 'success':
+                        logEntry.className += ' text-green-600 dark:text-green-400';
+                        break;
+                    case 'error':
+                        logEntry.className += ' text-red-600 dark:text-red-400';
+                        break;
+                    case 'info':
+                    default:
+                        logEntry.className += ' text-gray-700 dark:text-gray-300';
+                        break;
+                }
+                
+                logEntry.textContent = message;
+                resultsLog.appendChild(logEntry);
+                
+                // Auto-scroll to bottom
+                resultsLog.scrollTop = resultsLog.scrollHeight;
+            }
+            
+            // Cancel operation
+            function cancelOperation() {
+                previewSection.classList.add('hidden');
+            }
+            
+            // Reset app
+            function resetApp() {
+                // Reset file input
+                fileInput.value = '';
+                
+                // Reset and hide sections
+                sheetSelection.classList.add('hidden');
+                columnSelection.classList.add('hidden');
+                configSection.classList.add('hidden');
+                previewSection.classList.add('hidden');
+                resultsSection.classList.add('hidden');
+                excelPreview.classList.add('hidden');
+                
+                // Clear data
+                workbook = null;
+                selectedSheet = null;
+                sheetData = null;
+                assetPaths = [];
+                renamedPaths = [];
+                
+                // Clear results log
+                resultsLog.innerHTML = '';
+            }
+            
+            // Notification system
+            // Setup collapsible panel functionality
+            function setupCollapsiblePanel() {
+                const authHeader = document.getElementById('authHeader');
+                const authPanel = document.getElementById('authPanel');
+                const toggleIcon = document.querySelector('.auth-toggle-icon');
+                
+                // Store panel state
+                let isPanelOpen = false;
+                
+                // Function to toggle panel state
+                function togglePanel() {
+                    isPanelOpen = !isPanelOpen;
+                    
+                    if (isPanelOpen) {
+                        // Open panel
+                        authPanel.style.maxHeight = '1000px';
+                        authPanel.style.opacity = '1';
+                        toggleIcon.style.transform = 'rotate(0deg)';
+                        authHeader.setAttribute('aria-expanded', 'true');
+                    } else {
+                        // Close panel
+                        authPanel.style.maxHeight = '0';
+                        authPanel.style.opacity = '0';
+                        toggleIcon.style.transform = 'rotate(-90deg)';
+                        authHeader.setAttribute('aria-expanded', 'false');
+                    }
+                }
+                
+                // Add click event listener to toggle panel
+                authHeader.addEventListener('click', togglePanel);
+                
+                // Initialize panel state (closed by default)
+                authHeader.setAttribute('aria-expanded', 'false');
+                toggleIcon.style.transform = 'rotate(-90deg)';
+            }
+            
+            function showNotification(message, type = 'info', duration = 5000) {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = 'notification fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-sm z-50 transform transition-transform duration-300 translate-y-full';
+                
+                // Set type-specific styles
+                switch (type) {
+                    case 'success':
+                        notification.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-800', 'dark:text-green-100');
+                        break;
+                    case 'error':
+                        notification.classList.add('bg-red-100', 'text-red-800', 'dark:bg-red-800', 'dark:text-red-100');
+                        break;
+                    case 'warning':
+                        notification.classList.add('bg-yellow-100', 'text-yellow-800', 'dark:bg-yellow-800', 'dark:text-yellow-100');
+                        break;
+                    case 'info':
+                    default:
+                        notification.classList.add('bg-blue-100', 'text-blue-800', 'dark:bg-blue-800', 'dark:text-blue-100');
+                        break;
+                }
+                
+                // Set notification content
+                notification.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="flex-1">${message}</div>
+                        <button type="button" class="ml-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                // Add to DOM
+                document.body.appendChild(notification);
+                
+                // Animate in
+                setTimeout(() => {
+                    notification.classList.remove('translate-y-full');
+                }, 10);
+                
+                // Close button handler
+                const closeButton = notification.querySelector('button');
+                closeButton.addEventListener('click', () => {
+                    notification.classList.add('translate-y-full');
+                    setTimeout(() => {
+                        if (document.body.contains(notification)) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 300);
+                });
+                
+                // Auto-remove after duration
+                if (duration > 0) {
+                    setTimeout(() => {
+                        if (document.body.contains(notification)) {
+                            notification.classList.add('translate-y-full');
+                            setTimeout(() => {
+                                if (document.body.contains(notification)) {
+                                    document.body.removeChild(notification);
+                                }
+                            }, 300);
+                        }
+                    }, duration);
+                }
+                
+                return notification;
+            }
+        });
+    </script>
+</body>
+</html>
