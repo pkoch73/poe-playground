@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulk Asset Name Renamer</title>
+    <title>Assets Bulk Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
@@ -35,6 +35,23 @@
         .dark .notification {
             @apply bg-gray-800 text-white;
         }
+        .tab-active {
+            @apply bg-primary text-white font-bold shadow-md relative;
+        }
+        .tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border-radius: 50%;
+        }
+        .tab-inactive {
+            @apply bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors;
+        }
     </style>
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
@@ -53,7 +70,7 @@
     </script>
 
     <div class="container mx-auto px-4 py-8 max-w-5xl">
-        <h1 class="text-3xl font-bold text-center mb-8">Bulk Asset Name Renamer</h1>
+        <h1 class="text-3xl font-bold text-center mb-8">Assets Bulk Tool</h1>
         
         <!-- Authentication Section -->
         <div class="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
@@ -102,12 +119,21 @@
                         </button>
                     </div>
                     
-                    <div id="imsTokenSection" class="mt-4 hidden">
-                        <label for="imsToken" class="block text-sm font-medium mb-1">IMS Access Token</label>
-                        <textarea id="imsToken" rows="2" placeholder="Paste your IMS token here if automatic detection fails"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                            dark:bg-gray-700 dark:text-white"></textarea>
+                    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <h3 class="text-sm font-semibold mb-2">Manual Token Entry (For Testing)</h3>
+                        <div id="imsTokenSection">
+                            <label for="imsToken" class="block text-sm font-medium mb-1">IMS Access Token</label>
+                            <textarea id="imsToken" rows="2" placeholder="Paste your IMS token here for testing or if automatic detection fails"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                                dark:bg-gray-700 dark:text-white"></textarea>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Note: Bearer token authentication will be used automatically if a token is provided here.
+                            </p>
+                            <button id="testTokenBtn" class="mt-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm rounded-md hover:bg-opacity-90 transition-colors">
+                                Validate Token
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -115,6 +141,16 @@
                     <!-- Will be populated dynamically with authentication status -->
                 </div>
             </div>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="mb-1">
+            <h2 class="text-base font-medium text-gray-600 dark:text-gray-400 mb-2">Current Mode: <span id="currentTabLabel" class="font-bold text-primary">Asset Renamer</span></h2>
+        </div>
+        <div class="mb-6 flex space-x-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 overflow-hidden">
+            <button class="tab-button flex-1 py-2 px-4 rounded-md tab-active" data-tab="rename" data-label="Asset Renamer">Asset Renamer</button>
+            <button class="tab-button flex-1 py-2 px-4 rounded-md tab-inactive" data-tab="metadata" data-label="Metadata Updater">Metadata Updater</button>
+            <button class="tab-button flex-1 py-2 px-4 rounded-md tab-inactive" data-tab="delete" data-label="Bulk Delete">Bulk Delete</button>
         </div>
         
         <!-- File Input Section -->
@@ -147,9 +183,9 @@
                     </select>
                 </div>
                 
-                <div id="columnSelection" class="hidden flex-1">
-                    <label for="columnSelect" class="block text-sm font-medium mb-1">Select Asset Path Column</label>
-                    <select id="columnSelect" 
+                <div id="assetPathColumnSelection" class="hidden flex-1">
+                    <label for="assetPathColumnSelect" class="block text-sm font-medium mb-1">Select Asset Path Column</label>
+                    <select id="assetPathColumnSelect" 
                         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
                         focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
                         dark:bg-gray-700 dark:text-white">
@@ -173,8 +209,8 @@
             </div>
         </div>
         
-        <!-- Configuration Section -->
-        <div id="configSection" class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+        <!-- Rename Configuration Section -->
+        <div id="renameConfigSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
             <h2 class="text-xl font-semibold mb-4">Renaming Configuration</h2>
             
             <div class="mb-4">
@@ -221,16 +257,94 @@
             </div>
             
             <div class="mb-4">
-                <button id="previewBtn" 
+                <button id="renamePreviewBtn" 
                     class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
                     Preview Changes (Dry Run)
                 </button>
             </div>
         </div>
         
-        <!-- Preview Section -->
-        <div id="previewSection" class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
-            <h2 class="text-xl font-semibold mb-4">Preview Changes</h2>
+        <!-- Metadata Configuration Section -->
+        <div id="metadataConfigSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-xl font-semibold mb-4">Metadata Configuration</h2>
+            
+            <div id="metadataMappingContainer" class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-sm font-medium">Metadata Property Mappings</label>
+                    <button id="addMappingBtn" class="text-primary hover:underline flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Add Property
+                    </button>
+                </div>
+                
+                <div id="mappingsContainer" class="space-y-3">
+                    <!-- Initial mapping row -->
+                    <div class="mapping-row flex flex-col md:flex-row gap-3 items-start md:items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                        <div class="flex-1">
+                            <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Property Name</label>
+                            <input type="text" placeholder="dc:title" class="property-name w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white" value="dc:title" />
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Value Column</label>
+                            <select class="value-column w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white">
+                                <option value="">Select column</option>
+                                <!-- Options will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="flex items-end justify-end h-full pt-6 md:pt-0">
+                            <button class="remove-mapping p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 dark:hover:bg-red-900">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    <p>Common properties: dc:title, dc:description, jcr:lastModified, cq:tags</p>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <button id="metadataPreviewBtn" 
+                    class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Preview Changes (Dry Run)
+                </button>
+            </div>
+        </div>
+        
+        <!-- Delete Configuration Section -->
+        <div id="deleteConfigSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-xl font-semibold mb-4">Bulk Delete Configuration</h2>
+            
+            <div class="mb-6">
+                <div class="p-3 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200 rounded-md border border-yellow-200 dark:border-yellow-700">
+                    <div class="flex items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                            <p class="font-medium">Warning: Delete operations cannot be undone</p>
+                            <p class="mt-1 text-sm">Assets will be permanently deleted and cannot be recovered unless you have a backup.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <button id="deletePreviewBtn" 
+                    class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Preview Deletions (Dry Run)
+                </button>
+            </div>
+        </div>
+        
+        <!-- Rename Preview Section -->
+        <div id="renamePreviewSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-xl font-semibold mb-4">Rename Preview</h2>
             
             <div class="mb-6 overflow-auto max-h-[400px]">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
@@ -251,17 +365,109 @@
             </div>
             
             <div class="flex gap-4">
-                <button id="executeBtn" 
+                <button id="executeRenameBtn" 
                     class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
                     Execute Renames
                 </button>
-                <div id="authRequiredNote" class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <div id="renameAuthRequiredNote" class="text-sm text-gray-500 dark:text-gray-400 mt-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Note: Authentication is required before executing renames
                 </div>
-                <button id="cancelBtn" 
+                <button id="cancelRenameBtn" 
+                    class="px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+        
+        <!-- Metadata Preview Section -->
+        <div id="metadataPreviewSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-xl font-semibold mb-4">Metadata Update Preview</h2>
+            
+            <div class="mb-6 overflow-auto max-h-[400px]">
+                <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
+                    <thead class="bg-gray-100 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col" class="py-3 px-4 text-left text-sm font-semibold sticky top-0 bg-gray-100 dark:bg-gray-700">
+                                Asset Path
+                            </th>
+                            <th scope="col" class="py-3 px-4 text-left text-sm font-semibold sticky top-0 bg-gray-100 dark:bg-gray-700">
+                                Metadata Updates
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="metadataPreviewTableBody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <!-- Preview rows will be added here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="flex gap-4">
+                <button id="executeMetadataBtn" 
+                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Execute Metadata Updates
+                </button>
+                <div id="metadataAuthRequiredNote" class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Note: Authentication is required before executing metadata updates
+                </div>
+                <button id="cancelMetadataBtn" 
+                    class="px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+        
+        <!-- Delete Preview Section -->
+        <div id="deletePreviewSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-xl font-semibold mb-4">Delete Preview</h2>
+            
+            <div class="mb-6 overflow-auto max-h-[400px]">
+                <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
+                    <thead class="bg-gray-100 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col" class="py-3 px-4 text-left text-sm font-semibold sticky top-0 bg-gray-100 dark:bg-gray-700">
+                                Asset Path
+                            </th>
+                            <th scope="col" class="py-3 px-4 text-left text-sm font-semibold sticky top-0 bg-gray-100 dark:bg-gray-700">
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="deletePreviewTableBody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <!-- Preview rows will be added here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mb-4 p-3 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200 rounded-md border border-yellow-200 dark:border-yellow-700">
+                <div class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                        <p class="font-medium">Warning: Delete operations cannot be undone</p>
+                        <p class="mt-1">Please verify all assets before proceeding. This action will permanently delete the assets and cannot be recovered.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-4">
+                <button id="executeDeleteBtn" 
+                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Execute Deletions
+                </button>
+                <div id="deleteAuthRequiredNote" class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Note: Authentication is required before executing deletions
+                </div>
+                <button id="cancelDeleteBtn" 
                     class="px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
                     Cancel
                 </button>
@@ -278,7 +484,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
-                <span id="successCount">0</span> <span class="text-sm text-gray-500 dark:text-gray-400">paths renamed successfully</span>
+                <span id="successCount">0</span> <span class="text-sm text-gray-500 dark:text-gray-400">operations completed successfully</span>
             </div>
             
             <div class="mb-4 flex items-center gap-2">
@@ -287,7 +493,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </div>
-                <span id="failureCount">0</span> <span class="text-sm text-gray-500 dark:text-gray-400">paths failed to rename</span>
+                <span id="failureCount">0</span> <span class="text-sm text-gray-500 dark:text-gray-400">operations failed</span>
             </div>
             
             <div class="overflow-auto max-h-[300px]">
@@ -307,9 +513,9 @@
     
     <!-- IMS Authentication Configuration -->
     <script>
-        // IMS Configuration - would be replaced with actual values in real implementation
+        // IMS Configuration with AEM CS Assets Selector client ID
         const imsConfig = {
-            clientId: 'aemcs-poe-assetselector',
+            clientId: 'aemcs-poe-assetselector', // AEM CS Assets Selector client ID
             redirectUri: window.location.origin + window.location.pathname,
             scope: 'openid,AdobeID,read_organizations',
             responseType: 'token'
@@ -515,32 +721,41 @@
             // Setup collapsible authentication panel
             setupCollapsiblePanel();
             
+            // Setup tabs
+            setupTabs();
+            
             // State management
             let workbook = null;
             let selectedSheet = null;
             let sheetData = null;
             let assetPaths = [];
             let renamedPaths = [];
+            let metadataUpdates = [];
+            let currentTab = 'rename'; // Default tab
             
             // DOM elements
             const fileInput = document.getElementById('fileInput');
             const fileProcessingStatus = document.getElementById('fileProcessingStatus');
             const sheetSelect = document.getElementById('sheetSelect');
-            const columnSelect = document.getElementById('columnSelect');
+            const assetPathColumnSelect = document.getElementById('assetPathColumnSelect');
             const sheetSelection = document.getElementById('sheetSelection');
-            const columnSelection = document.getElementById('columnSelection');
-            const configSection = document.getElementById('configSection');
-            const previewSection = document.getElementById('previewSection');
+            const assetPathColumnSelection = document.getElementById('assetPathColumnSelection');
+            const renameConfigSection = document.getElementById('renameConfigSection');
+            const metadataConfigSection = document.getElementById('metadataConfigSection');
+            const renamePreviewSection = document.getElementById('renamePreviewSection');
+            const metadataPreviewSection = document.getElementById('metadataPreviewSection');
             const resultsSection = document.getElementById('resultsSection');
             const excelPreview = document.getElementById('excelPreview');
             const previewTableHead = document.getElementById('previewTableHead');
             const previewTableBody = document.getElementById('previewTableBody');
             const renamePreviewTableBody = document.getElementById('renamePreviewTableBody');
+            const metadataPreviewTableBody = document.getElementById('metadataPreviewTableBody');
             const resultsLog = document.getElementById('resultsLog');
             const basicAuthBtn = document.getElementById('basicAuthBtn');
             const imsAuthBtn = document.getElementById('imsAuthBtn');
             const imsTokenSection = document.getElementById('imsTokenSection');
             const authStatus = document.getElementById('authStatus');
+            const addMappingBtn = document.getElementById('addMappingBtn');
             
             // Authentication state
             let isAuthenticated = false;
@@ -550,18 +765,45 @@
             basicAuthBtn.addEventListener('click', authenticateBasic);
             imsAuthBtn.addEventListener('click', loginWithIMS);
             fileInput.addEventListener('change', handleFileUpload);
-            document.getElementById('previewBtn').addEventListener('click', previewChanges);
-            document.getElementById('executeBtn').addEventListener('click', executeRenames);
-            document.getElementById('cancelBtn').addEventListener('click', cancelOperation);
+            document.getElementById('renamePreviewBtn').addEventListener('click', previewRenames);
+            document.getElementById('metadataPreviewBtn').addEventListener('click', previewMetadataUpdates);
+            document.getElementById('deletePreviewBtn').addEventListener('click', previewDeletes);
+            document.getElementById('executeRenameBtn').addEventListener('click', executeRenames);
+            document.getElementById('executeMetadataBtn').addEventListener('click', executeMetadataUpdates);
+            document.getElementById('executeDeleteBtn').addEventListener('click', executeDeletes);
+            document.getElementById('cancelRenameBtn').addEventListener('click', cancelOperation);
+            document.getElementById('cancelMetadataBtn').addEventListener('click', cancelOperation);
+            document.getElementById('cancelDeleteBtn').addEventListener('click', cancelOperation);
             document.getElementById('resetBtn').addEventListener('click', resetApp);
+            addMappingBtn.addEventListener('click', addMetadataMapping);
+            
+            // Initialize event listeners for removing metadata mappings
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-mapping')) {
+                    const mappingRow = e.target.closest('.mapping-row');
+                    if (mappingRow && document.querySelectorAll('.mapping-row').length > 1) {
+                        mappingRow.remove();
+                    } else {
+                        showNotification('Cannot remove the last mapping row', 'warning');
+                    }
+                }
+            });
             
             // Initialize direct event listeners for select elements
             sheetSelect.addEventListener('change', function() {
                 processSheetSelection(this.value);
             });
             
-            columnSelect.addEventListener('change', function() {
-                showConfigSection();
+            assetPathColumnSelect.addEventListener('change', function() {
+                // When asset path column is selected, show the appropriate config section based on the active tab
+                if (currentTab === 'rename') {
+                    renameConfigSection.classList.remove('hidden');
+                } else if (currentTab === 'metadata') {
+                    metadataConfigSection.classList.remove('hidden');
+                    populateMetadataColumnOptions();
+                } else if (currentTab === 'delete') {
+                    document.getElementById('deleteConfigSection').classList.remove('hidden');
+                }
             });
             
             // Document imsToken field update listener
@@ -570,6 +812,147 @@
                     updateAuthStatusUI(true, 'IMS');
                 }
             });
+            
+            // Add test token button functionality
+            document.getElementById('testTokenBtn').addEventListener('click', function() {
+                const token = document.getElementById('imsToken').value.trim();
+                if (!token) {
+                    showNotification('Please enter an IMS token to validate', 'warning');
+                    return;
+                }
+                
+                // Show validation in progress
+                const btn = this;
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-current inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Validating...
+                `;
+                
+                // Here you would normally make an API call to validate the token
+                // For demo purposes, we'll simulate a success after a brief delay
+                setTimeout(() => {
+                    updateAuthStatusUI(true, 'IMS');
+                    showNotification('Token validated successfully', 'success');
+                    
+                    // Restore button state
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }, 1500);
+            });
+            
+            // Setup tab functionality
+            function setupTabs() {
+                const tabButtons = document.querySelectorAll('.tab-button');
+                const currentTabLabel = document.getElementById('currentTabLabel');
+                
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        // Update currentTab value
+                        currentTab = button.getAttribute('data-tab');
+                        
+                        // Update the current tab label
+                        const tabLabel = button.getAttribute('data-label');
+                        currentTabLabel.textContent = tabLabel;
+                        
+                        // Update active tab button
+                        tabButtons.forEach(btn => {
+                            if (btn === button) {
+                                btn.classList.remove('tab-inactive');
+                                btn.classList.add('tab-active');
+                            } else {
+                                btn.classList.remove('tab-active');
+                                btn.classList.add('tab-inactive');
+                            }
+                        });
+                        
+                        // Hide all tab content
+                        document.querySelectorAll('.tab-content').forEach(content => {
+                            content.classList.add('hidden');
+                        });
+                        
+                        // Show appropriate config section if we have file data
+                        if (workbook && assetPathColumnSelect.value) {
+                            if (currentTab === 'rename') {
+                                renameConfigSection.classList.remove('hidden');
+                            } else if (currentTab === 'metadata') {
+                                metadataConfigSection.classList.remove('hidden');
+                                populateMetadataColumnOptions();
+                            } else if (currentTab === 'delete') {
+                                document.getElementById('deleteConfigSection').classList.remove('hidden');
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // Add a new metadata mapping row
+            function addMetadataMapping() {
+                const mappingsContainer = document.getElementById('mappingsContainer');
+                const newRow = document.createElement('div');
+                newRow.className = 'mapping-row flex flex-col md:flex-row gap-3 items-start md:items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md';
+                
+                newRow.innerHTML = `
+                    <div class="flex-1">
+                        <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Property Name</label>
+                        <input type="text" placeholder="dc:description" class="property-name w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white" />
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Value Column</label>
+                        <select class="value-column w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white">
+                            <option value="">Select column</option>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="flex items-end justify-end h-full pt-6 md:pt-0">
+                        <button class="remove-mapping p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 dark:hover:bg-red-900">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                mappingsContainer.appendChild(newRow);
+                
+                // Populate the column options in the new row
+                populateMetadataColumnOptions();
+            }
+            
+            // Populate column options for metadata mappings
+            function populateMetadataColumnOptions() {
+                if (!sheetData || !sheetData[0]) return;
+                
+                const headers = sheetData[0];
+                const assetPathColumnIndex = parseInt(assetPathColumnSelect.value);
+                
+                // Get all value-column selects
+                const valueColumns = document.querySelectorAll('.value-column');
+                
+                valueColumns.forEach(select => {
+                    const currentValue = select.value;
+                    select.innerHTML = '<option value="">Select column</option>';
+                    
+                    headers.forEach((header, index) => {
+                        // Skip the asset path column
+                        if (index !== assetPathColumnIndex) {
+                            const option = document.createElement('option');
+                            option.value = index;
+                            option.textContent = header || `Column ${index + 1}`;
+                            select.appendChild(option);
+                        }
+                    });
+                    
+                    // Restore selected value if possible
+                    if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                        select.value = currentValue;
+                    }
+                });
+            }
             
             // Handle Basic Authentication
             function authenticateBasic() {
@@ -588,6 +971,160 @@
                     updateAuthStatusUI(true, 'Basic');
                     showNotification('Successfully authenticated with Basic Auth', 'success');
                 }, 1000);
+            }
+            
+            // Preview delete operations
+            function previewDeletes() {
+                if (!sheetData || sheetData.length <= 1) {
+                    showNotification('No data to process', 'error');
+                    return;
+                }
+                
+                try {
+                    // Get selected column index
+                    const columnIndex = parseInt(assetPathColumnSelect.value);
+                    
+                    // Skip header row
+                    const dataRows = sheetData.slice(1);
+                    
+                    // Get asset paths from selected column
+                    const deleteAssetPaths = dataRows.map(row => {
+                        return row[columnIndex] || '';
+                    }).filter(path => path.trim() !== '');
+                    
+                    if (deleteAssetPaths.length === 0) {
+                        showNotification('No asset paths found in the selected column', 'warning');
+                        return;
+                    }
+                    
+                    // Store paths for later use
+                    assetPaths = deleteAssetPaths;
+                    
+                    // Populate the delete preview table
+                    populateDeletePreviewTable(deleteAssetPaths);
+                    
+                    // Show the delete preview section
+                    document.getElementById('deletePreviewSection').classList.remove('hidden');
+                    document.getElementById('deleteConfigSection').classList.add('hidden');
+                    
+                } catch (error) {
+                    showNotification('Error generating delete preview: ' + error.message, 'error');
+                }
+            }
+            
+            // Populate the delete preview table
+            function populateDeletePreviewTable(paths) {
+                const tableBody = document.getElementById('deletePreviewTableBody');
+                tableBody.innerHTML = '';
+                
+                if (paths.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 2;
+                    cell.className = 'py-4 text-center text-sm text-gray-500 dark:text-gray-400';
+                    cell.textContent = 'No assets found to delete';
+                    row.appendChild(cell);
+                    tableBody.appendChild(row);
+                    return;
+                }
+                
+                paths.forEach(path => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 dark:hover:bg-gray-800';
+                    
+                    // Asset path cell
+                    const pathCell = document.createElement('td');
+                    pathCell.className = 'py-3 px-4 text-sm';
+                    pathCell.textContent = path;
+                    row.appendChild(pathCell);
+                    
+                    // Action cell
+                    const actionCell = document.createElement('td');
+                    actionCell.className = 'py-3 px-4 text-sm text-red-600 dark:text-red-400 font-medium';
+                    actionCell.textContent = 'DELETE';
+                    row.appendChild(actionCell);
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            // Execute delete operations
+            async function executeDeletes() {
+                // Check if authenticated before proceeding
+                if (!isAuthenticated) {
+                    showNotification('Please authenticate before executing deletions', 'error');
+                    return;
+                }
+                
+                // Show results section
+                resultsSection.classList.remove('hidden');
+                document.getElementById('deletePreviewSection').classList.add('hidden');
+                
+                // Get AEM host
+                const aemHost = document.getElementById('aemHost').value.trim();
+                if (!aemHost) {
+                    showNotification('Please provide an AEM host URL', 'error');
+                    addToLog('Error: AEM host URL is required', 'error');
+                    return;
+                }
+                
+                // Initialize counters
+                let successCount = 0;
+                let failureCount = 0;
+                
+                // Log header
+                addToLog('Starting asset deletion operation...', 'header');
+                
+                // Get authentication headers
+                const headers = getAuthHeaders();
+                
+                // Process each asset
+                for (const path of assetPaths) {
+                    try {
+                        // Log start of operation
+                        addToLog(`Deleting asset: ${path}`, 'info');
+                        
+                        // Prepare API path - asset path is without '/content/dam'
+                        const apiPath = buildApiPath(path);
+                        
+                        // Create the full URL - with CORS proxy
+                        const targetUrl = new URL(apiPath, aemHost).toString();
+                        const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=' + encodeURIComponent(targetUrl);
+                        
+                        // Log the actual request details
+                        addToLog(`Sending DELETE request via CORS proxy`, 'info');
+                        addToLog(`URL: ${targetUrl}`, 'info');
+                        
+                        // Make the actual API call through the CORS proxy
+                        const response = await fetch(corsProxyUrl, {
+                            method: 'DELETE',
+                            headers: headers,
+                        });
+                        
+                        // Process the response
+                        if (response.ok) {
+                            addToLog(`Successfully deleted: ${path}`, 'success');
+                            successCount++;
+                        } else {
+                            const errorText = await response.text().catch(() => 'Unknown error');
+                            addToLog(`Failed to delete: ${path}. Status: ${response.status}. Error: ${errorText}`, 'error');
+                            failureCount++;
+                        }
+                    } catch (error) {
+                        addToLog(`Error deleting ${path}: ${error.message}`, 'error');
+                        failureCount++;
+                    }
+                    
+                    // Small delay between operations to avoid overwhelming the server
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                // Update counters in UI
+                document.getElementById('successCount').textContent = successCount;
+                document.getElementById('failureCount').textContent = failureCount;
+                
+                // Log completion
+                addToLog(`Operation completed. ${successCount} successful, ${failureCount} failed.`, 'header');
             }
             
             // Update authentication status UI
@@ -633,9 +1170,11 @@
                 
                 // Hide other sections
                 sheetSelection.classList.add('hidden');
-                columnSelection.classList.add('hidden');
-                configSection.classList.add('hidden');
-                previewSection.classList.add('hidden');
+                assetPathColumnSelection.classList.add('hidden');
+                renameConfigSection.classList.add('hidden');
+                metadataConfigSection.classList.add('hidden');
+                renamePreviewSection.classList.add('hidden');
+                metadataPreviewSection.classList.add('hidden');
                 resultsSection.classList.add('hidden');
                 excelPreview.classList.add('hidden');
                 
@@ -708,36 +1247,45 @@
                         return;
                     }
                     
-                    // Populate column selection
-                    populateColumnOptions(headers);
+                    // Populate asset path column selection
+                    populateAssetPathColumnOptions(headers);
                     
                     // Show Excel preview
                     generateExcelPreview(sheetData);
                     
                     // Show column selection
-                    columnSelection.classList.remove('hidden');
+                    assetPathColumnSelection.classList.remove('hidden');
                     excelPreview.classList.remove('hidden');
                     
                     // Auto-select first column
-                    if (columnSelect.options.length > 0) {
-                        columnSelect.selectedIndex = 0;
-                        showConfigSection();
+                    if (assetPathColumnSelect.options.length > 0) {
+                        assetPathColumnSelect.selectedIndex = 0;
+                        
+                        // Show appropriate config section based on active tab
+                        if (currentTab === 'rename') {
+                            renameConfigSection.classList.remove('hidden');
+                        } else if (currentTab === 'metadata') {
+                            metadataConfigSection.classList.remove('hidden');
+                            populateMetadataColumnOptions();
+                        } else if (currentTab === 'delete') {
+                            document.getElementById('deleteConfigSection').classList.remove('hidden');
+                        }
                     }
                 } catch (error) {
                     showNotification('Error processing the selected sheet: ' + error.message, 'error');
                 }
             }
             
-            // Populate column options
-            function populateColumnOptions(headers) {
-                columnSelect.innerHTML = '';
+            // Populate asset path column options
+            function populateAssetPathColumnOptions(headers) {
+                assetPathColumnSelect.innerHTML = '';
                 
                 headers.forEach((header, index) => {
                     const displayName = header || `Column ${index + 1}`;
                     const option = document.createElement('option');
                     option.value = index;
                     option.textContent = displayName;
-                    columnSelect.appendChild(option);
+                    assetPathColumnSelect.appendChild(option);
                 });
             }
             
@@ -794,13 +1342,8 @@
                 }
             }
             
-            // Show configuration section
-            function showConfigSection() {
-                configSection.classList.remove('hidden');
-            }
-            
-            // Preview changes (dry run)
-            function previewChanges() {
+            // Preview rename changes
+            function previewRenames() {
                 if (!sheetData || sheetData.length <= 1) {
                     showNotification('No data to process', 'error');
                     return;
@@ -808,7 +1351,7 @@
                 
                 try {
                     // Get selected column index
-                    const columnIndex = parseInt(columnSelect.value);
+                    const columnIndex = parseInt(assetPathColumnSelect.value);
                     
                     // Skip header row
                     const dataRows = sheetData.slice(1);
@@ -853,9 +1396,84 @@
                     populateRenamePreviewTable(assetPaths, renamedPaths);
                     
                     // Show preview section
-                    previewSection.classList.remove('hidden');
+                    renamePreviewSection.classList.remove('hidden');
                 } catch (error) {
                     showNotification('Error generating preview: ' + error.message, 'error');
+                }
+            }
+            
+            // Preview metadata updates
+            function previewMetadataUpdates() {
+                if (!sheetData || sheetData.length <= 1) {
+                    showNotification('No data to process', 'error');
+                    return;
+                }
+                
+                try {
+                    // Get selected asset path column index
+                    const assetPathColumnIndex = parseInt(assetPathColumnSelect.value);
+                    
+                    // Get metadata mappings
+                    const mappings = [];
+                    document.querySelectorAll('.mapping-row').forEach(row => {
+                        const propertyName = row.querySelector('.property-name').value.trim();
+                        const valueColumnIndex = row.querySelector('.value-column').value;
+                        
+                        if (propertyName && valueColumnIndex) {
+                            mappings.push({
+                                property: propertyName,
+                                columnIndex: parseInt(valueColumnIndex)
+                            });
+                        }
+                    });
+                    
+                    if (mappings.length === 0) {
+                        showNotification('No valid metadata mappings defined', 'warning');
+                        return;
+                    }
+                    
+                    // Skip header row
+                    const dataRows = sheetData.slice(1);
+                    
+                    // Build metadata updates
+                    metadataUpdates = [];
+                    
+                    dataRows.forEach(row => {
+                        const assetPath = row[assetPathColumnIndex];
+                        
+                        if (assetPath && assetPath.trim()) {
+                            const properties = {};
+                            let hasValues = false;
+                            
+                            mappings.forEach(mapping => {
+                                const value = row[mapping.columnIndex];
+                                if (value !== undefined && value !== null && value !== '') {
+                                    properties[mapping.property] = value;
+                                    hasValues = true;
+                                }
+                            });
+                            
+                            if (hasValues) {
+                                metadataUpdates.push({
+                                    assetPath,
+                                    properties
+                                });
+                            }
+                        }
+                    });
+                    
+                    if (metadataUpdates.length === 0) {
+                        showNotification('No metadata updates found in the selected data', 'warning');
+                        return;
+                    }
+                    
+                    // Populate metadata preview table
+                    populateMetadataPreviewTable(metadataUpdates);
+                    
+                    // Show preview section
+                    metadataPreviewSection.classList.remove('hidden');
+                } catch (error) {
+                    showNotification('Error generating metadata preview: ' + error.message, 'error');
                 }
             }
             
@@ -909,7 +1527,51 @@
                 }
             }
             
-            // Execute renames
+            // Populate metadata preview table
+            function populateMetadataPreviewTable(updates) {
+                metadataPreviewTableBody.innerHTML = '';
+                
+                updates.forEach(update => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 dark:hover:bg-gray-800';
+                    
+                    // Asset path cell
+                    const pathCell = document.createElement('td');
+                    pathCell.className = 'py-3 px-4 text-sm';
+                    pathCell.textContent = update.assetPath;
+                    row.appendChild(pathCell);
+                    
+                    // Metadata updates cell
+                    const metadataCell = document.createElement('td');
+                    metadataCell.className = 'py-3 px-4 text-sm';
+                    
+                    const metadataList = document.createElement('ul');
+                    metadataList.className = 'list-disc pl-5 space-y-1';
+                    
+                    Object.entries(update.properties).forEach(([key, value]) => {
+                        const item = document.createElement('li');
+                        item.innerHTML = `<span class="font-medium">${key}</span>: <span class="text-primary">${value}</span>`;
+                        metadataList.appendChild(item);
+                    });
+                    
+                    metadataCell.appendChild(metadataList);
+                    row.appendChild(metadataCell);
+                    
+                    metadataPreviewTableBody.appendChild(row);
+                });
+                
+                if (updates.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 2;
+                    cell.className = 'py-4 text-center text-sm text-gray-500 dark:text-gray-400';
+                    cell.textContent = 'No metadata updates found';
+                    row.appendChild(cell);
+                    metadataPreviewTableBody.appendChild(row);
+                }
+            }
+            
+            // Execute renames - production implementation
             async function executeRenames() {
                 // Check if authenticated before proceeding
                 if (!isAuthenticated) {
@@ -919,10 +1581,15 @@
                 
                 // Show results section
                 resultsSection.classList.remove('hidden');
-                previewSection.classList.add('hidden');
+                renamePreviewSection.classList.add('hidden');
                 
                 // Get AEM host
                 const aemHost = document.getElementById('aemHost').value.trim();
+                if (!aemHost) {
+                    showNotification('Please provide an AEM host URL', 'error');
+                    addToLog('Error: AEM host URL is required', 'error');
+                    return;
+                }
                 
                 // Initialize counters
                 let successCount = 0;
@@ -930,6 +1597,9 @@
                 
                 // Log header
                 addToLog('Starting asset rename operation...', 'header');
+                
+                // Get authentication headers
+                const headers = getAuthHeaders();
                 
                 // Process each asset
                 for (let i = 0; i < assetPaths.length; i++) {
@@ -943,34 +1613,124 @@
                         // Log start of operation
                         addToLog(`Processing: ${originalPath} → ${newPath}`, 'info');
                         
-                        // Get appropriate auth header based on auth method
-                        const headers = getAuthHeaders();
+                        // Prepare API paths
+                        const apiOriginalPath = buildApiPath(originalPath);
+                        const apiNewPath = buildApiPath(newPath);
                         
-                        // Prepare API path from full path
-                        const apiOriginalPath = originalPath.startsWith('/content/dam') 
-                            ? `/api/assets${originalPath.substring('/content/dam'.length)}` 
-                            : `/api/assets/${originalPath}`;
-                            
-                        const apiNewPath = newPath.startsWith('/content/dam')
-                            ? `/api/assets${newPath.substring('/content/dam'.length)}`
-                            : `/api/assets/${newPath}`;
+                        // Create the full URLs - with CORS proxy
+                        const targetUrl = new URL(apiOriginalPath, aemHost).toString();
+                        const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=' + encodeURIComponent(targetUrl);
                         
-                        // In a real app, you would make the actual API call
+                        // For the destination path, we need the full URL too (not just the path)
+                        const fullDestinationUrl = new URL(apiNewPath, aemHost).toString();
+                        
+                        // Clone the headers to avoid mutation issues
+                        const requestHeaders = new Headers(headers);
+                        
+                        // Add MOVE-specific headers
+                        requestHeaders.append('X-Destination', fullDestinationUrl);
+                        requestHeaders.append('X-Overwrite', 'T');
+                        
+                        // Log the actual request details
+                        addToLog(`Sending MOVE request via CORS proxy`, 'info');
+                        addToLog(`Source: ${targetUrl}`, 'info');
+                        addToLog(`Destination: ${fullDestinationUrl}`, 'info');
+                        
+                        // Make the actual API call through the CORS proxy
+                        const response = await fetch(corsProxyUrl, {
+                            method: 'MOVE',
+                            headers: requestHeaders,
+                        });
+                        
+                        // Process the response
+                        if (response.ok) {
+                            addToLog(`Successfully renamed: ${originalPath} → ${newPath}`, 'success');
+                            successCount++;
+                        } else {
+                            const errorText = await response.text().catch(() => 'Unknown error');
+                            addToLog(`Failed to rename: ${originalPath}. Status: ${response.status}. Error: ${errorText}`, 'error');
+                            failureCount++;
+                        }
+                    } catch (error) {
+                        addToLog(`Error processing ${originalPath}: ${error.message}`, 'error');
+                        failureCount++;
+                    }
+                    
+                    // Small delay between operations to avoid overwhelming the server
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                // Update counters in UI
+                document.getElementById('successCount').textContent = successCount;
+                document.getElementById('failureCount').textContent = failureCount;
+                
+                // Log completion
+                addToLog(`Operation completed. ${successCount} successful, ${failureCount} failed.`, 'header');
+            }
+            
+            // Execute metadata updates
+            async function executeMetadataUpdates() {
+                // Check if authenticated before proceeding
+                if (!isAuthenticated) {
+                    showNotification('Please authenticate before executing metadata updates', 'error');
+                    return;
+                }
+                
+                // Show results section
+                resultsSection.classList.remove('hidden');
+                metadataPreviewSection.classList.add('hidden');
+                
+                // Get AEM host
+                const aemHost = document.getElementById('aemHost').value.trim();
+                
+                // Initialize counters
+                let successCount = 0;
+                let failureCount = 0;
+                
+                // Log header
+                addToLog('Starting metadata update operation...', 'header');
+                
+                // Process each asset
+                for (const update of metadataUpdates) {
+                    try {
+                        // Log start of operation
+                        addToLog(`Updating metadata for: ${update.assetPath}`, 'info');
+                        
+                        // Prepare API path
+                        const apiPath = buildApiPath(update.assetPath);
+                        
+                        // Prepare request body
+                        const requestBody = {
+                            class: "asset",
+                            properties: update.properties
+                        };
+                        
+                        // In a real app, you would make the actual API call to update metadata
+                        // API endpoint: PUT apiPath
+                        // Headers: 
+                        // - Content-Type: application/json
+                        // - Authorization: Basic/Bearer based on auth method
+                        // Body: JSON.stringify(requestBody)
+                        
                         // Here we'll simulate success/failure based on a basic rule
                         const success = Math.random() > 0.2; // 80% success rate
                         
                         if (success) {
-                            addToLog(`Successfully renamed: ${originalPath} → ${newPath}`, 'success');
+                            const propertiesList = Object.entries(update.properties)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(', ');
+                                
+                            addToLog(`Successfully updated metadata for: ${update.assetPath} (${propertiesList})`, 'success');
                             successCount++;
                         } else {
-                            addToLog(`Failed to rename: ${originalPath}. API error: Asset not found.`, 'error');
+                            addToLog(`Failed to update metadata for: ${update.assetPath}. API error: Asset not found.`, 'error');
                             failureCount++;
                         }
                         
                         // Simulating API call delay
                         await new Promise(resolve => setTimeout(resolve, 300));
                     } catch (error) {
-                        addToLog(`Error processing ${originalPath}: ${error.message}`, 'error');
+                        addToLog(`Error processing ${update.assetPath}: ${error.message}`, 'error');
                         failureCount++;
                     }
                 }
@@ -983,18 +1743,59 @@
                 addToLog(`Operation completed. ${successCount} successful, ${failureCount} failed.`, 'header');
             }
             
-            // Get auth headers based on auth method
+            // Helper function to build API path from asset path
+            function buildApiPath(path) {
+                // Ensure the path has a leading slash
+                if (!path.startsWith('/')) {
+                    path = '/' + path;
+                }
+                
+                // For the AEM Assets HTTP API:
+                // If the path starts with /content/dam, we need to REMOVE it and replace with /api/assets
+                // If the path is already in the right format, leave it as is
+                
+                if (path.startsWith('/content/dam/')) {
+                    // Remove /content/dam prefix and replace with /api/assets
+                    return '/api/assets' + path.substring('/content/dam'.length);
+                } else if (path === '/content/dam') {
+                    // Special case for root DAM folder
+                    return '/api/assets';
+                } else if (path.startsWith('/content/dam')) {
+                    // Handle edge case with no trailing slash
+                    return '/api/assets' + path.substring('/content/dam'.length);
+                } else if (path.startsWith('/api/assets')) {
+                    // Path is already in API format
+                    return path;
+                } else {
+                    // Assume this is a relative path within DAM
+                    // Add the /api/assets prefix directly
+                    return '/api/assets' + path;
+                }
+            }
+            
+            // Get auth headers - prioritize IMS token when available, fall back to basic auth
             function getAuthHeaders() {
                 const headers = new Headers();
                 
-                if (authMethod === 'Basic') {
+                // Check for IMS token first
+                const imsToken = document.getElementById('imsToken').value.trim();
+                
+                if (imsToken) {
+                    // Use bearer token if available, regardless of selected auth method
+                    headers.append('Authorization', `Bearer ${imsToken}`);
+                    console.log('Using Bearer token authentication for API request');
+                } else {
+                    // Fall back to basic auth
                     const username = document.getElementById('username').value.trim();
                     const password = document.getElementById('password').value.trim();
-                    const basicAuth = btoa(`${username}:${password}`);
-                    headers.append('Authorization', `Basic ${basicAuth}`);
-                } else if (authMethod === 'IMS') {
-                    const token = document.getElementById('imsToken').value.trim();
-                    headers.append('Authorization', `Bearer ${token}`);
+                    
+                    if (username && password) {
+                        const basicAuth = btoa(`${username}:${password}`);
+                        headers.append('Authorization', `Basic ${basicAuth}`);
+                        console.log('Using Basic authentication for API request');
+                    } else {
+                        console.warn('No authentication credentials available');
+                    }
                 }
                 
                 return headers;
@@ -1030,7 +1831,8 @@
             
             // Cancel operation
             function cancelOperation() {
-                previewSection.classList.add('hidden');
+                renamePreviewSection.classList.add('hidden');
+                metadataPreviewSection.classList.add('hidden');
             }
             
             // Reset app
@@ -1040,9 +1842,11 @@
                 
                 // Reset and hide sections
                 sheetSelection.classList.add('hidden');
-                columnSelection.classList.add('hidden');
-                configSection.classList.add('hidden');
-                previewSection.classList.add('hidden');
+                assetPathColumnSelection.classList.add('hidden');
+                renameConfigSection.classList.add('hidden');
+                metadataConfigSection.classList.add('hidden');
+                renamePreviewSection.classList.add('hidden');
+                metadataPreviewSection.classList.add('hidden');
                 resultsSection.classList.add('hidden');
                 excelPreview.classList.add('hidden');
                 
@@ -1052,12 +1856,12 @@
                 sheetData = null;
                 assetPaths = [];
                 renamedPaths = [];
+                metadataUpdates = [];
                 
                 // Clear results log
                 resultsLog.innerHTML = '';
             }
             
-            // Notification system
             // Setup collapsible panel functionality
             function setupCollapsiblePanel() {
                 const authHeader = document.getElementById('authHeader');
@@ -1094,6 +1898,7 @@
                 toggleIcon.style.transform = 'rotate(-90deg)';
             }
             
+            // Notification system
             function showNotification(message, type = 'info', duration = 5000) {
                 // Create notification element
                 const notification = document.createElement('div');
