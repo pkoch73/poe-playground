@@ -722,6 +722,9 @@
             
             // Update table
             renderTable();
+            
+            // Update charts to reflect filtered data
+            updateChartsWithFilteredData();
         }
 
         // Render the data table
@@ -925,6 +928,48 @@
             
             // Recreate charts with updated theme
             createCharts();
+        }
+        
+        // Update charts to reflect filtered data
+        function updateChartsWithFilteredData() {
+            if (Object.keys(chartInstances).length === 0) return;
+            
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            const textColor = isDarkMode ? '#f3f4f6' : '#111827';
+            
+            // Update Status chart with filtered data
+            if (chartInstances.statusChart) {
+                chartInstances.statusChart.data.datasets[0].data = [
+                    filteredData.filter(item => item['Contract Status'] === 'In Effect').length,
+                    filteredData.filter(item => item['Contract Status'] === 'Future').length,
+                    filteredData.filter(item => item['Contract Status'] === 'Expired').length
+                ];
+                chartInstances.statusChart.update();
+            }
+            
+            // Update Region chart with filtered data
+            if (chartInstances.regionChart) {
+                const regions = [...new Set(filteredData.map(item => item['Geo']))].filter(Boolean);
+                const regionCounts = regions.map(region => {
+                    return filteredData.filter(item => item['Geo'] === region).length;
+                });
+                
+                chartInstances.regionChart.data.labels = regions;
+                chartInstances.regionChart.data.datasets[0].data = regionCounts;
+                chartInstances.regionChart.update();
+            }
+            
+            // Update Solution chart with filtered data
+            if (chartInstances.solutionChart) {
+                const solutions = [...new Set(filteredData.map(item => item['Solution']))].filter(Boolean);
+                const solutionCounts = solutions.map(solution => {
+                    return filteredData.filter(item => item['Solution'] === solution).length;
+                });
+                
+                chartInstances.solutionChart.data.labels = solutions;
+                chartInstances.solutionChart.data.datasets[0].data = solutionCounts;
+                chartInstances.solutionChart.update();
+            }
         }
 
         // Event listeners for dashboard functionality
