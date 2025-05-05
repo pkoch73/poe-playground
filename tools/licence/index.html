@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEM Edge Delivery Services Customer License Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Add SheetJS (xlsx) library for Excel parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4B4AB2',
+                        'primary-light': '#7977E8',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/css">
+        .dark .dark\:bg-gray-900 {
+            background-color: #181818;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .dark .table-container::-webkit-scrollbar-track {
+            background: #333;
+        }
+        
+        .table-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+        }
+        
+        .dark .loading {
+            background-color: rgba(24, 24, 24, 0.8);
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #5D5CDE;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .file-drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .file-drop-area.highlight {
+            border-color: #5D5CDE;
+            background-color: rgba(93, 92, 222, 0.05);
+        }
+
+        .dark .file-drop-area {
+            border-color: #555;
+        }
+        
+        .dark .file-drop-area.highlight {
+            border-color: #7977E8;
+            background-color: rgba(93, 92, 222, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+    <!-- Loading indicator -->
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between">
+                <h1 class="text-2xl md:text-3xl font-bold mb-4 md:mb-0">AEM CS Edge Delivery Services - Licensed Customers</h1>
+                <div class="flex items-center">
+                    <button id="toggle-theme" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none" aria-label="Toggle dark mode">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- File Upload Section -->
+        <div id="upload-section" class="mb-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Upload AEM License Data</h2>
+                <p class="mb-4 text-gray-600 dark:text-gray-400">
+                    Upload your AEM CS Licensed Customers Excel (.xlsx) file to analyze license data.
+                </p>
+                
+                <div id="file-drop" class="file-drop-area mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p class="text-gray-600 dark:text-gray-400 mb-2">Drag and drop your Excel file here, or</p>
+                    <label for="file-input" class="inline-block px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark cursor-pointer transition-colors">
+                        Browse Files
+                    </label>
+                    <input type="file" id="file-input" class="hidden" accept=".xlsx, .xls">
+                </div>
+                
+                <div id="file-info" class="hidden p-3 bg-gray-100 dark:bg-gray-700 rounded-md mb-4">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                        </svg>
+                        <span id="file-name" class="text-sm font-medium text-gray-700 dark:text-gray-300"></span>
+                    </div>
+                </div>
+                
+                <div id="error-message" class="hidden p-3 bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-100 rounded-md mb-4">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                        <span id="error-text" class="text-sm font-medium"></span>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button id="process-button" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors" disabled>
+                        Process Data
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Section (Hidden Initially) -->
+        <div id="dashboard-section" class="hidden">
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-6 flex justify-between items-center">
+                <span id="filename">No file selected</span>
+                <button id="change-file" class="px-3 py-1 text-xs border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    Change File
+                </button>
+            </div>
+                
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <!-- KPI Cards -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <h3 class="text-sm uppercase font-semibold text-gray-500 dark:text-gray-400">Total Customers</h3>
+                    <p class="text-2xl font-bold" id="total-customers">-</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <h3 class="text-sm uppercase font-semibold text-gray-500 dark:text-gray-400">Active Licenses</h3>
+                    <p class="text-2xl font-bold text-green-600 dark:text-green-500" id="active-licenses">-</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <h3 class="text-sm uppercase font-semibold text-gray-500 dark:text-gray-400">Future Licenses</h3>
+                    <p class="text-2xl font-bold text-blue-600 dark:text-blue-500" id="future-licenses">-</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <h3 class="text-sm uppercase font-semibold text-gray-500 dark:text-gray-400">Expired Licenses</h3>
+                    <p class="text-2xl font-bold text-red-600 dark:text-red-500" id="expired-licenses">-</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Charts -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow col-span-1">
+                    <h3 class="text-lg font-semibold mb-4">Licenses by Status</h3>
+                    <div class="h-64">
+                        <canvas id="status-chart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow col-span-1">
+                    <h3 class="text-lg font-semibold mb-4">Licenses by Region</h3>
+                    <div class="h-64">
+                        <canvas id="region-chart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow col-span-1">
+                    <h3 class="text-lg font-semibold mb-4">Licenses by Solution</h3>
+                    <div class="h-64">
+                        <canvas id="solution-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-8">
+                <!-- Filter and Search -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label for="status-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                        <select id="status-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-primary focus:border-primary rounded-md dark:bg-gray-700 dark:text-white">
+                            <option value="">All Statuses</option>
+                            <option value="In Effect">In Effect</option>
+                            <option value="Future">Future</option>
+                            <option value="Expired">Expired</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="geo-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Region</label>
+                        <select id="geo-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-primary focus:border-primary rounded-md dark:bg-gray-700 dark:text-white">
+                            <option value="">All Regions</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="solution-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Solution</label>
+                        <select id="solution-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-primary focus:border-primary rounded-md dark:bg-gray-700 dark:text-white">
+                            <option value="">All Solutions</option>
+                            <option value="Sites">Sites</option>
+                            <option value="Forms">Forms</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                        <input type="text" id="search" placeholder="Search customers, tenants, etc." class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-primary focus:border-primary rounded-md dark:bg-gray-700 dark:text-white">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                <!-- Data Table -->
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Customer Licenses</h2>
+                    <div class="flex items-center">
+                        <span id="result-count" class="text-sm text-gray-600 dark:text-gray-400 mr-4">Showing 0 records</span>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-800">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer" data-sort="customerName">
+                                    Customer <span class="sort-icon">▼</span>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer" data-sort="tenant">
+                                    Tenant <span class="sort-icon"></span>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer" data-sort="geo">
+                                    Region <span class="sort-icon"></span>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer" data-sort="solution">
+                                    Solution <span class="sort-icon"></span>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer" data-sort="skuDetails">
+                                    SKU Details <span class="sort-icon"></span>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer" data-sort="status">
+                                    Status <span class="sort-icon"></span>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer" data-sort="startDate">
+                                    Start Date <span class="sort-icon"></span>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer" data-sort="endDate">
+                                    End Date <span class="sort-icon"></span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="license-table-body" class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Table rows will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 flex justify-between items-center">
+                    <div>
+                        <button id="prev-page" class="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50" disabled>
+                            Previous
+                        </button>
+                        <button id="next-page" class="ml-3 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50" disabled>
+                            Next
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check system dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Listen for changes to the prefers-color-scheme media query
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            updateCharts(); // Update charts when theme changes
+        });
+
+        // Toggle dark mode
+        document.getElementById('toggle-theme').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            updateCharts(); // Update charts when theme changes
+        });
+
+        // Data processing and visualization
+        let allData = [];
+        let filteredData = [];
+        let chartInstances = {};
+        let currentPage = 1;
+        const pageSize = 10;
+        let currentSort = { column: 'customerName', direction: 'asc' };
+        let currentFile = null;
+
+        // File Upload Handling
+        const fileDropArea = document.getElementById('file-drop');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const processButton = document.getElementById('process-button');
+        const loadingIndicator = document.getElementById('loading');
+        const uploadSection = document.getElementById('upload-section');
+        const dashboardSection = document.getElementById('dashboard-section');
+        const changeFileButton = document.getElementById('change-file');
+        const filenameDisplay = document.getElementById('filename');
+
+        // File Drop Area Event Listeners
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileDropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileDropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileDropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            fileDropArea.classList.add('highlight');
+        }
+
+        function unhighlight() {
+            fileDropArea.classList.remove('highlight');
+        }
+
+        fileDropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                handleFiles(files);
+            }
+        }
+
+        fileInput.addEventListener('change', function() {
+            if (this.files.length) {
+                handleFiles(this.files);
+            }
+        });
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            
+            // Check if file is an Excel file
+            if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                showError('Please upload an Excel file (.xlsx or .xls)');
+                return;
+            }
+            
+            // Display file info
+            currentFile = file;
+            fileName.textContent = file.name;
+            fileInfo.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            processButton.disabled = false;
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+            fileInfo.classList.add('hidden');
+            processButton.disabled = true;
+        }
+
+        // Process Button Click Handler
+        processButton.addEventListener('click', processExcelFile);
+        
+        function processExcelFile() {
+            if (!currentFile) {
+                showError('Please select a file first');
+                return;
+            }
+            
+            // Show loading indicator
+            loadingIndicator.style.display = 'flex';
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    console.log("File loaded, processing...");
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Get the first worksheet
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    console.log("Sheet found:", workbook.SheetNames[0]);
+                    
+                    // Convert to JSON with headers
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                    console.log("Data parsed, found", jsonData.length, "rows");
+                    
+                    // Check if there's enough data
+                    if (jsonData.length < 1) {
+                        showError('The Excel file does not contain enough data');
+                        loadingIndicator.style.display = 'none';
+                        return;
+                    }
+                    
+                    // Process the data
+                    allData = jsonData;
+                    
+                    // Extract unique values for filters
+                    const regions = [...new Set(allData.map(item => item['Geo']))].filter(Boolean).sort();
+                    const geoFilter = document.getElementById('geo-filter');
+                    
+                    // Clear existing options
+                    geoFilter.innerHTML = '<option value="">All Regions</option>';
+                    
+                    // Add new options
+                    regions.forEach(region => {
+                        const option = document.createElement('option');
+                        option.value = region;
+                        option.textContent = region;
+                        geoFilter.appendChild(option);
+                    });
+                    
+                    // Solutions filter
+                    const solutions = [...new Set(allData.map(item => item['Solution']))].filter(Boolean).sort();
+                    const solutionFilter = document.getElementById('solution-filter');
+                    
+                    // Clear existing options
+                    solutionFilter.innerHTML = '<option value="">All Solutions</option>';
+                    
+                    // Add new options
+                    solutions.forEach(solution => {
+                        const option = document.createElement('option');
+                        option.value = solution;
+                        option.textContent = solution;
+                        solutionFilter.appendChild(option);
+                    });
+                    
+                    // Update filename display
+                    filenameDisplay.textContent = currentFile.name;
+                    
+                    // Update the KPIs
+                    updateKPIs();
+                    
+                    // Apply initial filtering and sorting
+                    filterAndSortData();
+                    
+                    // Create charts
+                    createCharts();
+                    
+                    // Show dashboard section and hide upload section
+                    uploadSection.classList.add('hidden');
+                    dashboardSection.classList.remove('hidden');
+                    
+                    // Hide loading indicator
+                    loadingIndicator.style.display = 'none';
+                    
+                } catch (error) {
+                    console.error('Error processing Excel file:', error);
+                    showError('Error processing the Excel file: ' + error.message);
+                    loadingIndicator.style.display = 'none';
+                }
+            };
+            
+            reader.onerror = function() {
+                showError('Error reading the file');
+                loadingIndicator.style.display = 'none';
+            };
+            
+            reader.readAsArrayBuffer(currentFile);
+        }
+
+        // Change File Button Handler
+        changeFileButton.addEventListener('click', function() {
+            // Reset file selection
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            processButton.disabled = true;
+            
+            // Show upload section and hide dashboard section
+            uploadSection.classList.remove('hidden');
+            dashboardSection.classList.add('hidden');
+            
+            // Destroy charts
+            Object.values(chartInstances).forEach(chart => {
+                if (chart) {
+                    chart.destroy();
+                }
+            });
+            chartInstances = {};
+        });
+
+        // Process the data and update the UI
+        function processData(excelData) {
+            // Assuming first row is headers, second row may be column headers
+            const headers = excelData[1];
+            
+            // Convert Excel data to our data format
+            allData = [];
+            for (let i = 2; i < excelData.length; i++) {
+                const row = excelData[i];
+                if (row.length === 0 || !row[0]) continue; // Skip empty rows
+                
+                const item = {};
+                for (let j = 0; j < headers.length; j++) {
+                    if (headers[j]) {
+                        item[headers[j]] = row[j] !== undefined ? row[j].toString() : '';
+                    }
+                }
+                allData.push(item);
+            }
+            
+            // Extract unique values for filters
+            const regions = [...new Set(allData.map(item => item.Geo))].filter(Boolean).sort();
+            const geoFilter = document.getElementById('geo-filter');
+            
+            // Clear existing options
+            geoFilter.innerHTML = '<option value="">All Regions</option>';
+            
+            // Add new options
+            regions.forEach(region => {
+                const option = document.createElement('option');
+                option.value = region;
+                option.textContent = region;
+                geoFilter.appendChild(option);
+            });
+            
+            // Update the KPIs
+            updateKPIs();
+            
+            // Apply initial filtering and sorting
+            filterAndSortData();
+            
+            // Create charts
+            createCharts();
+        }
+
+        // Update Key Performance Indicators
+        function updateKPIs() {
+            const uniqueCustomers = [...new Set(allData.map(item => item['Customer ID']))];
+            const activeContracts = allData.filter(item => item['Contract Status'] === 'In Effect');
+            const futureContracts = allData.filter(item => item['Contract Status'] === 'Future');
+            const expiredContracts = allData.filter(item => item['Contract Status'] === 'Expired');
+            
+            document.getElementById('total-customers').textContent = uniqueCustomers.length;
+            document.getElementById('active-licenses').textContent = activeContracts.length;
+            document.getElementById('future-licenses').textContent = futureContracts.length;
+            document.getElementById('expired-licenses').textContent = expiredContracts.length;
+        }
+
+        // Filter and sort data based on user selections
+        function filterAndSortData() {
+            const statusFilter = document.getElementById('status-filter').value;
+            const geoFilter = document.getElementById('geo-filter').value;
+            const solutionFilter = document.getElementById('solution-filter').value;
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            
+            filteredData = allData.filter(item => {
+                // Apply status filter
+                if (statusFilter && item['Contract Status'] !== statusFilter) {
+                    return false;
+                }
+                
+                // Apply region filter
+                if (geoFilter && item['Geo'] !== geoFilter) {
+                    return false;
+                }
+                
+                // Apply solution filter
+                if (solutionFilter && item['Solution'] !== solutionFilter) {
+                    return false;
+                }
+                
+                // Apply search term
+                if (searchTerm) {
+                    const searchFields = [
+                        item['Customer Name'] || '',
+                        item['Tenant Name'] || '',
+                        item['SKU Name'] || '',
+                        item['SKU Details'] || ''
+                    ];
+                    
+                    return searchFields.some(field => field.toLowerCase().includes(searchTerm));
+                }
+                
+                return true;
+            });
+            
+            // Sort data
+            filteredData.sort((a, b) => {
+                let aValue = a[currentSort.column] || '';
+                let bValue = b[currentSort.column] || '';
+                
+                // Handle date sorting
+                if (currentSort.column === 'startDate') {
+                    aValue = a['Contract Start'] || '';
+                    bValue = b['Contract Start'] || '';
+                    
+                    // Convert DD/MM/YYYY to YYYY-MM-DD for proper comparison
+                    if (aValue && bValue) {
+                        const [aDay, aMonth, aYear] = aValue.split('/');
+                        const [bDay, bMonth, bYear] = bValue.split('/');
+                        
+                        if (aDay && aMonth && aYear && bDay && bMonth && bYear) {
+                            aValue = `${aYear}-${aMonth}-${aDay}`;
+                            bValue = `${bYear}-${bMonth}-${bDay}`;
+                        }
+                    }
+                } else if (currentSort.column === 'endDate') {
+                    aValue = a['Contract End'] || '';
+                    bValue = b['Contract End'] || '';
+                    
+                    // Convert DD/MM/YYYY to YYYY-MM-DD for proper comparison
+                    if (aValue && bValue) {
+                        const [aDay, aMonth, aYear] = aValue.split('/');
+                        const [bDay, bMonth, bYear] = bValue.split('/');
+                        
+                        if (aDay && aMonth && aYear && bDay && bMonth && bYear) {
+                            aValue = `${aYear}-${aMonth}-${aDay}`;
+                            bValue = `${bYear}-${bMonth}-${bDay}`;
+                        }
+                    }
+                } else if (currentSort.column === 'customerName') {
+                    aValue = a['Customer Name'] || '';
+                    bValue = b['Customer Name'] || '';
+                } else if (currentSort.column === 'tenant') {
+                    aValue = a['Tenant Name'] || '';
+                    bValue = b['Tenant Name'] || '';
+                } else if (currentSort.column === 'geo') {
+                    aValue = a['Geo'] || '';
+                    bValue = b['Geo'] || '';
+                } else if (currentSort.column === 'solution') {
+                    aValue = a['Solution'] || '';
+                    bValue = b['Solution'] || '';
+                } else if (currentSort.column === 'skuDetails') {
+                    aValue = a['SKU Details'] || '';
+                    bValue = b['SKU Details'] || '';
+                } else if (currentSort.column === 'status') {
+                    aValue = a['Contract Status'] || '';
+                    bValue = b['Contract Status'] || '';
+                }
+                
+                if (currentSort.direction === 'asc') {
+                    return aValue.localeCompare(bValue);
+                } else {
+                    return bValue.localeCompare(aValue);
+                }
+            });
+            
+            // Update pagination
+            currentPage = 1;
+            updatePagination();
+            
+            // Update results count
+            document.getElementById('result-count').textContent = `Showing ${filteredData.length} records`;
+            
+            // Update table
+            renderTable();
+        }
+
+        // Render the data table
+        function renderTable() {
+            const tableBody = document.getElementById('license-table-body');
+            tableBody.innerHTML = '';
+            
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, filteredData.length);
+            
+            for (let i = startIndex; i < endIndex; i++) {
+                const item = filteredData[i];
+                const row = document.createElement('tr');
+                
+                // Color-code the status
+                let statusClass = '';
+                if (item['Contract Status'] === 'In Effect') {
+                    statusClass = 'text-green-600 dark:text-green-500';
+                } else if (item['Contract Status'] === 'Future') {
+                    statusClass = 'text-blue-600 dark:text-blue-500';
+                } else if (item['Contract Status'] === 'Expired') {
+                    statusClass = 'text-red-600 dark:text-red-500';
+                }
+                
+                // Create table cells
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${item['Customer Name'] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${item['Tenant Name'] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${item['Geo'] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${item['Solution'] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${item['SKU Details'] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm ${statusClass}">${item['Contract Status'] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${item['Contract Start'] || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${item['Contract End'] || ''}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            }
+        }
+
+        // Update pagination controls
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            document.getElementById('current-page').textContent = currentPage;
+            document.getElementById('total-pages').textContent = totalPages;
+            
+            // Update button states
+            document.getElementById('prev-page').disabled = currentPage <= 1;
+            document.getElementById('next-page').disabled = currentPage >= totalPages;
+        }
+
+        // Create the charts
+        function createCharts() {
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            const textColor = isDarkMode ? '#f3f4f6' : '#111827';
+            
+            // Status chart
+            const statusCtx = document.getElementById('status-chart').getContext('2d');
+            const statusData = {
+                labels: ['In Effect', 'Future', 'Expired'],
+                datasets: [{
+                    data: [
+                        allData.filter(item => item['Contract Status'] === 'In Effect').length,
+                        allData.filter(item => item['Contract Status'] === 'Future').length,
+                        allData.filter(item => item['Contract Status'] === 'Expired').length
+                    ],
+                    backgroundColor: [
+                        'rgba(52, 211, 153, 0.7)',
+                        'rgba(96, 165, 250, 0.7)',
+                        'rgba(248, 113, 113, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgb(16, 185, 129)',
+                        'rgb(59, 130, 246)',
+                        'rgb(239, 68, 68)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+            
+            chartInstances.statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: statusData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: textColor
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Region chart
+            const regions = [...new Set(allData.map(item => item['Geo']))].filter(Boolean);
+            const regionCounts = regions.map(region => {
+                return allData.filter(item => item['Geo'] === region).length;
+            });
+            
+            const regionCtx = document.getElementById('region-chart').getContext('2d');
+            const regionData = {
+                labels: regions,
+                datasets: [{
+                    label: 'Licenses by Region',
+                    data: regionCounts,
+                    backgroundColor: 'rgba(93, 92, 222, 0.7)',
+                    borderColor: 'rgb(93, 92, 222)',
+                    borderWidth: 1
+                }]
+            };
+            
+            chartInstances.regionChart = new Chart(regionCtx, {
+                type: 'bar',
+                data: regionData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: textColor
+                            },
+                            grid: {
+                                color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: textColor
+                            },
+                            grid: {
+                                color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Solution chart
+            const solutions = [...new Set(allData.map(item => item['Solution']))].filter(Boolean);
+            const solutionCounts = solutions.map(solution => {
+                return allData.filter(item => item['Solution'] === solution).length;
+            });
+            
+            const solutionCtx = document.getElementById('solution-chart').getContext('2d');
+            const solutionData = {
+                labels: solutions,
+                datasets: [{
+                    data: solutionCounts,
+                    backgroundColor: [
+                        'rgba(93, 92, 222, 0.7)',
+                        'rgba(251, 146, 60, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgb(93, 92, 222)',
+                        'rgb(234, 88, 12)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+            
+            chartInstances.solutionChart = new Chart(solutionCtx, {
+                type: 'pie',
+                data: solutionData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: textColor
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update charts when theme changes
+        function updateCharts() {
+            // Only update if charts exist
+            if (Object.keys(chartInstances).length === 0) return;
+            
+            // Destroy existing charts
+            Object.values(chartInstances).forEach(chart => {
+                if (chart) {
+                    chart.destroy();
+                }
+            });
+            
+            // Recreate charts with updated theme
+            createCharts();
+        }
+
+        // Event listeners for dashboard functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            // Filter change handlers
+            document.getElementById('status-filter').addEventListener('change', filterAndSortData);
+            document.getElementById('geo-filter').addEventListener('change', filterAndSortData);
+            document.getElementById('solution-filter').addEventListener('change', filterAndSortData);
+            
+            // Search handler
+            document.getElementById('search').addEventListener('input', filterAndSortData);
+            
+            // Pagination handlers
+            document.getElementById('prev-page').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updatePagination();
+                    renderTable();
+                }
+            });
+            
+            document.getElementById('next-page').addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredData.length / pageSize);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updatePagination();
+                    renderTable();
+                }
+            });
+            
+            // Sorting handlers
+            document.querySelectorAll('th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const column = th.dataset.sort;
+                    
+                    // Update sort direction
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.column = column;
+                        currentSort.direction = 'asc';
+                    }
+                    
+                    // Update sort icons
+                    document.querySelectorAll('.sort-icon').forEach(icon => {
+                        icon.textContent = '';
+                    });
+                    
+                    const sortIcon = th.querySelector('.sort-icon');
+                    sortIcon.textContent = currentSort.direction === 'asc' ? '▲' : '▼';
+                    
+                    // Apply sorting
+                    filterAndSortData();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
