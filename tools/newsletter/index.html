@@ -199,6 +199,54 @@
             );
             elementsToRemove.forEach(el => el.remove());
             
+            // Handle <picture> tags first - convert them to simple <img> tags for email compatibility
+            const pictureTags = doc.querySelectorAll('picture');
+            pictureTags.forEach(pictureTag => {
+                // Find the fallback img inside the picture tag
+                const imgTag = pictureTag.querySelector('img');
+                
+                if (imgTag) {
+                    // Find the best source available in the picture tag
+                    let bestSource = null;
+                    const sources = pictureTag.querySelectorAll('source');
+                    
+                    // First try to find a source with type="image/jpeg" or type="image/png" (email-safe formats)
+                    for (const source of sources) {
+                        const type = source.getAttribute('type');
+                        if (type === 'image/jpeg' || type === 'image/png') {
+                            const srcset = source.getAttribute('srcset');
+                            if (srcset) {
+                                // Get the first source URL from srcset (ignore width descriptors)
+                                bestSource = srcset.split(' ')[0];
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If no email-safe format found, just use the first source with a srcset
+                    if (!bestSource) {
+                        for (const source of sources) {
+                            const srcset = source.getAttribute('srcset');
+                            if (srcset) {
+                                bestSource = srcset.split(' ')[0];
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If we found a better source, update the image src
+                    if (bestSource) {
+                        imgTag.setAttribute('src', bestSource);
+                    }
+                    
+                    // Clone the img with all its attributes
+                    const newImg = imgTag.cloneNode(true);
+                    
+                    // Replace the picture tag with just the img tag
+                    pictureTag.parentNode.replaceChild(newImg, pictureTag);
+                }
+            });
+            
             // Fix image URLs if needed
             if (options.fixImages) {
                 const images = doc.querySelectorAll('img');
