@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website to Email Newsletter Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- No external juice library needed -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4a49b7',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-white">
+            Website to Email Newsletter Converter
+        </h1>
+        
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8">
+            <form id="converterForm" class="space-y-4">
+                <div>
+                    <label for="websiteUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Website URL
+                    </label>
+                    <input 
+                        type="url" 
+                        id="websiteUrl" 
+                        placeholder="https://example.com" 
+                        required
+                        class="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary dark:bg-gray-700 dark:text-white"
+                    >
+                </div>
+                
+                <div class="flex flex-col space-y-2">
+                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Options
+                    </label>
+                    <div class="flex flex-wrap gap-3">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="removeScripts" checked class="form-checkbox text-primary h-5 w-5 rounded">
+                            <span class="ml-2 text-gray-700 dark:text-gray-300">Remove scripts</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="inlineCSS" checked class="form-checkbox text-primary h-5 w-5 rounded">
+                            <span class="ml-2 text-gray-700 dark:text-gray-300">Inline CSS</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="makeResponsive" checked class="form-checkbox text-primary h-5 w-5 rounded">
+                            <span class="ml-2 text-gray-700 dark:text-gray-300">Make responsive</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="fixImages" checked class="form-checkbox text-primary h-5 w-5 rounded">
+                            <span class="ml-2 text-gray-700 dark:text-gray-300">Fix image URLs</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="proxyImages" checked class="form-checkbox text-primary h-5 w-5 rounded">
+                            <span class="ml-2 text-gray-700 dark:text-gray-300">Proxy images (avoid CORS)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="keepOriginalUrls" class="form-checkbox text-primary h-5 w-5 rounded">
+                            <span class="ml-2 text-gray-700 dark:text-gray-300">Keep original image URLs</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="embedImages" class="form-checkbox text-primary h-5 w-5 rounded">
+                            <span class="ml-2 text-gray-700 dark:text-gray-300">Embed images (base64)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <button 
+                    type="submit" 
+                    id="convertButton"
+                    class="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition duration-200"
+                >
+                    Convert to Email Format
+                </button>
+            </form>
+        </div>
+        
+        <div id="loadingState" class="hidden">
+            <div class="flex justify-center items-center py-10">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+            <p class="text-center text-gray-600 dark:text-gray-400">
+                Processing your website... This may take a few moments.
+            </p>
+        </div>
+        
+        <div id="resultContainer" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Converted Email HTML</h2>
+                <div class="space-x-2">
+                    <button 
+                        id="copyButton"
+                        class="bg-primary hover:bg-primary-dark text-white font-medium py-1.5 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition duration-200"
+                    >
+                        Copy HTML
+                    </button>
+                    <button 
+                        id="previewButton"
+                        class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium py-1.5 px-3 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition duration-200"
+                    >
+                        Preview
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md overflow-hidden">
+                <pre id="htmlResult" class="p-4 whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-300 max-h-96 overflow-y-auto"></pre>
+            </div>
+            
+            <div id="previewContainer" class="hidden">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Email Preview</h2>
+                <div id="previewFrame" class="border border-gray-300 dark:border-gray-700 rounded-md p-4 bg-white min-h-[300px] overflow-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // DOM Elements
+        const form = document.getElementById('converterForm');
+        const loadingState = document.getElementById('loadingState');
+        const resultContainer = document.getElementById('resultContainer');
+        const htmlResult = document.getElementById('htmlResult');
+        const copyButton = document.getElementById('copyButton');
+        const previewButton = document.getElementById('previewButton');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewFrame = document.getElementById('previewFrame');
+        
+        // Function to fetch website content using CORS proxy
+        async function fetchWebsite(url) {
+            try {
+                // Use AllOrigins as a CORS proxy
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch website: ${response.status} ${response.statusText}`);
+                }
+                
+                return await response.text();
+            } catch (error) {
+                throw new Error(`Error fetching website: ${error.message}`);
+            }
+        }
+        
+        // Function to convert HTML to email-friendly format
+        function convertToEmailFormat(html, options, baseUrl) {
+            // Create a document to work with
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Get base URL for fixing relative paths
+            const urlObj = new URL(baseUrl);
+            const origin = urlObj.origin;
+            const path = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf('/') + 1);
+            
+            // Remove elements not suitable for email
+            if (options.removeScripts) {
+                const scripts = doc.querySelectorAll('script');
+                scripts.forEach(script => script.remove());
+                
+                // Also remove script attributes from elements
+                const elementsWithOnEvents = doc.querySelectorAll('[onclick], [onload], [onmouseover], [onmouseout]');
+                elementsWithOnEvents.forEach(el => {
+                    el.removeAttribute('onclick');
+                    el.removeAttribute('onload');
+                    el.removeAttribute('onmouseover');
+                    el.removeAttribute('onmouseout');
+                });
+            }
+            
+            // Remove other elements not suitable for email
+            const elementsToRemove = doc.querySelectorAll(
+                'iframe, canvas, svg, video, audio, noscript, style'
+            );
+            elementsToRemove.forEach(el => el.remove());
+            
+            // Fix image URLs if needed
+            if (options.fixImages) {
+                const images = doc.querySelectorAll('img');
+                images.forEach(img => {
+                    const src = img.getAttribute('src');
+                    if (src) {
+                        // Skip data URLs
+                        if (src.startsWith('data:')) {
+                            return;
+                        }
+                        
+                        let absoluteUrl;
+                        try {
+                            // Try to create an absolute URL based on the base URL
+                            absoluteUrl = new URL(src, baseUrl).href;
+                            img.setAttribute('src', absoluteUrl);
+                        } catch (e) {
+                            console.warn(`Could not convert image URL: ${src}`, e);
+                            // Fallback method for problematic URLs
+                            if (src.startsWith('http')) {
+                                // Already absolute URL
+                                img.setAttribute('src', src);
+                            } else if (src.startsWith('//')) {
+                                // Protocol-relative URL
+                                img.setAttribute('src', 'https:' + src);
+                            } else if (src.startsWith('/')) {
+                                // Root-relative URL
+                                img.setAttribute('src', origin + src);
+                            } else {
+                                // Relative URL
+                                img.setAttribute('src', origin + path + src);
+                            }
+                        }
+                    }
+                    
+                    // Add width and height attributes if not present
+                    if (!img.hasAttribute('width')) {
+                        img.setAttribute('width', 'auto');
+                    }
+                    if (!img.hasAttribute('height')) {
+                        img.setAttribute('height', 'auto');
+                    }
+                    
+                    // Add alt text if missing
+                    if (!img.hasAttribute('alt')) {
+                        img.setAttribute('alt', '');
+                    }
+                });
+                
+                // Also check for background images in inline styles
+                const elementsWithBackgroundImage = doc.querySelectorAll('[style*="background-image"]');
+                elementsWithBackgroundImage.forEach(el => {
+                    const style = el.getAttribute('style');
+                    if (style) {
+                        // Find background-image: url(...) patterns
+                        const bgImageRegex = /background-image:\s*url\(['"]?([^'")]+)['"]?\)/gi;
+                        let newStyle = style;
+                        let match;
+                        
+                        while ((match = bgImageRegex.exec(style)) !== null) {
+                            const imgUrl = match[1];
+                            if (imgUrl.startsWith('data:')) continue; // Skip data URLs
+                            
+                            try {
+                                // Convert to absolute URL
+                                const absoluteUrl = new URL(imgUrl, baseUrl).href;
+                                newStyle = newStyle.replace(imgUrl, absoluteUrl);
+                            } catch (e) {
+                                console.warn(`Could not convert background image URL: ${imgUrl}`, e);
+                            }
+                        }
+                        
+                        el.setAttribute('style', newStyle);
+                    }
+                });
+            }
+            
+            // Fix links to absolute URLs
+            const links = doc.querySelectorAll('a');
+            links.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && !href.startsWith('#') && !href.startsWith('mailto:')) {
+                    if (href.startsWith('http')) {
+                        // Already absolute URL
+                        link.setAttribute('href', href);
+                    } else if (href.startsWith('//')) {
+                        // Protocol-relative URL
+                        link.setAttribute('href', 'https:' + href);
+                    } else if (href.startsWith('/')) {
+                        // Root-relative URL
+                        link.setAttribute('href', origin + href);
+                    } else {
+                        // Relative URL
+                        link.setAttribute('href', origin + path + href);
+                    }
+                }
+                
+                // Add target="_blank" for external links
+                link.setAttribute('target', '_blank');
+            });
+            
+            // Make responsive if needed
+            if (options.makeResponsive) {
+                // Add responsive meta tag
+                if (!doc.querySelector('meta[name="viewport"]')) {
+                    const meta = doc.createElement('meta');
+                    meta.setAttribute('name', 'viewport');
+                    meta.setAttribute('content', 'width=device-width, initial-scale=1.0');
+                    doc.head.appendChild(meta);
+                }
+                
+                // Add responsive styles
+                const responsiveStyle = doc.createElement('style');
+                responsiveStyle.textContent = `
+                    @media only screen and (max-width: 600px) {
+                        table, tr, td, div, p, span, h1, h2, h3, h4, h5, h6 {
+                            max-width: 100% !important;
+                            width: 100% !important;
+                            height: auto !important;
+                        }
+                        img {
+                            max-width: 100% !important;
+                            height: auto !important;
+                        }
+                    }
+                `;
+                doc.head.appendChild(responsiveStyle);
+            }
+            
+            // Extract all CSS (both <style> tags and <link> stylesheets)
+            let css = '';
+            
+            // Get embedded styles
+            const styles = doc.querySelectorAll('style');
+            styles.forEach(style => {
+                css += style.textContent;
+            });
+            
+            // Simplify the structure - focus on main content
+            const mainContent = doc.querySelector('main') || 
+                                doc.querySelector('#content') || 
+                                doc.querySelector('#main') || 
+                                doc.querySelector('article') || 
+                                doc.querySelector('.content') || 
+                                doc.querySelector('.main') || 
+                                doc.body;
+            
+            // Create a basic email template
+            const emailTemplate = `
+                <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+                <html xmlns="http://www.w3.org/1999/xhtml">
+                <head>
+                    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                    <title>${doc.title || 'Newsletter'}</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            padding: 0;
+                            font-family: Arial, sans-serif;
+                            line-height: 1.6;
+                            color: #333333;
+                        }
+                        .container {
+                            max-width: 600px;
+                            margin: 0 auto;
+                            padding: 20px;
+                        }
+                        img {
+                            max-width: 100%;
+                            height: auto;
+                        }
+                        h1, h2, h3, h4, h5, h6 {
+                            margin-top: 20px;
+                            margin-bottom: 10px;
+                            line-height: 1.2;
+                        }
+                        p {
+                            margin-top: 0;
+                            margin-bottom: 20px;
+                        }
+                        a {
+                            color: #0066cc;
+                            text-decoration: underline;
+                        }
+                        table {
+                            border-collapse: collapse;
+                            width: 100%;
+                        }
+                        td {
+                            padding: 0;
+                        }
+                        ${css}
+                        @media only screen and (max-width: 600px) {
+                            .container {
+                                width: 100% !important;
+                            }
+                            table, tr, td, div, p, span, h1, h2, h3, h4, h5, h6 {
+                                max-width: 100% !important;
+                                width: 100% !important;
+                                height: auto !important;
+                            }
+                            img {
+                                max-width: 100% !important;
+                                height: auto !important;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                            <td>
+                                <div class="container">
+                                    ${mainContent.innerHTML}
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+            `;
+            
+            // Parse the template
+            const emailDoc = parser.parseFromString(emailTemplate, 'text/html');
+            
+            // Convert CSS to inline styles if needed
+            if (options.inlineCSS) {
+                try {
+                    // Use our custom function to inline CSS
+                    inlineStyles(emailDoc);
+                    return formatHtml(emailDoc.documentElement.outerHTML);
+                } catch (error) {
+                    console.error('Error inlining CSS:', error);
+                    return formatHtml(emailDoc.documentElement.outerHTML);
+                }
+            } else {
+                return formatHtml(emailDoc.documentElement.outerHTML);
+            }
+        }
+        
+        // Function to format HTML with proper indentation
+        function formatHtml(html) {
+            let formatted = '';
+            let indent = '';
+            
+            html.split(/>\s*</).forEach(function(node) {
+                if (node.match(/^\/\w/)) {
+                    indent = indent.substring(2);
+                }
+                
+                formatted += indent + '<' + node + '>\r\n';
+                
+                if (node.match(/^<?\w[^>]*[^\/]$/) && !node.startsWith('<input') && !node.startsWith('<img') && !node.startsWith('<br')) {
+                    indent += '  ';
+                }
+            });
+            
+            return formatted.substring(1, formatted.length - 3);
+        }
+        
+        // Function to proxy image URLs through a CORS proxy
+        function proxyImageUrl(url) {
+            // Use a CORS proxy for images
+            return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+        }
+        
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = document.getElementById('websiteUrl').value.trim();
+            if (!url) return;
+            
+            const options = {
+                removeScripts: document.getElementById('removeScripts').checked,
+                inlineCSS: document.getElementById('inlineCSS').checked,
+                makeResponsive: document.getElementById('makeResponsive').checked,
+                fixImages: document.getElementById('fixImages').checked,
+                proxyImages: document.getElementById('proxyImages').checked,
+                keepOriginalUrls: document.getElementById('keepOriginalUrls').checked,
+                embedImages: document.getElementById('embedImages').checked
+            };
+            
+            // Show loading state
+            loadingState.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            previewContainer.classList.add('hidden');
+            
+            try {
+                // Fetch website content
+                const html = await fetchWebsite(url);
+                
+                // Convert to email format
+                let emailHtml = convertToEmailFormat(html, options, url);
+                
+                // Create a temporary document to manipulate the HTML
+                const parser = new DOMParser();
+                const tempDoc = parser.parseFromString(emailHtml, 'text/html');
+                
+                // Handle images based on selected options
+                if (options.embedImages) {
+                    // Update status message
+                    loadingState.querySelector('p').textContent = 'Embedding images... This may take a few moments.';
+                    
+                    try {
+                        // Embed images as base64
+                        const images = tempDoc.querySelectorAll('img');
+                        const imagePromises = Array.from(images).map(async (img) => {
+                            const src = img.getAttribute('src');
+                            if (src && !src.startsWith('data:')) {
+                                try {
+                                    // Show progress
+                                    loadingState.querySelector('p').textContent = `Embedding image: ${src.substring(0, 50)}...`;
+                                    
+                                    // Determine fetch URL (direct or via proxy)
+                                    let fetchUrl = src;
+                                    try {
+                                        // Try to fetch directly first
+                                        const response = await fetch(src);
+                                        if (!response.ok) {
+                                            throw new Error('Direct fetch failed, trying proxy');
+                                        }
+                                    } catch (e) {
+                                        // If direct fetch fails, use proxy
+                                        fetchUrl = proxyImageUrl(src);
+                                    }
+                                    
+                                    // Fetch the image
+                                    const response = await fetch(fetchUrl);
+                                    if (!response.ok) {
+                                        console.warn(`Failed to fetch image: ${src}`);
+                                        return;
+                                    }
+                                    
+                                    // Get image data
+                                    const blob = await response.blob();
+                                    const base64 = await new Promise((resolve) => {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => resolve(reader.result);
+                                        reader.readAsDataURL(blob);
+                                    });
+                                    
+                                    // Replace the src with base64 data
+                                    img.setAttribute('src', base64);
+                                } catch (error) {
+                                    console.warn(`Error embedding image ${src}:`, error);
+                                }
+                            }
+                        });
+                        
+                        // Wait for all images to be processed
+                        await Promise.all(imagePromises);
+                        
+                        // Also convert background images (much more complex, so we'll just try)
+                        try {
+                            const elementsWithBackgroundImage = tempDoc.querySelectorAll('[style*="background-image"]');
+                            const bgImagePromises = Array.from(elementsWithBackgroundImage).map(async (el) => {
+                                const style = el.getAttribute('style');
+                                if (style) {
+                                    // Find background-image: url(...) patterns
+                                    const bgImageRegex = /background-image:\s*url\(['"]?([^'")]+)['"]?\)/gi;
+                                    let newStyle = style;
+                                    let match;
+                                    
+                                    while ((match = bgImageRegex.exec(style)) !== null) {
+                                        const imgUrl = match[1];
+                                        if (imgUrl.startsWith('data:')) continue; // Skip data URLs
+                                        
+                                        try {
+                                            // Show progress
+                                            loadingState.querySelector('p').textContent = `Embedding background image: ${imgUrl.substring(0, 50)}...`;
+                                            
+                                            // Determine fetch URL (direct or via proxy)
+                                            let fetchUrl = imgUrl;
+                                            try {
+                                                // Try to fetch directly first
+                                                const response = await fetch(imgUrl);
+                                                if (!response.ok) {
+                                                    throw new Error('Direct fetch failed, trying proxy');
+                                                }
+                                            } catch (e) {
+                                                // If direct fetch fails, use proxy
+                                                fetchUrl = proxyImageUrl(imgUrl);
+                                            }
+                                            
+                                            // Fetch the image
+                                            const response = await fetch(fetchUrl);
+                                            if (!response.ok) {
+                                                console.warn(`Failed to fetch background image: ${imgUrl}`);
+                                                continue;
+                                            }
+                                            
+                                            // Get image data
+                                            const blob = await response.blob();
+                                            const base64 = await new Promise((resolve) => {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => resolve(reader.result);
+                                                reader.readAsDataURL(blob);
+                                            });
+                                            
+                                            // Replace the url with base64 data
+                                            newStyle = newStyle.replace(imgUrl, base64);
+                                        } catch (error) {
+                                            console.warn(`Error embedding background image ${imgUrl}:`, error);
+                                        }
+                                    }
+                                    
+                                    // Set the new style with embedded images
+                                    el.setAttribute('style', newStyle);
+                                }
+                            });
+                            
+                            // Wait for all background images to be processed
+                            await Promise.all(bgImagePromises);
+                        } catch (e) {
+                            console.warn('Error processing background images:', e);
+                        }
+                        
+                        // Update status message
+                        loadingState.querySelector('p').textContent = 'Finalizing...';
+                    } catch (e) {
+                        console.error('Error embedding images:', e);
+                    }
+                } 
+                // Otherwise, if we need to proxy images
+                else if (options.proxyImages && options.fixImages && !options.keepOriginalUrls) {
+                    // Replace all image URLs with proxied versions
+                    const images = tempDoc.querySelectorAll('img');
+                    images.forEach(img => {
+                        const src = img.getAttribute('src');
+                        if (src && !src.startsWith('data:')) {
+                            img.setAttribute('src', proxyImageUrl(src));
+                        }
+                    });
+                    
+                    // Also check for background images in inline styles
+                    const elementsWithBackgroundImage = tempDoc.querySelectorAll('[style*="background-image"]');
+                    elementsWithBackgroundImage.forEach(el => {
+                        const style = el.getAttribute('style');
+                        if (style) {
+                            // Find background-image: url(...) patterns
+                            const bgImageRegex = /background-image:\s*url\(['"]?([^'")]+)['"]?\)/gi;
+                            let newStyle = style;
+                            let match;
+                            
+                            while ((match = bgImageRegex.exec(style)) !== null) {
+                                const imgUrl = match[1];
+                                if (imgUrl.startsWith('data:')) continue; // Skip data URLs
+                                
+                                // Replace with proxied URL
+                                newStyle = newStyle.replace(imgUrl, proxyImageUrl(imgUrl));
+                            }
+                            
+                            el.setAttribute('style', newStyle);
+                        }
+                    });
+                }
+                
+                // Get the modified HTML
+                emailHtml = formatHtml(tempDoc.documentElement.outerHTML);
+                
+                // Display the result
+                htmlResult.textContent = emailHtml;
+                
+                // Hide loading, show result
+                loadingState.classList.add('hidden');
+                resultContainer.classList.remove('hidden');
+            } catch (error) {
+                loadingState.classList.add('hidden');
+                alert('Error: ' + error.message);
+            }
+        });
+        
+        // Copy button functionality
+        copyButton.addEventListener('click', () => {
+            const textToCopy = htmlResult.textContent;
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    const originalText = copyButton.textContent;
+                    copyButton.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyButton.textContent = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    alert('Failed to copy: ' + err);
+                });
+        });
+        
+        // Preview button functionality
+        previewButton.addEventListener('click', () => {
+            previewContainer.classList.toggle('hidden');
+            if (!previewContainer.classList.contains('hidden')) {
+                // Create a document for the preview
+                try {
+                    // Use document.write to properly initialize the preview frame
+                    // This ensures embedded images (data:image/...) are correctly displayed
+                    const previewContent = htmlResult.textContent;
+                    
+                    // Create an iframe for the preview (more reliable than div for embedded content)
+                    const iframe = document.createElement('iframe');
+                    iframe.style.width = '100%';
+                    iframe.style.height = '600px';
+                    iframe.style.border = 'none';
+                    
+                    // Clear the preview container and add the iframe
+                    previewFrame.innerHTML = '';
+                    previewFrame.appendChild(iframe);
+                    
+                    // Write the content to the iframe
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    iframeDoc.open();
+                    iframeDoc.write(previewContent);
+                    iframeDoc.close();
+                } catch (error) {
+                    console.error('Error displaying preview:', error);
+                    previewFrame.innerHTML = '<p class="text-red-500">Error displaying preview. Your converted HTML is still valid, but cannot be previewed in this browser.</p>';
+                }
+            }
+        });
+        
+        // Interactivity between options
+        const proxyImagesCheckbox = document.getElementById('proxyImages');
+        const keepOriginalUrlsCheckbox = document.getElementById('keepOriginalUrls');
+        const embedImagesCheckbox = document.getElementById('embedImages');
+        
+        // When "Keep original URLs" is checked, disable "Proxy images"
+        keepOriginalUrlsCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                proxyImagesCheckbox.disabled = true;
+                // Add a visual indicator that it's disabled
+                proxyImagesCheckbox.parentElement.classList.add('opacity-50');
+                
+                // Cannot embed images when keeping original URLs
+                embedImagesCheckbox.disabled = true;
+                embedImagesCheckbox.parentElement.classList.add('opacity-50');
+            } else {
+                proxyImagesCheckbox.disabled = false;
+                proxyImagesCheckbox.parentElement.classList.remove('opacity-50');
+                
+                embedImagesCheckbox.disabled = false;
+                embedImagesCheckbox.parentElement.classList.remove('opacity-50');
+            }
+        });
+        
+        // When "Proxy images" is unchecked, enable "Keep original URLs"
+        proxyImagesCheckbox.addEventListener('change', function() {
+            if (!this.checked) {
+                keepOriginalUrlsCheckbox.checked = true;
+                keepOriginalUrlsCheckbox.disabled = true;
+                keepOriginalUrlsCheckbox.parentElement.classList.add('opacity-50');
+                
+                // Cannot embed images when keeping original URLs
+                embedImagesCheckbox.disabled = true;
+                embedImagesCheckbox.parentElement.classList.add('opacity-50');
+            } else {
+                keepOriginalUrlsCheckbox.disabled = false;
+                keepOriginalUrlsCheckbox.parentElement.classList.remove('opacity-50');
+                
+                embedImagesCheckbox.disabled = false;
+                embedImagesCheckbox.parentElement.classList.remove('opacity-50');
+            }
+        });
+        
+        // When "Embed images" is checked, disable other image options
+        embedImagesCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                keepOriginalUrlsCheckbox.disabled = true;
+                keepOriginalUrlsCheckbox.parentElement.classList.add('opacity-50');
+                
+                proxyImagesCheckbox.disabled = true;
+                proxyImagesCheckbox.parentElement.classList.add('opacity-50');
+            } else {
+                keepOriginalUrlsCheckbox.disabled = false;
+                keepOriginalUrlsCheckbox.parentElement.classList.remove('opacity-50');
+                
+                proxyImagesCheckbox.disabled = false;
+                proxyImagesCheckbox.parentElement.classList.remove('opacity-50');
+            }
+        });
+        
+        // Custom CSS inliner function
+        function inlineStyles(doc) {
+            // Get all style tags in the document
+            const styleTags = doc.querySelectorAll('style');
+            if (styleTags.length === 0) return;
+            
+            // Collect all CSS rules from style tags
+            let cssRules = [];
+            styleTags.forEach(styleTag => {
+                // Parse the CSS text
+                const cssText = styleTag.textContent;
+                // Simple CSS parser
+                const ruleRegex = /([^{]+)\{([^}]+)\}/g;
+                let match;
+                while ((match = ruleRegex.exec(cssText)) !== null) {
+                    const selector = match[1].trim();
+                    const styles = match[2].trim();
+                    
+                    // Skip media queries and keyframes for simplicity
+                    if (selector.includes('@media') || selector.includes('@keyframes')) continue;
+                    
+                    // Add the rule
+                    cssRules.push({
+                        selector: selector,
+                        styles: styles
+                    });
+                }
+            });
+            
+            // Process each CSS rule
+            cssRules.forEach(rule => {
+                try {
+                    // Find elements matching the selector
+                    const elements = doc.querySelectorAll(rule.selector);
+                    if (elements.length === 0) return;
+                    
+                    // Extract style properties
+                    const styleProps = {};
+                    rule.styles.split(';').forEach(styleProp => {
+                        if (!styleProp.trim()) return;
+                        const [property, value] = styleProp.split(':').map(s => s.trim());
+                        if (property && value) {
+                            styleProps[property] = value;
+                        }
+                    });
+                    
+                    // Apply inline styles to matching elements
+                    elements.forEach(element => {
+                        const currentStyle = element.getAttribute('style') || '';
+                        const currentProps = {};
+                        
+                        // Parse current inline styles
+                        currentStyle.split(';').forEach(style => {
+                            if (!style.trim()) return;
+                            const [prop, val] = style.split(':').map(s => s.trim());
+                            if (prop && val) {
+                                currentProps[prop] = val;
+                            }
+                        });
+                        
+                        // Merge with new styles (current styles take precedence)
+                        const mergedProps = { ...styleProps, ...currentProps };
+                        
+                        // Build the new style string
+                        const newStyle = Object.entries(mergedProps)
+                            .map(([prop, val]) => `${prop}: ${val}`)
+                            .join('; ');
+                        
+                        // Set the new inline style
+                        element.setAttribute('style', newStyle);
+                    });
+                } catch (error) {
+                    console.warn(`Error applying selector "${rule.selector}":`, error);
+                }
+            });
+            
+            // Remove style tags after inlining (except those with media queries)
+            styleTags.forEach(styleTag => {
+                if (!styleTag.textContent.includes('@media')) {
+                    styleTag.remove();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
