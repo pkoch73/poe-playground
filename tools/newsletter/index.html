@@ -462,8 +462,23 @@
         
         // Function to proxy image URLs through a CORS proxy
         function proxyImageUrl(url) {
-            // Use a CORS proxy for images
-            return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+            try {
+                // Remove protocol for better compatibility with the proxy service
+                let cleanUrl = url;
+                
+                // Remove protocol if present
+                if (url.startsWith('http://')) {
+                    cleanUrl = url.substring(7);
+                } else if (url.startsWith('https://')) {
+                    cleanUrl = url.substring(8);
+                }
+                
+                // Use images.weserv.nl - a versatile image proxy that supports CORS
+                return `https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}`;
+            } catch (e) {
+                console.warn('Error creating proxy URL:', e);
+                return url;
+            }
         }
         
         // Form submission
@@ -514,23 +529,23 @@
                                     // Show progress
                                     loadingState.querySelector('p').textContent = `Embedding image: ${src.substring(0, 50)}...`;
                                     
-                                    // Determine fetch URL (direct or via proxy)
-                                    let fetchUrl = src;
-                                    try {
-                                        // Try to fetch directly first
-                                        const response = await fetch(src);
-                                        if (!response.ok) {
-                                            throw new Error('Direct fetch failed, trying proxy');
-                                        }
-                                    } catch (e) {
-                                        // If direct fetch fails, use proxy
-                                        fetchUrl = proxyImageUrl(src);
-                                    }
+                                    // Always use the proxy for image embedding to ensure CORS compliance
+                                    const fetchUrl = proxyImageUrl(src);
                                     
-                                    // Fetch the image
-                                    const response = await fetch(fetchUrl);
+                                    // Fetch the image with timeout
+                                    const controller = new AbortController();
+                                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                                    
+                                    const response = await fetch(fetchUrl, {
+                                        signal: controller.signal,
+                                        // Using no-cors mode can help with some images, but limits what we can do with the response
+                                        // mode: 'no-cors'
+                                    });
+                                    
+                                    clearTimeout(timeoutId);
+                                    
                                     if (!response.ok) {
-                                        console.warn(`Failed to fetch image: ${src}`);
+                                        console.warn(`Failed to fetch image: ${src} (Status: ${response.status})`);
                                         return;
                                     }
                                     
@@ -572,23 +587,21 @@
                                             // Show progress
                                             loadingState.querySelector('p').textContent = `Embedding background image: ${imgUrl.substring(0, 50)}...`;
                                             
-                                            // Determine fetch URL (direct or via proxy)
-                                            let fetchUrl = imgUrl;
-                                            try {
-                                                // Try to fetch directly first
-                                                const response = await fetch(imgUrl);
-                                                if (!response.ok) {
-                                                    throw new Error('Direct fetch failed, trying proxy');
-                                                }
-                                            } catch (e) {
-                                                // If direct fetch fails, use proxy
-                                                fetchUrl = proxyImageUrl(imgUrl);
-                                            }
+                                            // Always use proxy for background images too
+                                            const fetchUrl = proxyImageUrl(imgUrl);
                                             
-                                            // Fetch the image
-                                            const response = await fetch(fetchUrl);
+                                            // Fetch with timeout
+                                            const controller = new AbortController();
+                                            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                                            
+                                            const response = await fetch(fetchUrl, {
+                                                signal: controller.signal
+                                            });
+                                            
+                                            clearTimeout(timeoutId);
+                                            
                                             if (!response.ok) {
-                                                console.warn(`Failed to fetch background image: ${imgUrl}`);
+                                                console.warn(`Failed to fetch background image: ${imgUrl} (Status: ${response.status})`);
                                                 continue;
                                             }
                                             
