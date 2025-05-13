@@ -1256,7 +1256,13 @@
             },
             
             // Search for assets within a collection using facetFilters
+            // Tracking flag to avoid duplicate API calls
+            _isLoadingCollection: false,
+            
             searchCollectionAssets: async function(collectionId, filters = {}) {
+                // Add extensive logging for tracking API calls
+                console.log(`API CALL - Collection: ${collectionId}, Filters:`, JSON.stringify(filters));
+                
                 // Base API URL
                 const baseApiUrl = 'https://delivery-p108396-e1040009.adobeaemcloud.com';
                 const searchEndpoint = `${baseApiUrl}/adobe/assets/search`;
@@ -1573,6 +1579,16 @@
             // Set the active collection and load its assets
             setActiveCollection: async function(collection) {
                 console.log('Setting active collection:', collection?.name || 'null');
+                
+                // IMPORTANT: Prevent duplicate loading of the same collection
+                if (this._isLoadingCollection) {
+                    console.warn('⚠️ Preventing duplicate collection loading - operation already in progress');
+                    return;
+                }
+
+                // Set loading flag to true to prevent duplicate calls
+                this._isLoadingCollection = true;
+                
                 this.activeCollection = collection;
                 
                 if (collection) {
@@ -1598,22 +1614,54 @@
                         if (collection.collectionId) {
                             console.log('Loading real API collection assets for collection ID:', collection.collectionId);
                             const result = await this.searchCollectionAssets(collection.collectionId);
-                            console.log('Successfully loaded assets from API, count:', result.assets.length);
                             
-                            // Store the assets and facets for later use
-                            this.currentCollectionAssets = result.assets;
-                            this.currentCollectionFacets = result.facets;
-                            
-                            // Update the filter dropdowns from facets
-                            this.populateFiltersFromFacets(result.facets);
-                            console.log('Updated filter dropdowns from facets');
-                            
-                            // Display the assets and folder structure
-                            console.log('About to display assets...');
-                            displayAssets(result.assets);
-                            console.log('Assets display completed');
-                            generateFolderStructure(result.assets);
-                            console.log('Folder structure generated');
+                            // IMPORTANT: Check if we actually got assets back, and only proceed if we did
+                            if (result.assets && result.assets.length > 0) {
+                                console.log('Successfully loaded assets from API, count:', result.assets.length);
+                                
+                                // Store the assets and facets for later use
+                                this.currentCollectionAssets = result.assets;
+                                this.currentCollectionFacets = result.facets;
+                                
+                                // Update the filter dropdowns from facets
+                                this.populateFiltersFromFacets(result.facets);
+                                console.log('Updated filter dropdowns from facets');
+                                
+                                // Display the assets and folder structure
+                                console.log('About to display assets...');
+                                displayAssets(result.assets);
+                                console.log('Assets display completed');
+                                generateFolderStructure(result.assets);
+                                console.log('Folder structure generated');
+                            } else {
+                                console.warn('⚠️ API returned zero assets! Preserving previously loaded assets');
+                                
+                                // Still store the facets even if there are no assets
+                                if (result.facets) {
+                                    this.currentCollectionFacets = result.facets;
+                                    this.populateFiltersFromFacets(result.facets);
+                                    console.log('Updated filter dropdowns from facets, despite no assets');
+                                }
+                                
+                                // If we have previously loaded assets, keep showing them
+                                if (this.currentCollectionAssets && this.currentCollectionAssets.length > 0) {
+                                    console.log('Displaying previously loaded assets:', this.currentCollectionAssets.length);
+                                    displayAssets(this.currentCollectionAssets);
+                                    generateFolderStructure(this.currentCollectionAssets);
+                                } else if (window._lastLoadedAssets && window._lastLoadedAssets.length > 0) {
+                                    // Last resort - use the recovery variable if available
+                                    console.log('Using recovered assets:', window._lastLoadedAssets.length);
+                                    displayAssets(window._lastLoadedAssets);
+                                    generateFolderStructure(window._lastLoadedAssets);
+                                    
+                                    // Show a notification about the recovery
+                                    showNotification('Automatically recovered assets from previous view', 'info');
+                                } else {
+                                    // Show an empty state if we have no assets to show
+                                    displayAssets([]);
+                                    generateFolderStructure([]);
+                                }
+                            }
                         } else {
                             // We're using sample data
                             console.log('Using sample data from local storage');
@@ -1631,6 +1679,11 @@
                         
                         // Show notification about the error
                         showNotification('Failed to load collection assets: ' + error.message, 'error');
+                    } finally {
+                        // IMPORTANT: Always reset the loading flag when done, even in case of errors
+                        // This prevents the app from getting stuck in a loading state if an error occurs
+                        this._isLoadingCollection = false;
+                        console.log('Collection loading flag reset');
                     }
                 }
             },
