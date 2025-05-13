@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marketing Media Organizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -187,6 +187,10 @@
                             
                             <button id="clear-filters" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded transition">
                                 Reset Filters
+                            </button>
+                            
+                            <button id="recover-assets-btn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded transition">
+                                Recover Assets View
                             </button>
                         </div>
                     </div>
@@ -1568,6 +1572,7 @@
             
             // Set the active collection and load its assets
             setActiveCollection: async function(collection) {
+                console.log('Setting active collection:', collection?.name || 'null');
                 this.activeCollection = collection;
                 
                 if (collection) {
@@ -1591,7 +1596,9 @@
                     try {
                         // Check if we have a collection ID (from real API) or using sample data
                         if (collection.collectionId) {
+                            console.log('Loading real API collection assets for collection ID:', collection.collectionId);
                             const result = await this.searchCollectionAssets(collection.collectionId);
+                            console.log('Successfully loaded assets from API, count:', result.assets.length);
                             
                             // Store the assets and facets for later use
                             this.currentCollectionAssets = result.assets;
@@ -1599,15 +1606,23 @@
                             
                             // Update the filter dropdowns from facets
                             this.populateFiltersFromFacets(result.facets);
+                            console.log('Updated filter dropdowns from facets');
                             
                             // Display the assets and folder structure
+                            console.log('About to display assets...');
                             displayAssets(result.assets);
+                            console.log('Assets display completed');
                             generateFolderStructure(result.assets);
+                            console.log('Folder structure generated');
                         } else {
                             // We're using sample data
+                            console.log('Using sample data from local storage');
                             const filtered = filterAssets();
+                            console.log('Filtered sample assets, count:', filtered.length);
                             displayAssets(filtered);
+                            console.log('Sample assets displayed');
                             generateFolderStructure(filtered);
+                            console.log('Sample folder structure generated');
                         }
                     } catch (error) {
                         console.error('Error loading collection assets:', error);
@@ -2522,17 +2537,34 @@
             }
         }
 
+        // Global variable to store the last successfully loaded assets
+        window._lastLoadedAssets = [];
+        
         // Display assets in the assets container with thumbnails when available
         function displayAssets(assets) {
             const assetsContainer = document.getElementById('assets-container');
             const assetsCount = document.getElementById('assets-count');
             
-            assetsContainer.innerHTML = '';
-            assetsCount.textContent = `Showing ${assets.length} assets`;
+            // Add logging to track asset display
+            console.log('displayAssets called with', assets.length, 'assets');
             
-            if (assets.length === 0) {
-                assetsContainer.innerHTML = '<div class="col-span-full text-center py-4 text-gray-500 dark:text-gray-400">No assets match the selected filters</div>';
-                return;
+            // Store assets for recovery
+            if (assets && assets.length > 0) {
+                window._lastLoadedAssets = [...assets];
+                console.log('Saved assets to recovery variable');
+            }
+            
+            // Safety check - only clear if we have new assets to show
+            if (assetsContainer.innerHTML === '' || assets.length > 0) {
+                assetsContainer.innerHTML = '';
+                assetsCount.textContent = `Showing ${assets.length} assets`;
+                
+                if (assets.length === 0) {
+                    assetsContainer.innerHTML = '<div class="col-span-full text-center py-4 text-gray-500 dark:text-gray-400">No assets match the selected filters</div>';
+                    return;
+                }
+            } else {
+                console.log('⚠️ Prevented assets container from being cleared when it already has content');
             }
             
             assets.forEach(asset => {
@@ -3973,6 +4005,25 @@ function reattachAllEventListeners() {
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     reattachAllEventListeners();
 }
+
+// Add event handler for the Recovery button
+document.getElementById('recover-assets-btn').addEventListener('click', () => {
+    console.log('Recover Assets button clicked');
+    
+    if (window._lastLoadedAssets && window._lastLoadedAssets.length > 0) {
+        console.log(`Recovering ${window._lastLoadedAssets.length} assets from last successful load`);
+        
+        // Show notification
+        showNotification(`Recovering ${window._lastLoadedAssets.length} assets from saved state`, 'info');
+        
+        // Re-display the assets and folder structure
+        displayAssets(window._lastLoadedAssets);
+        generateFolderStructure(window._lastLoadedAssets);
+    } else {
+        console.log('No saved assets available to recover');
+        showNotification('No saved assets available to recover', 'warning');
+    }
+});
 
 // Event handlers for the export postfix modal
 document.getElementById('cancel-postfix-btn').addEventListener('click', () => {
