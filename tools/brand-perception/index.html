@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Perception Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .dark body {
+            background-color: #181818;
+            color: #fff;
+        }
+        
+        .dark .card {
+            background-color: #2a2a2a;
+        }
+        
+        .trend-up {
+            color: #4ade80;
+        }
+        
+        .trend-down {
+            color: #f87171;
+        }
+
+        /* Transition for dark mode */
+        .transition-colors {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 transition-colors">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow transition-colors">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-primary">BrandAI Perception Monitor</h1>
+                <div class="flex space-x-2">
+                    <select id="brandSelector" class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                        <option value="apple">Apple</option>
+                        <option value="samsung">Samsung</option>
+                        <option value="google">Google</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-6">
+            <!-- Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="card bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-colors">
+                    <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Overall Brand Perception</h3>
+                    <div class="flex items-baseline">
+                        <span id="overallScore" class="text-4xl font-bold text-primary">83%</span>
+                        <span id="overallTrend" class="ml-2 text-sm trend-up">+2.3%</span>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Based on 154 brand claims</p>
+                </div>
+                
+                <div class="card bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-colors">
+                    <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Problematic Claims</h3>
+                    <div class="flex items-baseline">
+                        <span id="problematicCount" class="text-4xl font-bold text-red-500">12</span>
+                        <span id="problematicTrend" class="ml-2 text-sm trend-down">+3</span>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Claims with negative perception</p>
+                </div>
+                
+                <div class="card bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-colors">
+                    <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">Top Cited Source</h3>
+                    <div class="text-lg font-medium mt-2">Reddit Threads</div>
+                    <div class="flex items-baseline">
+                        <span id="topSource" class="text-2xl font-bold text-gray-800 dark:text-gray-200">23%</span>
+                        <span id="topSourceTrend" class="ml-2 text-sm trend-up">+5.2%</span>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Of negative citations</p>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="card bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-colors">
+                    <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">Perception Trend (Last 6 Months)</h3>
+                    <canvas id="trendChart" height="250"></canvas>
+                </div>
+                
+                <div class="card bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-colors">
+                    <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">Product Line Comparison</h3>
+                    <canvas id="productChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- Claim Management Section -->
+            <div class="card bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6 transition-colors">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2 md:mb-0">Brand Claims Library</h2>
+                    <div class="flex space-x-2">
+                        <select id="filterLevel" class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base">
+                            <option value="all">All Levels</option>
+                            <option value="brand">Brand Level</option>
+                            <option value="product-line">Product Line</option>
+                            <option value="product">Product</option>
+                            <option value="sku">SKU</option>
+                        </select>
+                        <button id="addClaimBtn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md">
+                            Add Claim
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Claims Table -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Claim</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Level</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Perception</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Trend</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="claimsTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Claims will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Critical Sources Section -->
+            <div class="card bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-colors">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Critical Sources</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="criticalSources">
+                    <!-- Sources will be populated here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Claim Modal -->
+    <div id="addClaimModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Add New Brand Claim</h3>
+            <form id="claimForm">
+                <div class="mb-4">
+                    <label for="claimText" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Claim Statement</label>
+                    <textarea id="claimText" rows="3" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700" placeholder="Enter claim statement..."></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="claimLevel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Claim Level</label>
+                    <select id="claimLevel" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                        <option value="brand">Brand Level</option>
+                        <option value="product-line">Product Line</option>
+                        <option value="product">Product</option>
+                        <option value="sku">SKU</option>
+                    </select>
+                </div>
+                <div class="mb-4 hidden" id="productLineContainer">
+                    <label for="productLine" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Product Line</label>
+                    <select id="productLine" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                        <option value="iphone">iPhone</option>
+                        <option value="ipad">iPad</option>
+                        <option value="mac">Mac</option>
+                        <option value="watch">Watch</option>
+                        <option value="airpods">AirPods</option>
+                        <option value="vision">Vision</option>
+                    </select>
+                </div>
+                <div class="mb-4 hidden" id="productContainer">
+                    <label for="product" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Product</label>
+                    <select id="product" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                        <option value="iphone-15">iPhone 15</option>
+                        <option value="iphone-15-pro">iPhone 15 Pro</option>
+                        <option value="ipad-pro">iPad Pro</option>
+                        <option value="macbook-pro">MacBook Pro</option>
+                        <option value="vision-pro">Vision Pro</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" id="cancelAddClaim" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md">Add Claim</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Claim Detail Modal -->
+    <div id="claimDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-4">
+                <h3 id="detailClaimText" class="text-xl font-bold text-gray-800 dark:text-gray-200"></h3>
+                <button id="closeDetailModal" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <div class="mb-4">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Current Perception</span>
+                        <div class="flex items-baseline">
+                            <span id="detailPerception" class="text-3xl font-bold text-primary">78%</span>
+                            <span id="detailTrend" class="ml-2 text-sm trend-down">-3.2%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Level</span>
+                        <div id="detailLevel" class="text-lg font-medium">Product Line - iPhone</div>
+                    </div>
+                    
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Last Updated</span>
+                        <div id="detailLastUpdated" class="text-lg font-medium">June 15, 2023</div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">6-Month Trend</h4>
+                    <canvas id="detailTrendChart" height="150"></canvas>
+                </div>
+            </div>
+            
+            <h4 class="font-bold text-gray-800 dark:text-gray-200 mb-3">AI Sources & Citations</h4>
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                <div id="detailSources" class="space-y-4">
+                    <!-- Sources will be populated here -->
+                </div>
+            </div>
+            
+            <div class="flex justify-end">
+                <button id="runTestBtn" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md mr-2">
+                    Run New Test
+                </button>
+                <button id="editClaimBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    Edit Claim
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // Sample data
+        const brandClaims = [
+            {
+                id: 1,
+                text: "Apple's products are environmentally friendly",
+                level: "brand",
+                productLine: null,
+                product: null,
+                perception: 72,
+                trend: -5.4,
+                lastUpdated: "2023-06-10"
+            },
+            {
+                id: 2,
+                text: "When buying multiple Apple products, integration just works",
+                level: "brand",
+                productLine: null,
+                product: null,
+                perception: 94,
+                trend: 2.1,
+                lastUpdated: "2023-06-12"
+            },
+            {
+                id: 3,
+                text: "Apple's products may not be cheap, but offer good value for money",
+                level: "brand",
+                productLine: null,
+                product: null,
+                perception: 68,
+                trend: -2.3,
+                lastUpdated: "2023-06-05"
+            },
+            {
+                id: 4,
+                text: "iPhone cameras are industry-leading",
+                level: "product-line",
+                productLine: "iphone",
+                product: null,
+                perception: 88,
+                trend: 3.2,
+                lastUpdated: "2023-06-15"
+            },
+            {
+                id: 5,
+                text: "Mac computers last longer than competitors",
+                level: "product-line",
+                productLine: "mac",
+                product: null,
+                perception: 91,
+                trend: 0.8,
+                lastUpdated: "2023-06-08"
+            },
+            {
+                id: 6,
+                text: "Vision Pro is a revolutionary product",
+                level: "product",
+                productLine: "vision",
+                product: "vision-pro",
+                perception: 53,
+                trend: -12.5,
+                lastUpdated: "2023-06-01"
+            },
+            {
+                id: 7,
+                text: "iPhone 15 Pro has the best smartphone camera",
+                level: "product",
+                productLine: "iphone",
+                product: "iphone-15-pro",
+                perception: 79,
+                trend: 4.2,
+                lastUpdated: "2023-06-11"
+            }
+        ];
+        
+        const criticalSourcesData = [
+            {
+                source: "Reddit Threads",
+                percentage: 23,
+                trend: 5.2,
+                examples: [
+                    "r/technology discussion on Vision Pro price point",
+                    "r/apple thread criticizing environmental claims"
+                ]
+            },
+            {
+                source: "Tech Review Blogs",
+                percentage: 18,
+                trend: -1.5,
+                examples: [
+                    "TechCrunch review of iPhone 15 battery life",
+                    "The Verge criticism of Apple repair policies"
+                ]
+            },
+            {
+                source: "Twitter/X",
+                percentage: 15,
+                trend: 2.8,
+                examples: [
+                    "Viral thread comparing Apple to competitors",
+                    "Tech influencer critique of Apple pricing"
+                ]
+            },
+            {
+                source: "YouTube Reviews",
+                percentage: 12,
+                trend: -0.3,
+                examples: [
+                    "MKBHD review highlighting Vision Pro limitations",
+                    "iJustine comparison of Apple vs Android ecosystem"
+                ]
+            }
+        ];
+        
+        const monthlyPerceptionData = {
+            months: ['January', 'February', 'March', 'April', 'May', 'June'],
+            values: [79, 77, 80, 82, 81, 83]
+        };
+        
+        const productLineData = {
+            labels: ['Overall', 'iPhone', 'iPad', 'Mac', 'Watch', 'AirPods', 'Vision'],
+            values: [83, 86, 79, 84, 88, 82, 63]
+        };
+        
+        const detailSourcesData = [
+            {
+                ai: "Claude AI",
+                verdict: "False",
+                confidence: 78,
+                citation: "According to a Greenpeace report from March 2023, while Apple has made progress, their products still contain toxic materials and have repairability issues that contradict their environmental claims.",
+                source: "greenpeace.org/electronics-report-2023"
+            },
+            {
+                ai: "GPT-4",
+                verdict: "Partially True",
+                confidence: 65,
+                citation: "Apple has made significant strides in environmental initiatives, including renewable energy in operations and recycled materials. However, product repairability and e-waste issues remain concerns.",
+                source: "apple.com/environment, ifixit.com/repairability-index"
+            },
+            {
+                ai: "Gemini",
+                verdict: "False",
+                confidence: 72,
+                citation: "While Apple markets environmental friendliness, independent testing shows their products contain PFAS chemicals and have low repairability scores (avg 4.2/10 on iFixit).",
+                source: "consumerreports.org/tech-sustainability, reddit.com/r/technology"
+            }
+        ];
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize charts
+            initTrendChart();
+            initProductChart();
+            
+            // Populate the claims table
+            populateClaimsTable();
+            
+            // Populate critical sources
+            populateCriticalSources();
+            
+            // Setup event listeners
+            setupEventListeners();
+        });
+        
+        function initTrendChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            
+            // Color based on dark/light mode
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const textColor = isDarkMode ? '#9ca3af' : '#6b7280';
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthlyPerceptionData.months,
+                    datasets: [{
+                        label: 'Brand Perception',
+                        data: monthlyPerceptionData.values,
+                        borderColor: '#5D5CDE',
+                        backgroundColor: 'rgba(93, 92, 222, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 50,
+                            max: 100,
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initProductChart() {
+            const ctx = document.getElementById('productChart').getContext('2d');
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            
+            // Color based on dark/light mode
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const textColor = isDarkMode ? '#9ca3af' : '#6b7280';
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: productLineData.labels,
+                    datasets: [{
+                        label: 'Perception Score',
+                        data: productLineData.values,
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            return value < 70 ? '#f87171' : 
+                                   value < 80 ? '#fbbf24' : '#5D5CDE';
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 50,
+                            max: 100,
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function initDetailChart(claimId) {
+            // Generate some random data for the claim's 6-month trend
+            const months = ['January', 'February', 'March', 'April', 'May', 'June'];
+            const claim = brandClaims.find(c => c.id === claimId);
+            
+            // Start from current perception and work backwards with some randomness
+            let currentValue = claim.perception;
+            const values = [currentValue];
+            
+            for (let i = 1; i < 6; i++) {
+                // Add some randomness but maintain the overall trend direction
+                const randomChange = (Math.random() * 5) - 2; // Random between -2 and 3
+                const directedChange = (claim.trend > 0) ? 
+                    -(Math.random() * 3) : // If trending up now, trend was down before
+                    (Math.random() * 3);   // If trending down now, trend was up before
+                
+                const newValue = Math.min(Math.max(values[i-1] + randomChange + directedChange, 50), 100);
+                values.unshift(newValue);
+            }
+            
+            const ctx = document.getElementById('detailTrendChart').getContext('2d');
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            
+            // Color based on dark/light mode
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const textColor = isDarkMode ? '#9ca3af' : '#6b7280';
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Perception Score',
+                        data: values,
+                        borderColor: '#5D5CDE',
+                        backgroundColor: 'rgba(93, 92, 222, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 50,
+                            max: 100,
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function populateClaimsTable(filter = 'all') {
+            const tableBody = document.getElementById('claimsTableBody');
+            tableBody.innerHTML = '';
+            
+            // Filter claims if needed
+            const filteredClaims = filter === 'all' ? 
+                brandClaims : 
+                brandClaims.filter(claim => claim.level === filter);
+            
+            filteredClaims.forEach(claim => {
+                const row = document.createElement('tr');
+                
+                // Format level for display
+                let levelDisplay = '';
+                if (claim.level === 'brand') {
+                    levelDisplay = 'Brand';
+                } else if (claim.level === 'product-line') {
+                    const lineCapitalized = claim.productLine.charAt(0).toUpperCase() + claim.productLine.slice(1);
+                    levelDisplay = `Product Line: ${lineCapitalized}`;
+                } else if (claim.level === 'product') {
+                    const productFormatted = claim.product.split('-').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ');
+                    levelDisplay = `Product: ${productFormatted}`;
+                }
+                
+                // Get trend class and symbol
+                const trendClass = claim.trend >= 0 ? 'trend-up' : 'trend-down';
+                const trendSymbol = claim.trend >= 0 ? '↑' : '↓';
+                const trendFormatted = `${trendSymbol} ${Math.abs(claim.trend).toFixed(1)}%`;
+                
+                // Get perception color
+                let perceptionColor = '';
+                if (claim.perception >= 80) perceptionColor = 'text-green-500';
+                else if (claim.perception >= 70) perceptionColor = 'text-yellow-500';
+                else perceptionColor = 'text-red-500';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-normal">
+                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">${claim.text}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">${levelDisplay}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-lg font-medium ${perceptionColor}">${claim.perception}%</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm ${trendClass}">${trendFormatted}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="view-claim-btn text-primary hover:text-primary-dark" data-id="${claim.id}">View</button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Add event listeners to the view buttons
+            document.querySelectorAll('.view-claim-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const claimId = parseInt(this.getAttribute('data-id'));
+                    openClaimDetailModal(claimId);
+                });
+            });
+        }
+        
+        function populateCriticalSources() {
+            const container = document.getElementById('criticalSources');
+            container.innerHTML = '';
+            
+            criticalSourcesData.forEach(source => {
+                const trendClass = source.trend >= 0 ? 'trend-up' : 'trend-down';
+                const trendSymbol = source.trend >= 0 ? '↑' : '↓';
+                const trendFormatted = `${trendSymbol} ${Math.abs(source.trend).toFixed(1)}%`;
+                
+                const sourceCard = document.createElement('div');
+                sourceCard.className = 'bg-gray-50 dark:bg-gray-700 p-4 rounded-lg';
+                
+                sourceCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-medium text-gray-800 dark:text-gray-200">${source.source}</h3>
+                        <div class="flex items-baseline">
+                            <span class="text-lg font-medium">${source.percentage}%</span>
+                            <span class="ml-1 text-sm ${trendClass}">${trendFormatted}</span>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+                        ${source.examples.map(example => `<div>• ${example}</div>`).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(sourceCard);
+            });
+        }
+        
+        function openClaimDetailModal(claimId) {
+            const modal = document.getElementById('claimDetailModal');
+            const claim = brandClaims.find(c => c.id === claimId);
+            
+            if (!claim) return;
+            
+            // Populate the modal with claim details
+            document.getElementById('detailClaimText').textContent = claim.text;
+            document.getElementById('detailPerception').textContent = `${claim.perception}%`;
+            
+            // Set trend
+            const detailTrend = document.getElementById('detailTrend');
+            detailTrend.textContent = `${claim.trend >= 0 ? '+' : ''}${claim.trend.toFixed(1)}%`;
+            detailTrend.className = claim.trend >= 0 ? 'ml-2 text-sm trend-up' : 'ml-2 text-sm trend-down';
+            
+            // Set level
+            let levelText = 'Brand Level';
+            if (claim.level === 'product-line') {
+                const lineCapitalized = claim.productLine.charAt(0).toUpperCase() + claim.productLine.slice(1);
+                levelText = `Product Line - ${lineCapitalized}`;
+            } else if (claim.level === 'product') {
+                const productFormatted = claim.product.split('-').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ');
+                levelText = `Product - ${productFormatted}`;
+            }
+            document.getElementById('detailLevel').textContent = levelText;
+            
+            // Set last updated
+            const lastUpdated = new Date(claim.lastUpdated);
+            document.getElementById('detailLastUpdated').textContent = lastUpdated.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Populate sources
+            const sourcesContainer = document.getElementById('detailSources');
+            sourcesContainer.innerHTML = '';
+            
+            detailSourcesData.forEach(source => {
+                const verdictColor = 
+                    source.verdict === 'True' ? 'text-green-500' :
+                    source.verdict === 'False' ? 'text-red-500' : 'text-yellow-500';
+                
+                const sourceEl = document.createElement('div');
+                sourceEl.className = 'border-b border-gray-200 dark:border-gray-600 pb-3 last:border-0 last:pb-0';
+                
+                sourceEl.innerHTML = `
+                    <div class="flex justify-between mb-1">
+                        <span class="font-medium text-gray-800 dark:text-gray-200">${source.ai}</span>
+                        <span class="${verdictColor} font-medium">${source.verdict} (${source.confidence}%)</span>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 text-sm mb-1">${source.citation}</p>
+                    <p class="text-xs text-primary">Source: ${source.source}</p>
+                `;
+                
+                sourcesContainer.appendChild(sourceEl);
+            });
+            
+            // Initialize chart
+            setTimeout(() => {
+                initDetailChart(claimId);
+            }, 100);
+            
+            // Show the modal
+            modal.classList.remove('hidden');
+        }
+        
+        function setupEventListeners() {
+            // Filter claims
+            document.getElementById('filterLevel').addEventListener('change', function() {
+                populateClaimsTable(this.value);
+            });
+            
+            // Add claim button
+            document.getElementById('addClaimBtn').addEventListener('click', function() {
+                document.getElementById('addClaimModal').classList.remove('hidden');
+            });
+            
+            // Cancel add claim
+            document.getElementById('cancelAddClaim').addEventListener('click', function() {
+                document.getElementById('addClaimModal').classList.add('hidden');
+            });
+            
+            // Close detail modal
+            document.getElementById('closeDetailModal').addEventListener('click', function() {
+                document.getElementById('claimDetailModal').classList.add('hidden');
+            });
+            
+            // Run test button (simulate)
+            document.getElementById('runTestBtn').addEventListener('click', function() {
+                this.textContent = 'Running Test...';
+                this.disabled = true;
+                
+                setTimeout(() => {
+                    this.textContent = 'Test Complete';
+                    
+                    // Update source data (randomly)
+                    const sourcesContainer = document.getElementById('detailSources');
+                    const sources = sourcesContainer.querySelectorAll('div');
+                    
+                    sources.forEach(source => {
+                        const verdictEl = source.querySelector('span:nth-child(2)');
+                        const confidenceOld = parseInt(verdictEl.textContent.match(/\((\d+)%\)/)[1]);
+                        const confidenceNew = Math.max(50, Math.min(95, confidenceOld + (Math.random() > 0.5 ? 5 : -5)));
+                        
+                        // Update confidence
+                        verdictEl.textContent = verdictEl.textContent.replace(
+                            /\((\d+)%\)/, 
+                            `(${confidenceNew}%)`
+                        );
+                    });
+                    
+                    setTimeout(() => {
+                        this.textContent = 'Run New Test';
+                        this.disabled = false;
+                    }, 1000);
+                }, 2000);
+            });
+            
+            // Claim level change
+            document.getElementById('claimLevel').addEventListener('change', function() {
+                const productLineContainer = document.getElementById('productLineContainer');
+                const productContainer = document.getElementById('productContainer');
+                
+                if (this.value === 'brand') {
+                    productLineContainer.classList.add('hidden');
+                    productContainer.classList.add('hidden');
+                } else if (this.value === 'product-line') {
+                    productLineContainer.classList.remove('hidden');
+                    productContainer.classList.add('hidden');
+                } else {
+                    productLineContainer.classList.remove('hidden');
+                    productContainer.classList.remove('hidden');
+                }
+            });
+            
+            // Form submission
+            document.getElementById('claimForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const claimText = document.getElementById('claimText').value.trim();
+                const claimLevel = document.getElementById('claimLevel').value;
+                
+                if (!claimText) {
+                    alert('Please enter a claim statement');
+                    return;
+                }
+                
+                // Get product line and product if applicable
+                let productLine = null;
+                let product = null;
+                
+                if (claimLevel !== 'brand') {
+                    productLine = document.getElementById('productLine').value;
+                    if (claimLevel === 'product') {
+                        product = document.getElementById('product').value;
+                    }
+                }
+                
+                // Generate a perception score between 60-95
+                const perception = Math.floor(Math.random() * 36) + 60;
+                // Generate a trend between -10 and +10
+                const trend = Math.round((Math.random() * 20 - 10) * 10) / 10;
+                
+                // Add the new claim
+                const newId = brandClaims.length > 0 ? Math.max(...brandClaims.map(c => c.id)) + 1 : 1;
+                
+                const newClaim = {
+                    id: newId,
+                    text: claimText,
+                    level: claimLevel,
+                    productLine: productLine,
+                    product: product,
+                    perception: perception,
+                    trend: trend,
+                    lastUpdated: new Date().toISOString().split('T')[0]
+                };
+                
+                brandClaims.push(newClaim);
+                
+                // Refresh the table
+                populateClaimsTable(document.getElementById('filterLevel').value);
+                
+                // Hide the modal
+                document.getElementById('addClaimModal').classList.add('hidden');
+                
+                // Reset the form
+                this.reset();
+                document.getElementById('productLineContainer').classList.add('hidden');
+                document.getElementById('productContainer').classList.add('hidden');
+            });
+            
+            // Brand selector change
+            document.getElementById('brandSelector').addEventListener('change', function() {
+                // In a real app, this would load different brand data
+                const brand = this.value;
+                document.querySelector('h1').textContent = 
+                    brand.charAt(0).toUpperCase() + brand.slice(1) + ' Brand Perception Monitor';
+            });
+        }
+    </script>
+</body>
+</html>
