@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Property Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#5D5CDE',
+                            dark: '#4b4ab2',
+                            light: '#7978e3'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-center text-primary">Real Estate Property Manager</h1>
+            <div class="flex justify-center mt-4">
+                <nav class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+                    <ul class="flex">
+                        <li>
+                            <button id="entryTab" class="px-6 py-3 text-primary font-semibold focus:outline-none border-b-2 border-primary">
+                                <i class="fas fa-home mr-2"></i>Property Entry
+                            </button>
+                        </li>
+                        <li>
+                            <button id="searchTab" class="px-6 py-3 text-gray-500 dark:text-gray-400 font-semibold focus:outline-none">
+                                <i class="fas fa-search mr-2"></i>Search Properties
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <main>
+            <!-- Property Entry Section -->
+            <section id="propertyEntrySection" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Select Property Template</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <button data-template="residential" class="template-btn bg-primary text-white p-4 rounded-lg text-center font-medium hover:bg-primary-dark transition">
+                            <i class="fas fa-house-user text-2xl mb-2"></i>
+                            <span class="block">Residential</span>
+                        </button>
+                        <button data-template="commercial" class="template-btn bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-4 rounded-lg text-center font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                            <i class="fas fa-building text-2xl mb-2"></i>
+                            <span class="block">Commercial</span>
+                        </button>
+                        <button data-template="land" class="template-btn bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-4 rounded-lg text-center font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                            <i class="fas fa-tree text-2xl mb-2"></i>
+                            <span class="block">Land</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <form id="propertyForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Basic Info Section -->
+                        <div class="space-y-4">
+                            <h3 class="font-semibold border-b pb-2 dark:border-gray-700">Basic Information</h3>
+                            
+                            <div>
+                                <label for="title" class="block text-sm font-medium mb-1">Property Title</label>
+                                <input type="text" id="title" name="title" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" required>
+                            </div>
+                            
+                            <div>
+                                <label for="type" class="block text-sm font-medium mb-1">Property Type</label>
+                                <select id="type" name="type" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" required>
+                                    <option value="">Select property type</option>
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="price" class="block text-sm font-medium mb-1">Price ($)</label>
+                                <input type="number" id="price" name="price" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" min="0" required>
+                            </div>
+                            
+                            <div>
+                                <label for="status" class="block text-sm font-medium mb-1">Status</label>
+                                <select id="status" name="status" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" required>
+                                    <option value="For Sale">For Sale</option>
+                                    <option value="For Rent">For Rent</option>
+                                    <option value="Sold">Sold</option>
+                                    <option value="Pending">Pending</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Location Section -->
+                        <div class="space-y-4">
+                            <h3 class="font-semibold border-b pb-2 dark:border-gray-700">Location</h3>
+                            
+                            <div>
+                                <label for="address" class="block text-sm font-medium mb-1">Street Address</label>
+                                <input type="text" id="address" name="address" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" required>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="city" class="block text-sm font-medium mb-1">City</label>
+                                    <input type="text" id="city" name="city" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" required>
+                                </div>
+                                <div>
+                                    <label for="state" class="block text-sm font-medium mb-1">State</label>
+                                    <input type="text" id="state" name="state" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" required>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="zip" class="block text-sm font-medium mb-1">ZIP Code</label>
+                                    <input type="text" id="zip" name="zip" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" required>
+                                </div>
+                                <div>
+                                    <label for="neighborhood" class="block text-sm font-medium mb-1">Neighborhood</label>
+                                    <input type="text" id="neighborhood" name="neighborhood" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Template Fields -->
+                    <div id="templateFields" class="space-y-4">
+                        <!-- Fields will be added dynamically based on template selection -->
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium mb-1">Description</label>
+                        <textarea id="description" name="description" rows="4" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary"></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="reset" class="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg mr-4 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                            Reset
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">
+                            Save Property
+                        </button>
+                    </div>
+                </form>
+            </section>
+            
+            <!-- Property Search Section -->
+            <section id="propertySearchSection" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 hidden">
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Search Properties</h2>
+                    <form id="searchForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="searchType" class="block text-sm font-medium mb-1">Property Type</label>
+                                <select id="searchType" name="searchType" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary">
+                                    <option value="">Any</option>
+                                    <option value="Residential">Residential</option>
+                                    <option value="Commercial">Commercial</option>
+                                    <option value="Land">Land</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="searchStatus" class="block text-sm font-medium mb-1">Status</label>
+                                <select id="searchStatus" name="searchStatus" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary">
+                                    <option value="">Any</option>
+                                    <option value="For Sale">For Sale</option>
+                                    <option value="For Rent">For Rent</option>
+                                    <option value="Sold">Sold</option>
+                                    <option value="Pending">Pending</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="searchLocation" class="block text-sm font-medium mb-1">Location (City or ZIP)</label>
+                                <input type="text" id="searchLocation" name="searchLocation" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="searchPriceMin" class="block text-sm font-medium mb-1">Min Price ($)</label>
+                                <input type="number" id="searchPriceMin" name="searchPriceMin" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" min="0">
+                            </div>
+                            
+                            <div>
+                                <label for="searchPriceMax" class="block text-sm font-medium mb-1">Max Price ($)</label>
+                                <input type="number" id="searchPriceMax" name="searchPriceMax" class="w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary" min="0">
+                            </div>
+                        </div>
+                        
+                        <div id="advancedSearchFields" class="grid grid-cols-1 md:grid-cols-3 gap-4 hidden">
+                            <!-- Will be populated based on search type -->
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <button type="button" id="toggleAdvancedSearch" class="text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-primary focus:outline-none">
+                                <i class="fas fa-sliders-h mr-2"></i>Advanced Search
+                            </button>
+                            <div>
+                                <button type="reset" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg mr-4 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                                    Reset
+                                </button>
+                                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">
+                                    <i class="fas fa-search mr-2"></i>Search
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div id="searchResults" class="mt-8">
+                    <h3 class="font-semibold text-lg mb-4">Search Results</h3>
+                    <div id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Search results will be displayed here -->
+                        <div class="text-center text-gray-500 dark:text-gray-400 col-span-full py-8">
+                            <i class="fas fa-search text-4xl mb-2"></i>
+                            <p>Search for properties to see results</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Property Detail Modal -->
+        <div id="propertyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold" id="modalTitle">Property Details</h3>
+                    <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="modalContent" class="space-y-4">
+                    <!-- Modal content will be dynamically populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Toast -->
+        <div id="notification" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-20 opacity-0 flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="notificationMessage"></span>
+        </div>
+    </div>
+
+    <script>
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Property database (in-memory)
+        let properties = [
+            {
+                id: 1,
+                title: "Modern Family Home",
+                type: "Residential",
+                subtype: "Single Family Home",
+                price: 750000,
+                status: "For Sale",
+                address: "123 Maple Street",
+                city: "Springfield",
+                state: "IL",
+                zip: "62704",
+                neighborhood: "Evergreen Terrace",
+                description: "Beautiful modern home with open floor plan and updated finishes throughout.",
+                bedrooms: 4,
+                bathrooms: 3,
+                squareFeet: 2800,
+                yearBuilt: 2018,
+                garage: "2-Car Attached",
+                lotSize: "0.25 acres",
+                features: ["Central Air", "Fireplace", "Hardwood Floors", "Finished Basement"]
+            },
+            {
+                id: 2,
+                title: "Downtown Retail Space",
+                type: "Commercial",
+                subtype: "Retail",
+                price: 450000,
+                status: "For Sale",
+                address: "456 Main Street",
+                city: "Springfield",
+                state: "IL",
+                zip: "62701",
+                neighborhood: "Downtown",
+                description: "Prime retail location in the heart of downtown with high foot traffic.",
+                squareFeet: 1500,
+                yearBuilt: 1995,
+                zoningType: "Commercial",
+                parkingSpaces: 5,
+                features: ["ADA Compliant", "Storage Room", "Display Windows", "Recently Renovated"]
+            },
+            {
+                id: 3,
+                title: "Lakefront Building Lot",
+                type: "Land",
+                subtype: "Residential Lot",
+                price: 325000,
+                status: "For Sale",
+                address: "789 Lakeview Drive",
+                city: "Springfield",
+                state: "IL",
+                zip: "62707",
+                neighborhood: "Lakeview Estates",
+                description: "Beautiful lakefront lot ready for your dream home with stunning views.",
+                lotSize: "0.75 acres",
+                zoningType: "Residential",
+                utilities: ["Water", "Electricity", "Sewer"],
+                features: ["Lakefront", "Cleared", "Surveyed", "Soil Test Completed"]
+            },
+            {
+                id: 4,
+                title: "Luxury Condominium",
+                type: "Residential",
+                subtype: "Condominium",
+                price: 525000,
+                status: "For Sale",
+                address: "101 Skyline Avenue",
+                city: "Chicago",
+                state: "IL",
+                zip: "60601",
+                neighborhood: "Loop",
+                description: "Stunning city views from this luxury high-rise condominium with premium finishes.",
+                bedrooms: 2,
+                bathrooms: 2,
+                squareFeet: 1400,
+                yearBuilt: 2020,
+                garage: "1 Deeded Space",
+                features: ["Concierge Service", "Gym", "Swimming Pool", "Balcony"]
+            },
+            {
+                id: 5,
+                title: "Medical Office Building",
+                type: "Commercial",
+                subtype: "Office",
+                price: 1200000,
+                status: "For Sale",
+                address: "202 Health Parkway",
+                city: "Springfield",
+                state: "IL",
+                zip: "62704",
+                neighborhood: "Medical District",
+                description: "Fully leased medical office building with stable tenants and strong income.",
+                squareFeet: 8000,
+                yearBuilt: 2010,
+                zoningType: "Commercial",
+                parkingSpaces: 40,
+                features: ["Multiple Suites", "Elevator", "Backup Generator", "Landscaped Grounds"]
+            }
+        ];
+
+        let nextId = properties.length + 1;
+
+        // Property template definitions
+        const templates = {
+            residential: {
+                name: "Residential",
+                icon: "fas fa-house-user",
+                types: ["Single Family Home", "Condominium", "Townhouse", "Multi-Family", "Apartment"],
+                fields: [
+                    { id: "bedrooms", label: "Bedrooms", type: "number", required: true },
+                    { id: "bathrooms", label: "Bathrooms", type: "number", required: true },
+                    { id: "squareFeet", label: "Square Feet", type: "number", required: true },
+                    { id: "yearBuilt", label: "Year Built", type: "number", required: false },
+                    { id: "garage", label: "Garage", type: "text", required: false },
+                    { id: "lotSize", label: "Lot Size", type: "text", required: false },
+                    { 
+                        id: "features", 
+                        label: "Features", 
+                        type: "checkboxes", 
+                        options: ["Central Air", "Fireplace", "Hardwood Floors", "Pool", "Finished Basement", "Deck/Patio", "Fenced Yard"], 
+                        required: false 
+                    }
+                ]
+            },
+            commercial: {
+                name: "Commercial",
+                icon: "fas fa-building",
+                types: ["Office", "Retail", "Industrial", "Mixed Use", "Restaurant", "Hotel/Motel"],
+                fields: [
+                    { id: "squareFeet", label: "Square Feet", type: "number", required: true },
+                    { id: "yearBuilt", label: "Year Built", type: "number", required: false },
+                    { id: "zoningType", label: "Zoning Type", type: "text", required: true },
+                    { id: "parkingSpaces", label: "Parking Spaces", type: "number", required: false },
+                    { 
+                        id: "features", 
+                        label: "Features", 
+                        type: "checkboxes", 
+                        options: ["ADA Compliant", "Elevator", "Loading Dock", "Security System", "Storage Space", "High Ceilings", "Sprinkler System"], 
+                        required: false 
+                    }
+                ]
+            },
+            land: {
+                name: "Land",
+                icon: "fas fa-tree",
+                types: ["Residential Lot", "Commercial Lot", "Agricultural", "Ranch", "Recreational", "Vacant Land"],
+                fields: [
+                    { id: "lotSize", label: "Lot Size", type: "text", required: true },
+                    { id: "zoningType", label: "Zoning Type", type: "text", required: true },
+                    { 
+                        id: "utilities", 
+                        label: "Available Utilities", 
+                        type: "checkboxes", 
+                        options: ["Water", "Electricity", "Natural Gas", "Sewer", "Internet", "Phone"], 
+                        required: false 
+                    },
+                    { 
+                        id: "features", 
+                        label: "Features", 
+                        type: "checkboxes", 
+                        options: ["Cleared", "Wooded", "Waterfront", "View", "Surveyed", "Soil Test Completed", "Road Access"], 
+                        required: false 
+                    }
+                ]
+            }
+        };
+
+        // Current active template
+        let currentTemplate = "residential";
+        let isAdvancedSearchVisible = false;
+
+        // DOM elements
+        const entryTab = document.getElementById('entryTab');
+        const searchTab = document.getElementById('searchTab');
+        const propertyEntrySection = document.getElementById('propertyEntrySection');
+        const propertySearchSection = document.getElementById('propertySearchSection');
+        const templateBtns = document.querySelectorAll('.template-btn');
+        const propertyForm = document.getElementById('propertyForm');
+        const templateFields = document.getElementById('templateFields');
+        const typeSelect = document.getElementById('type');
+        const searchForm = document.getElementById('searchForm');
+        const advancedSearchFields = document.getElementById('advancedSearchFields');
+        const toggleAdvancedSearchBtn = document.getElementById('toggleAdvancedSearch');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const propertyModal = document.getElementById('propertyModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notificationMessage');
+
+        // Initialize the application
+        function init() {
+            // Setup event listeners
+            entryTab.addEventListener('click', switchToEntryTab);
+            searchTab.addEventListener('click', switchToSearchTab);
+            
+            templateBtns.forEach(btn => {
+                btn.addEventListener('click', () => switchTemplate(btn.dataset.template));
+            });
+            
+            propertyForm.addEventListener('submit', handlePropertySubmit);
+            searchForm.addEventListener('submit', handleSearchSubmit);
+            toggleAdvancedSearchBtn.addEventListener('click', toggleAdvancedSearch);
+            closeModal.addEventListener('click', hideModal);
+            
+            // Handle search type change to update advanced fields
+            document.getElementById('searchType').addEventListener('change', function() {
+                if (isAdvancedSearchVisible) {
+                    buildAdvancedSearchFields(this.value);
+                }
+            });
+            
+            // Initialize with residential template
+            switchTemplate('residential');
+            
+            // Check if there are properties to show
+            updateResultsCount();
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            notificationMessage.textContent = message;
+            
+            // Set color based on type
+            if (type === 'success') {
+                notification.classList.remove('bg-red-500', 'bg-yellow-500');
+                notification.classList.add('bg-green-500');
+                notification.innerHTML = `<i class="fas fa-check-circle mr-2"></i><span>${message}</span>`;
+            } else if (type === 'error') {
+                notification.classList.remove('bg-green-500', 'bg-yellow-500');
+                notification.classList.add('bg-red-500');
+                notification.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i><span>${message}</span>`;
+            } else if (type === 'warning') {
+                notification.classList.remove('bg-green-500', 'bg-red-500');
+                notification.classList.add('bg-yellow-500');
+                notification.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i><span>${message}</span>`;
+            }
+            
+            // Show notification
+            notification.classList.remove('translate-y-20', 'opacity-0');
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Tab switching
+        function switchToEntryTab() {
+            entryTab.classList.add('text-primary', 'border-b-2', 'border-primary');
+            entryTab.classList.remove('text-gray-500', 'dark:text-gray-400');
+            
+            searchTab.classList.remove('text-primary', 'border-b-2', 'border-primary');
+            searchTab.classList.add('text-gray-500', 'dark:text-gray-400');
+            
+            propertyEntrySection.classList.remove('hidden');
+            propertySearchSection.classList.add('hidden');
+        }
+
+        function switchToSearchTab() {
+            searchTab.classList.add('text-primary', 'border-b-2', 'border-primary');
+            searchTab.classList.remove('text-gray-500', 'dark:text-gray-400');
+            
+            entryTab.classList.remove('text-primary', 'border-b-2', 'border-primary');
+            entryTab.classList.add('text-gray-500', 'dark:text-gray-400');
+            
+            propertySearchSection.classList.remove('hidden');
+            propertyEntrySection.classList.add('hidden');
+            
+            updateResultsCount();
+        }
+
+        // Switch between property templates
+        function switchTemplate(templateName) {
+            if (!templates[templateName]) return;
+            
+            currentTemplate = templateName;
+            
+            // Update template buttons
+            templateBtns.forEach(btn => {
+                const btnTemplate = btn.dataset.template;
+                if (btnTemplate === templateName) {
+                    btn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+                    btn.classList.add('bg-primary', 'text-white');
+                } else {
+                    btn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+                    btn.classList.remove('bg-primary', 'text-white');
+                }
+            });
+            
+            // Populate property type dropdown
+            typeSelect.innerHTML = '';
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select property type';
+            typeSelect.appendChild(defaultOption);
+            
+            templates[templateName].types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                typeSelect.appendChild(option);
+            });
+            
+            // Build template-specific fields
+            buildTemplateFields(templateName);
+        }
+
+        // Build template-specific form fields
+        function buildTemplateFields(templateName) {
+            templateFields.innerHTML = '';
+            
+            const template = templates[templateName];
+            if (!template) return;
+            
+            const fieldContainer = document.createElement('div');
+            fieldContainer.className = 'space-y-4';
+            
+            const heading = document.createElement('h3');
+            heading.className = 'font-semibold border-b pb-2 dark:border-gray-700';
+            heading.textContent = `${template.name} Details`;
+            fieldContainer.appendChild(heading);
+            
+            const fieldsGrid = document.createElement('div');
+            fieldsGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+            
+            template.fields.forEach(field => {
+                if (field.type === 'checkboxes') {
+                    // Create checkbox group
+                    const checkboxDiv = document.createElement('div');
+                    checkboxDiv.className = 'col-span-1 md:col-span-2';
+                    
+                    const checkboxLabel = document.createElement('label');
+                    checkboxLabel.className = 'block text-sm font-medium mb-2';
+                    checkboxLabel.textContent = field.label;
+                    checkboxDiv.appendChild(checkboxLabel);
+                    
+                    const checkboxGrid = document.createElement('div');
+                    checkboxGrid.className = 'grid grid-cols-2 md:grid-cols-3 gap-3';
+                    
+                    field.options.forEach(option => {
+                        const checkboxWrapper = document.createElement('div');
+                        checkboxWrapper.className = 'flex items-center';
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = `${field.id}[]`;
+                        checkbox.value = option;
+                        checkbox.id = `${field.id}_${option.replace(/\s+/g, '_').toLowerCase()}`;
+                        checkbox.className = 'h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded';
+                        
+                        const optionLabel = document.createElement('label');
+                        optionLabel.htmlFor = checkbox.id;
+                        optionLabel.className = 'ml-2 block text-sm';
+                        optionLabel.textContent = option;
+                        
+                        checkboxWrapper.appendChild(checkbox);
+                        checkboxWrapper.appendChild(optionLabel);
+                        checkboxGrid.appendChild(checkboxWrapper);
+                    });
+                    
+                    checkboxDiv.appendChild(checkboxGrid);
+                    fieldsGrid.appendChild(checkboxDiv);
+                } else {
+                    // Create standard input fields
+                    const fieldDiv = document.createElement('div');
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = field.id;
+                    label.className = 'block text-sm font-medium mb-1';
+                    label.textContent = field.label;
+                    
+                    const input = document.createElement('input');
+                    input.type = field.type;
+                    input.id = field.id;
+                    input.name = field.id;
+                    input.className = 'w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary';
+                    
+                    if (field.required) {
+                        input.required = true;
+                        label.innerHTML += ' <span class="text-red-500">*</span>';
+                    }
+                    
+                    if (field.type === 'number') {
+                        input.min = 0;
+                    }
+                    
+                    fieldDiv.appendChild(label);
+                    fieldDiv.appendChild(input);
+                    fieldsGrid.appendChild(fieldDiv);
+                }
+            });
+            
+            fieldContainer.appendChild(fieldsGrid);
+            templateFields.appendChild(fieldContainer);
+        }
+
+        // Handle property form submission
+        function handlePropertySubmit(e) {
+            e.preventDefault();
+            
+            // Collect form data
+            const formData = new FormData(propertyForm);
+            const property = {
+                id: nextId++,
+                title: formData.get('title'),
+                type: templates[currentTemplate].name,
+                subtype: formData.get('type'),
+                price: parseFloat(formData.get('price')),
+                status: formData.get('status'),
+                address: formData.get('address'),
+                city: formData.get('city'),
+                state: formData.get('state'),
+                zip: formData.get('zip'),
+                neighborhood: formData.get('neighborhood'),
+                description: formData.get('description')
+            };
+            
+            // Collect template-specific fields
+            templates[currentTemplate].fields.forEach(field => {
+                if (field.type === 'checkboxes') {
+                    // Handle checkbox groups
+                    const checkboxes = document.querySelectorAll(`input[name="${field.id}[]"]:checked`);
+                    const values = Array.from(checkboxes).map(cb => cb.value);
+                    property[field.id] = values;
+                } else if (field.type === 'number') {
+                    // Handle number fields
+                    const value = formData.get(field.id);
+                    property[field.id] = value ? parseFloat(value) : null;
+                } else {
+                    // Handle other fields
+                    property[field.id] = formData.get(field.id);
+                }
+            });
+            
+            // Add to properties array
+            properties.push(property);
+            
+            // Show success message
+            showNotification(`Property "${property.title}" has been added successfully!`, 'success');
+            
+            // Reset form
+            propertyForm.reset();
+            
+            // Switch to search tab
+            switchToSearchTab();
+            
+            // Perform a search to show all properties including the new one
+            searchProperties({});
+        }
+
+        // Advanced search toggle
+        function toggleAdvancedSearch() {
+            isAdvancedSearchVisible = !isAdvancedSearchVisible;
+            
+            if (isAdvancedSearchVisible) {
+                advancedSearchFields.classList.remove('hidden');
+                toggleAdvancedSearchBtn.innerHTML = '<i class="fas fa-chevron-up mr-2"></i>Hide Advanced Search';
+                
+                // Get selected property type and build advanced search fields
+                const propertyType = document.getElementById('searchType').value;
+                buildAdvancedSearchFields(propertyType);
+            } else {
+                advancedSearchFields.classList.add('hidden');
+                toggleAdvancedSearchBtn.innerHTML = '<i class="fas fa-sliders-h mr-2"></i>Advanced Search';
+            }
+        }
+
+        // Build advanced search fields based on property type
+        function buildAdvancedSearchFields(propertyType) {
+            advancedSearchFields.innerHTML = '';
+            
+            // Default fields for all property types
+            const defaultFields = [
+                { id: 'searchSquareFeet', label: 'Min Square Feet', type: 'number' }
+            ];
+            
+            // Template-specific fields
+            let specificFields = [];
+            
+            if (propertyType === 'Residential') {
+                specificFields = [
+                    { id: 'searchBedrooms', label: 'Min Bedrooms', type: 'number' },
+                    { id: 'searchBathrooms', label: 'Min Bathrooms', type: 'number' }
+                ];
+            } else if (propertyType === 'Commercial') {
+                specificFields = [
+                    { id: 'searchParkingSpaces', label: 'Min Parking Spaces', type: 'number' }
+                ];
+            } else if (propertyType === 'Land') {
+                specificFields = [
+                    { id: 'searchZoning', label: 'Zoning Type', type: 'text' }
+                ];
+            }
+            
+            // Create fields
+            const allFields = [...defaultFields, ...specificFields];
+            
+            allFields.forEach(field => {
+                const fieldDiv = document.createElement('div');
+                
+                const label = document.createElement('label');
+                label.htmlFor = field.id;
+                label.className = 'block text-sm font-medium mb-1';
+                label.textContent = field.label;
+                
+                const input = document.createElement('input');
+                input.type = field.type;
+                input.id = field.id;
+                input.name = field.id;
+                input.className = 'w-full px-4 py-2 border rounded-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-base focus:ring-primary focus:border-primary';
+                
+                if (field.type === 'number') {
+                    input.min = 0;
+                }
+                
+                fieldDiv.appendChild(label);
+                fieldDiv.appendChild(input);
+                advancedSearchFields.appendChild(fieldDiv);
+            });
+        }
+
+        // Handle search form submission
+        function handleSearchSubmit(e) {
+            e.preventDefault();
+            
+            // Collect search criteria
+            const formData = new FormData(searchForm);
+            const criteria = {
+                type: formData.get('searchType'),
+                status: formData.get('searchStatus'),
+                location: formData.get('searchLocation'),
+                priceMin: formData.get('searchPriceMin') ? parseFloat(formData.get('searchPriceMin')) : null,
+                priceMax: formData.get('searchPriceMax') ? parseFloat(formData.get('searchPriceMax')) : null,
+                squareFeet: formData.get('searchSquareFeet') ? parseFloat(formData.get('searchSquareFeet')) : null,
+                bedrooms: formData.get('searchBedrooms') ? parseFloat(formData.get('searchBedrooms')) : null,
+                bathrooms: formData.get('searchBathrooms') ? parseFloat(formData.get('searchBathrooms')) : null,
+                parkingSpaces: formData.get('searchParkingSpaces') ? parseFloat(formData.get('searchParkingSpaces')) : null,
+                zoning: formData.get('searchZoning')
+            };
+            
+            // Perform search
+            searchProperties(criteria);
+        }
+
+        // Search properties based on criteria
+        function searchProperties(criteria) {
+            // Filter properties based on criteria
+            const results = properties.filter(property => {
+                // Check property type
+                if (criteria.type && property.type !== criteria.type) {
+                    return false;
+                }
+                
+                // Check status
+                if (criteria.status && property.status !== criteria.status) {
+                    return false;
+                }
+                
+                // Check location (city, zip, or state)
+                if (criteria.location) {
+                    const locationLower = criteria.location.toLowerCase();
+                    const cityMatch = property.city.toLowerCase().includes(locationLower);
+                    const zipMatch = property.zip.toLowerCase().includes(locationLower);
+                    const stateMatch = property.state.toLowerCase().includes(locationLower);
+                    
+                    if (!cityMatch && !zipMatch && !stateMatch) {
+                        return false;
+                    }
+                }
+                
+                // Check price range
+                if (criteria.priceMin && property.price < criteria.priceMin) {
+                    return false;
+                }
+                
+                if (criteria.priceMax && property.price > criteria.priceMax) {
+                    return false;
+                }
+                
+                // Check square feet
+                if (criteria.squareFeet && property.squareFeet && property.squareFeet < criteria.squareFeet) {
+                    return false;
+                }
+                
+                // Check bedrooms
+                if (criteria.bedrooms && property.bedrooms && property.bedrooms < criteria.bedrooms) {
+                    return false;
+                }
+                
+                // Check bathrooms
+                if (criteria.bathrooms && property.bathrooms && property.bathrooms < criteria.bathrooms) {
+                    return false;
+                }
+                
+                // Check parking spaces
+                if (criteria.parkingSpaces && property.parkingSpaces && property.parkingSpaces < criteria.parkingSpaces) {
+                    return false;
+                }
+                
+                // Check zoning
+                if (criteria.zoning && property.zoningType && !property.zoningType.toLowerCase().includes(criteria.zoning.toLowerCase())) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            // Display results
+            displaySearchResults(results);
+        }
+
+        // Display search results
+        function displaySearchResults(results) {
+            resultsContainer.innerHTML = '';
+            
+            if (results.length === 0) {
+                const noResults = document.createElement('div');
+                noResults.className = 'text-center text-gray-500 dark:text-gray-400 col-span-full py-8';
+                noResults.innerHTML = `
+                    <i class="fas fa-search text-4xl mb-2"></i>
+                    <p>No properties found matching your criteria</p>
+                `;
+                resultsContainer.appendChild(noResults);
+                return;
+            }
+            
+            // Display each property card
+            results.forEach(property => {
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-gray-700 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow';
+                
+                // Property status badge
+                let statusColor;
+                switch (property.status) {
+                    case 'For Sale':
+                        statusColor = 'bg-green-500';
+                        break;
+                    case 'For Rent':
+                        statusColor = 'bg-blue-500';
+                        break;
+                    case 'Sold':
+                        statusColor = 'bg-red-500';
+                        break;
+                    case 'Pending':
+                        statusColor = 'bg-yellow-500';
+                        break;
+                    default:
+                        statusColor = 'bg-gray-500';
+                }
+                
+                // Build property details based on type
+                let propertyDetails = '';
+                
+                if (property.type === 'Residential') {
+                    propertyDetails = `
+                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-300 mt-2">
+                            <span class="mr-3"><i class="fas fa-bed mr-1"></i> ${property.bedrooms || 0} bd</span>
+                            <span class="mr-3"><i class="fas fa-bath mr-1"></i> ${property.bathrooms || 0} ba</span>
+                            <span><i class="fas fa-ruler-combined mr-1"></i> ${property.squareFeet || 0} sqft</span>
+                        </div>
+                    `;
+                } else if (property.type === 'Commercial') {
+                    propertyDetails = `
+                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-300 mt-2">
+                            <span class="mr-3"><i class="fas fa-ruler-combined mr-1"></i> ${property.squareFeet || 0} sqft</span>
+                            <span><i class="fas fa-car mr-1"></i> ${property.parkingSpaces || 0} spaces</span>
+                        </div>
+                    `;
+                } else if (property.type === 'Land') {
+                    propertyDetails = `
+                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-300 mt-2">
+                            <span class="mr-3"><i class="fas fa-map mr-1"></i> ${property.lotSize || 'n/a'}</span>
+                            <span><i class="fas fa-tag mr-1"></i> ${property.zoningType || 'n/a'}</span>
+                        </div>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="inline-block ${statusColor} text-white text-xs font-semibold px-2 py-1 rounded-full mb-2">
+                                    ${property.status}
+                                </span>
+                                <h3 class="font-bold text-lg mb-1">${property.title}</h3>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm mb-1">${property.address}, ${property.city}, ${property.state} ${property.zip}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-primary font-bold">$${property.price.toLocaleString()}</span>
+                                <p class="text-gray-500 dark:text-gray-400 text-sm">${property.type} - ${property.subtype}</p>
+                            </div>
+                        </div>
+                        ${propertyDetails}
+                    </div>
+                    <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                        <button class="view-property-btn w-full bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition" data-id="${property.id}">
+                            View Details
+                        </button>
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(card);
+                
+                // Add event listener to view property button
+                const viewBtn = card.querySelector('.view-property-btn');
+                viewBtn.addEventListener('click', () => showPropertyDetails(property.id));
+            });
+        }
+
+        // Show property details modal
+        function showPropertyDetails(propertyId) {
+            const property = properties.find(p => p.id === propertyId);
+            if (!property) return;
+            
+            modalTitle.textContent = property.title;
+            
+            // Build modal content
+            let content = `
+                <div class="flex flex-col md:flex-row md:justify-between mb-4">
+                    <div>
+                        <span class="inline-block bg-primary text-white px-3 py-1 rounded-full text-sm font-medium">
+                            ${property.type} - ${property.subtype}
+                        </span>
+                        <p class="mt-2 text-gray-600 dark:text-gray-300">
+                            ${property.address}<br>
+                            ${property.city}, ${property.state} ${property.zip}<br>
+                            ${property.neighborhood || ''}
+                        </p>
+                    </div>
+                    <div class="text-right mt-4 md:mt-0">
+                        <span class="text-2xl font-bold text-primary">$${property.price.toLocaleString()}</span>
+                        <p class="text-gray-500 dark:text-gray-400 mt-1">${property.status}</p>
+                    </div>
+                </div>
+                
+                <div class="border-t border-b py-4 my-4 border-gray-200 dark:border-gray-700">
+                    <h4 class="font-semibold mb-2">Description</h4>
+                    <p class="text-gray-600 dark:text-gray-300">${property.description || 'No description available'}</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            `;
+            
+            // Property details section
+            content += `<div>
+                <h4 class="font-semibold mb-3">Property Details</h4>
+                <ul class="space-y-2">`;
+            
+            // Add common details
+            content += `
+                <li class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">Property Type:</span>
+                    <span>${property.type} - ${property.subtype}</span>
+                </li>
+                <li class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-400">Status:</span>
+                    <span>${property.status}</span>
+                </li>
+            `;
+            
+            // Add type-specific details
+            if (property.type === 'Residential') {
+                if (property.bedrooms) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Bedrooms:</span>
+                            <span>${property.bedrooms}</span>
+                        </li>
+                    `;
+                }
+                if (property.bathrooms) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Bathrooms:</span>
+                            <span>${property.bathrooms}</span>
+                        </li>
+                    `;
+                }
+                if (property.squareFeet) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Square Feet:</span>
+                            <span>${property.squareFeet.toLocaleString()}</span>
+                        </li>
+                    `;
+                }
+                if (property.yearBuilt) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Year Built:</span>
+                            <span>${property.yearBuilt}</span>
+                        </li>
+                    `;
+                }
+                if (property.garage) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Garage:</span>
+                            <span>${property.garage}</span>
+                        </li>
+                    `;
+                }
+                if (property.lotSize) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Lot Size:</span>
+                            <span>${property.lotSize}</span>
+                        </li>
+                    `;
+                }
+            } else if (property.type === 'Commercial') {
+                if (property.squareFeet) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Square Feet:</span>
+                            <span>${property.squareFeet.toLocaleString()}</span>
+                        </li>
+                    `;
+                }
+                if (property.yearBuilt) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Year Built:</span>
+                            <span>${property.yearBuilt}</span>
+                        </li>
+                    `;
+                }
+                if (property.zoningType) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Zoning:</span>
+                            <span>${property.zoningType}</span>
+                        </li>
+                    `;
+                }
+                if (property.parkingSpaces) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Parking Spaces:</span>
+                            <span>${property.parkingSpaces}</span>
+                        </li>
+                    `;
+                }
+            } else if (property.type === 'Land') {
+                if (property.lotSize) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Lot Size:</span>
+                            <span>${property.lotSize}</span>
+                        </li>
+                    `;
+                }
+                if (property.zoningType) {
+                    content += `
+                        <li class="flex justify-between">
+                            <span class="text-gray-600 dark:text-gray-400">Zoning:</span>
+                            <span>${property.zoningType}</span>
+                        </li>
+                    `;
+                }
+            }
+            
+            content += `</ul></div>`;
+            
+            // Features section
+            content += `<div>
+                <h4 class="font-semibold mb-3">Features</h4>`;
+            
+            if (property.features && property.features.length > 0) {
+                content += `<ul class="grid grid-cols-1 gap-2">`;
+                property.features.forEach(feature => {
+                    content += `<li class="flex items-center">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>${feature}</span>
+                    </li>`;
+                });
+                content += `</ul>`;
+            } else {
+                content += `<p class="text-gray-500 dark:text-gray-400">No features listed</p>`;
+            }
+            
+            // Add utilities if available (Land properties)
+            if (property.type === 'Land' && property.utilities && property.utilities.length > 0) {
+                content += `
+                    <h4 class="font-semibold mb-3 mt-6">Available Utilities</h4>
+                    <ul class="grid grid-cols-1 gap-2">
+                `;
+                property.utilities.forEach(utility => {
+                    content += `<li class="flex items-center">
+                        <i class="fas fa-check text-green-500 mr-2"></i>
+                        <span>${utility}</span>
+                    </li>`;
+                });
+                content += `</ul>`;
+            }
+            
+            content += `</div></div>`;
+            
+            // Contact section
+            content += `
+                <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <button id="contactAgentBtn" class="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-lg transition">
+                        <i class="fas fa-envelope mr-2"></i> Contact Agent
+                    </button>
+                </div>
+            `;
+            
+            modalContent.innerHTML = content;
+            propertyModal.classList.remove('hidden');
+            
+            // Add event listener to Contact Agent button
+            document.getElementById('contactAgentBtn').addEventListener('click', () => {
+                showNotification('Agent contact feature will be available soon!', 'warning');
+            });
+            
+            // Close modal when clicking outside
+            propertyModal.addEventListener('click', (e) => {
+                if (e.target === propertyModal) {
+                    hideModal();
+                }
+            });
+        }
+
+        // Hide property details modal
+        function hideModal() {
+            propertyModal.classList.add('hidden');
+        }
+
+        // Update results count
+        function updateResultsCount() {
+            if (properties.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="text-center text-gray-500 dark:text-gray-400 col-span-full py-8">
+                        <i class="fas fa-home text-4xl mb-2"></i>
+                        <p>No properties in the database yet</p>
+                        <p class="mt-2">Add properties using the Property Entry tab</p>
+                    </div>
+                `;
+            } else {
+                searchProperties({});
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
