@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git-JIRA-Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#4A4A4A',
+                    }
+                }
+            },
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        .dark {
+            --bg-primary: #181818;
+            --text-primary: #F3F4F6;
+            --card-bg: #242424;
+            --border-color: #3F3F46;
+        }
+        
+        :root {
+            --bg-primary: #FFFFFF;
+            --text-primary: #1F2937;
+            --card-bg: #F9FAFB;
+            --border-color: #E5E7EB;
+        }
+        
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        
+        .dashboard-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        .skeleton-loader {
+            animation: skeleton-loading 1s linear infinite alternate;
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-color: rgba(200, 200, 200, 0.2);
+            }
+            100% {
+                background-color: rgba(200, 200, 200, 0.4);
+            }
+        }
+
+        .dark .skeleton-loader {
+            animation: skeleton-loading-dark 1s linear infinite alternate;
+        }
+
+        @keyframes skeleton-loading-dark {
+            0% {
+                background-color: rgba(60, 60, 60, 0.4);
+            }
+            100% {
+                background-color: rgba(60, 60, 60, 0.6);
+            }
+        }
+
+        .badge-valid {
+            background-color: #10B981;
+        }
+
+        .badge-invalid {
+            background-color: #EF4444;
+        }
+
+        .dark .badge-valid {
+            background-color: #059669;
+        }
+
+        .dark .badge-invalid {
+            background-color: #DC2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="py-4 px-6 bg-primary text-white shadow-md">
+            <div class="container mx-auto">
+                <h1 class="text-2xl font-bold">Git-JIRA-Analytics Dashboard</h1>
+                <p class="text-sm opacity-80">Track activity, output, and usage metrics in one place</p>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="flex-grow p-6">
+            <div class="container mx-auto">
+                <!-- File Upload Section -->
+                <div class="dashboard-card p-6 rounded-lg shadow-sm mb-8">
+                    <h2 class="text-xl font-semibold mb-4">Upload Data</h2>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <div class="flex-grow">
+                            <label for="fileInput" class="block mb-2 text-sm font-medium">
+                                Select Excel File (.xlsx)
+                            </label>
+                            <input type="file" id="fileInput" accept=".xlsx" 
+                                class="text-base block w-full border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer bg-white dark:bg-gray-700 focus:outline-none">
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400" id="fileHelp">
+                                File should contain 3 tabs: Git Activity, JIRA Status, and Usage Data
+                            </p>
+                        </div>
+                        <div>
+                            <button id="loadSampleBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 text-base transition">
+                                Load Sample Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Summary -->
+                <div id="dashboardSummary" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 hidden">
+                    <div class="dashboard-card p-4 rounded-lg shadow-sm flex flex-col">
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Git Activity</h3>
+                        <div class="mt-2 flex justify-between items-end">
+                            <div>
+                                <span id="totalCommitsCount" class="text-2xl font-bold">0</span>
+                                <span class="text-sm ml-1">commits</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="flex items-center justify-end">
+                                    <span id="validCommitsPercent" class="text-lg font-semibold">0%</span>
+                                    <span class="ml-1 text-xs text-green-600 dark:text-green-400">with valid JIRA refs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card p-4 rounded-lg shadow-sm flex flex-col">
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">JIRA Status</h3>
+                        <div class="mt-2 flex justify-between items-end">
+                            <div>
+                                <span id="totalEpicsCount" class="text-2xl font-bold">0</span>
+                                <span class="text-sm ml-1">epics</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="flex items-center justify-end">
+                                    <span id="completedEpicsPercent" class="text-lg font-semibold">0%</span>
+                                    <span class="ml-1 text-xs text-blue-600 dark:text-blue-400">completed</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card p-4 rounded-lg shadow-sm flex flex-col">
+                        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Usage Metrics</h3>
+                        <div class="mt-2 flex justify-between items-end">
+                            <div>
+                                <span id="usageTrend" class="text-2xl font-bold">0%</span>
+                                <span class="text-sm ml-1">growth</span>
+                            </div>
+                            <div id="usageTrendIndicator" class="text-green-500 dark:text-green-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Connected Data View (Moved above Git Activity) -->
+                <div id="detailedDataSection" class="mb-8 hidden">
+                    <div class="dashboard-card rounded-lg shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                            <h2 class="text-lg font-semibold">Connected Data View</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Connecting Git activity, JIRA epics, and usage metrics
+                            </p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table id="integratedDataTable" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-800">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            JIRA Epic
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Status
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Commits
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Last Activity
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Usage
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Trend
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="integratedDataBody" class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
+                                    <!-- Data rows will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dashboard Main Content -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Git Activity Section -->
+                    <div class="dashboard-card rounded-lg shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                            <h2 class="text-lg font-semibold">Git Activity</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">PR/Commit JIRA References</p>
+                        </div>
+                        <div id="gitActivityContent" class="p-4 min-h-[300px] flex items-center justify-center">
+                            <p class="text-gray-500 dark:text-gray-400 text-center">
+                                Upload an Excel file to view Git activity data
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- JIRA Status Section -->
+                    <div class="dashboard-card rounded-lg shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                            <h2 class="text-lg font-semibold">JIRA Status</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Epic & Hypothesis Tracking</p>
+                        </div>
+                        <div id="jiraStatusContent" class="p-4 min-h-[300px] flex items-center justify-center">
+                            <p class="text-gray-500 dark:text-gray-400 text-center">
+                                Upload an Excel file to view JIRA status data
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Usage Metrics Section -->
+                    <div class="dashboard-card rounded-lg shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                            <h2 class="text-lg font-semibold">Usage Metrics</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Bi-Weekly Trend Analysis</p>
+                        </div>
+                        <div id="usageMetricsContent" class="p-4 min-h-[300px] flex items-center justify-center">
+                            <p class="text-gray-500 dark:text-gray-400 text-center">
+                                Upload an Excel file to view usage metrics
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="py-4 px-6 text-center text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-800">
+            <p>Git-JIRA-Analytics Dashboard | Track activity, output, and usage metrics</p>
+        </footer>
+    </div>
+
+    <script>
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Dashboard data
+        let dashboardData = {
+            gitActivity: [],
+            jiraStatus: [],
+            usageMetrics: [],
+            integrated: []
+        };
+
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const loadSampleBtn = document.getElementById('loadSampleBtn');
+        const dashboardSummary = document.getElementById('dashboardSummary');
+        const detailedDataSection = document.getElementById('detailedDataSection');
+        const gitActivityContent = document.getElementById('gitActivityContent');
+        const jiraStatusContent = document.getElementById('jiraStatusContent');
+        const usageMetricsContent = document.getElementById('usageMetricsContent');
+
+        // Event listeners
+        fileInput.addEventListener('change', handleFileUpload);
+        loadSampleBtn.addEventListener('click', loadSampleData);
+
+        // Function to handle file upload
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showLoadingState();
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    // Process each sheet
+                    if (workbook.SheetNames.length < 3) {
+                        alert('The Excel file should contain 3 sheets: Git Activity, JIRA Status, and Usage Data');
+                        resetLoadingState();
+                        return;
+                    }
+                    
+                    // Parse sheets
+                    dashboardData.gitActivity = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                    dashboardData.jiraStatus = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[1]]);
+                    dashboardData.usageMetrics = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[2]]);
+                    
+                    // Process and integrate data
+                    integrateData();
+                    
+                    // Update dashboard
+                    updateDashboard();
+                    
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                    alert('Error processing file. Please check the file format.');
+                    resetLoadingState();
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Function to show loading state
+        function showLoadingState() {
+            gitActivityContent.innerHTML = `
+                <div class="w-full space-y-3">
+                    <div class="skeleton-loader h-6 w-full rounded"></div>
+                    <div class="skeleton-loader h-6 w-3/4 rounded"></div>
+                    <div class="skeleton-loader h-6 w-5/6 rounded"></div>
+                    <div class="skeleton-loader h-6 w-2/3 rounded"></div>
+                </div>
+            `;
+            
+            jiraStatusContent.innerHTML = `
+                <div class="w-full space-y-3">
+                    <div class="skeleton-loader h-6 w-full rounded"></div>
+                    <div class="skeleton-loader h-6 w-3/4 rounded"></div>
+                    <div class="skeleton-loader h-6 w-5/6 rounded"></div>
+                    <div class="skeleton-loader h-6 w-2/3 rounded"></div>
+                </div>
+            `;
+            
+            usageMetricsContent.innerHTML = `
+                <div class="w-full space-y-3">
+                    <div class="skeleton-loader h-6 w-full rounded"></div>
+                    <div class="skeleton-loader h-6 w-3/4 rounded"></div>
+                    <div class="skeleton-loader h-6 w-5/6 rounded"></div>
+                    <div class="skeleton-loader h-6 w-2/3 rounded"></div>
+                </div>
+            `;
+        }
+
+        // Function to reset loading state
+        function resetLoadingState() {
+            gitActivityContent.innerHTML = `
+                <p class="text-gray-500 dark:text-gray-400 text-center">
+                    Upload an Excel file to view Git activity data
+                </p>
+            `;
+            
+            jiraStatusContent.innerHTML = `
+                <p class="text-gray-500 dark:text-gray-400 text-center">
+                    Upload an Excel file to view JIRA status data
+                </p>
+            `;
+            
+            usageMetricsContent.innerHTML = `
+                <p class="text-gray-500 dark:text-gray-400 text-center">
+                    Upload an Excel file to view usage metrics
+                </p>
+            `;
+        }
+
+        // Function to integrate data from the three sources
+        function integrateData() {
+            dashboardData.integrated = [];
+            
+            // Create a map of JIRA epics
+            const epicsMap = new Map();
+            
+            dashboardData.jiraStatus.forEach(epic => {
+                if (epic.EpicID) {
+                    epicsMap.set(epic.EpicID, {
+                        epicId: epic.EpicID,
+                        epicName: epic.EpicName || 'Unnamed Epic',
+                        status: epic.Status || 'Unknown',
+                        hypothesis: epic.Hypothesis || 'No Hypothesis',
+                        lastUpdated: epic.LastUpdated || 'Unknown',
+                        commits: [],
+                        usageData: []
+                    });
+                }
+            });
+            
+            // Add git activity data to corresponding epics
+            dashboardData.gitActivity.forEach(commit => {
+                // Check if commit has a valid JIRA reference
+                const jiraRefs = extractJiraReferences(commit.CommitMessage || '');
+                
+                jiraRefs.forEach(jiraRef => {
+                    if (epicsMap.has(jiraRef)) {
+                        const epicData = epicsMap.get(jiraRef);
+                        epicData.commits.push({
+                            commitId: commit.CommitID || 'Unknown',
+                            message: commit.CommitMessage || '',
+                            author: commit.Author || 'Unknown',
+                            date: commit.Date || 'Unknown'
+                        });
+                        epicsMap.set(jiraRef, epicData);
+                    }
+                });
+            });
+            
+            // Add usage data to corresponding epics
+            dashboardData.usageMetrics.forEach(usage => {
+                if (usage.EpicID && epicsMap.has(usage.EpicID)) {
+                    const epicData = epicsMap.get(usage.EpicID);
+                    epicData.usageData.push({
+                        period: usage.Period || 'Unknown',
+                        value: usage.Value || 0,
+                        change: usage.Change || 0
+                    });
+                    epicsMap.set(usage.EpicID, epicData);
+                }
+            });
+            
+            // Convert map to array for the integrated data
+            epicsMap.forEach(epicData => {
+                dashboardData.integrated.push(epicData);
+            });
+        }
+
+        // Helper function to extract JIRA references from commit messages
+        function extractJiraReferences(message) {
+            // Look for patterns like JIRA-123, ABC-456, etc.
+            const regex = /([A-Z]+-\d+)/g;
+            const matches = message.match(regex) || [];
+            return [...new Set(matches)]; // Remove duplicates
+        }
+
+        // Function to update the dashboard with the processed data
+        function updateDashboard() {
+            // Show dashboard sections
+            dashboardSummary.classList.remove('hidden');
+            detailedDataSection.classList.remove('hidden');
+            
+            // Update summary metrics
+            updateSummaryMetrics();
+            
+            // Update Git activity section
+            updateGitActivitySection();
+            
+            // Update JIRA status section
+            updateJiraStatusSection();
+            
+            // Update usage metrics section
+            updateUsageMetricsSection();
+            
+            // Update integrated data table
+            updateIntegratedDataTable();
+        }
+
+        // Function to update summary metrics
+        function updateSummaryMetrics() {
+            const totalCommits = dashboardData.gitActivity.length;
+            const validCommits = dashboardData.gitActivity.filter(commit => 
+                extractJiraReferences(commit.CommitMessage || '').length > 0
+            ).length;
+            const validCommitsPercent = totalCommits > 0 ? 
+                Math.round((validCommits / totalCommits) * 100) : 0;
+            
+            const totalEpics = dashboardData.jiraStatus.length;
+            const completedEpics = dashboardData.jiraStatus.filter(epic => 
+                epic.Status === 'Completed' || epic.Status === 'Done'
+            ).length;
+            const completedEpicsPercent = totalEpics > 0 ? 
+                Math.round((completedEpics / totalEpics) * 100) : 0;
+            
+            // Calculate usage trend
+            let usageTrend = 0;
+            if (dashboardData.usageMetrics.length > 1) {
+                const sortedUsage = [...dashboardData.usageMetrics].sort((a, b) => {
+                    return new Date(a.Period) - new Date(b.Period);
+                });
+                
+                const periods = [...new Set(sortedUsage.map(item => item.Period))];
+                if (periods.length >= 2) {
+                    const firstPeriodTotal = sortedUsage
+                        .filter(u => u.Period === periods[0])
+                        .reduce((sum, item) => sum + (parseFloat(item.Value) || 0), 0);
+                    
+                    const lastPeriodTotal = sortedUsage
+                        .filter(u => u.Period === periods[periods.length - 1])
+                        .reduce((sum, item) => sum + (parseFloat(item.Value) || 0), 0);
+                    
+                    if (firstPeriodTotal > 0) {
+                        usageTrend = Math.round(((lastPeriodTotal - firstPeriodTotal) / firstPeriodTotal) * 100);
+                    }
+                }
+            }
+            
+            // Update DOM elements
+            document.getElementById('totalCommitsCount').textContent = totalCommits;
+            document.getElementById('validCommitsPercent').textContent = `${validCommitsPercent}%`;
+            
+            document.getElementById('totalEpicsCount').textContent = totalEpics;
+            document.getElementById('completedEpicsPercent').textContent = `${completedEpicsPercent}%`;
+            
+            document.getElementById('usageTrend').textContent = `${usageTrend}%`;
+            
+            // Update trend indicator
+            const trendIndicator = document.getElementById('usageTrendIndicator');
+            if (usageTrend > 0) {
+                trendIndicator.className = 'text-green-500 dark:text-green-400';
+                trendIndicator.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                `;
+            } else if (usageTrend < 0) {
+                trendIndicator.className = 'text-red-500 dark:text-red-400';
+                trendIndicator.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                    </svg>
+                `;
+            } else {
+                trendIndicator.className = 'text-gray-500 dark:text-gray-400';
+                trendIndicator.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14" />
+                    </svg>
+                `;
+            }
+        }
+
+        // Function to update Git activity section
+        function updateGitActivitySection() {
+            let html = `
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-medium">Recent Commits</h3>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">
+                            ${dashboardData.gitActivity.length} total
+                        </span>
+                    </div>
+                    <div class="space-y-3">
+            `;
+            
+            // Sort commits by date (newest first)
+            const sortedCommits = [...dashboardData.gitActivity].sort((a, b) => {
+                return new Date(b.Date || 0) - new Date(a.Date || 0);
+            }).slice(0, 5); // Show only 5 most recent
+            
+            if (sortedCommits.length === 0) {
+                html += `<p class="text-gray-500 dark:text-gray-400 text-center py-4">No Git activity data available</p>`;
+            } else {
+                sortedCommits.forEach(commit => {
+                    const jiraRefs = extractJiraReferences(commit.CommitMessage || '');
+                    const hasValidRef = jiraRefs.length > 0;
+                    
+                    html += `
+                        <div class="dashboard-card p-3 rounded border border-gray-200 dark:border-gray-700">
+                            <div class="flex justify-between items-start">
+                                <div class="text-sm font-medium truncate max-w-[70%]">${commit.CommitMessage || 'No message'}</div>
+                                <div class="text-xs px-2 py-1 rounded-full ${hasValidRef ? 'badge-valid text-white' : 'badge-invalid text-white'}">
+                                    ${hasValidRef ? jiraRefs.join(', ') : 'No JIRA Ref'}
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                <span>${commit.Author || 'Unknown'}</span>
+                                <span class="mx-1">•</span>
+                                <span>${formatDate(commit.Date)}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            gitActivityContent.innerHTML = html;
+        }
+
+        // Function to update JIRA status section
+        function updateJiraStatusSection() {
+            // Calculate status distribution
+            const statusCounts = {};
+            dashboardData.jiraStatus.forEach(epic => {
+                const status = epic.Status || 'Unknown';
+                statusCounts[status] = (statusCounts[status] || 0) + 1;
+            });
+            
+            // Status colors
+            const statusColors = {
+                'To Do': 'bg-gray-200 dark:bg-gray-700',
+                'In Progress': 'bg-blue-200 dark:bg-blue-700',
+                'In Review': 'bg-yellow-200 dark:bg-yellow-700',
+                'Done': 'bg-green-200 dark:bg-green-700',
+                'Completed': 'bg-green-200 dark:bg-green-700',
+                'Blocked': 'bg-red-200 dark:bg-red-700',
+                'Unknown': 'bg-gray-200 dark:bg-gray-700'
+            };
+            
+            let html = `
+                <div class="space-y-4">
+                    <div class="flex flex-col">
+                        <h3 class="font-medium mb-2">Epic Status Distribution</h3>
+                        <div class="h-8 w-full flex rounded-md overflow-hidden">
+            `;
+            
+            const totalEpics = dashboardData.jiraStatus.length;
+            if (totalEpics === 0) {
+                html += `
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-center py-4">No JIRA data available</p>
+                `;
+            } else {
+                // Add status bars
+                Object.keys(statusCounts).forEach(status => {
+                    const percentage = (statusCounts[status] / totalEpics) * 100;
+                    const colorClass = statusColors[status] || 'bg-gray-200 dark:bg-gray-700';
+                    
+                    html += `
+                        <div class="${colorClass}" style="width: ${percentage}%" 
+                            title="${status}: ${statusCounts[status]} epics (${percentage.toFixed(1)}%)"></div>
+                    `;
+                });
+                
+                html += `
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-xs">
+                `;
+                
+                // Add legend
+                Object.keys(statusCounts).forEach(status => {
+                    const colorClass = statusColors[status] || 'bg-gray-200 dark:bg-gray-700';
+                    
+                    html += `
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded ${colorClass} mr-1"></div>
+                            <span>${status} (${statusCounts[status]})</span>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                    </div>
+                    <div class="mt-4">
+                        <h3 class="font-medium mb-2">Recent Epics</h3>
+                        <div class="space-y-2">
+                `;
+                
+                // Sort epics by last updated date
+                const sortedEpics = [...dashboardData.jiraStatus].sort((a, b) => {
+                    return new Date(b.LastUpdated || 0) - new Date(a.LastUpdated || 0);
+                }).slice(0, 3); // Show only 3 most recent
+                
+                sortedEpics.forEach(epic => {
+                    const status = epic.Status || 'Unknown';
+                    const statusClass = statusColors[status] || 'bg-gray-200 dark:bg-gray-700';
+                    
+                    html += `
+                        <div class="dashboard-card p-3 rounded border border-gray-200 dark:border-gray-700">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="text-sm font-medium">${epic.EpicName || 'Unnamed Epic'}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">${epic.EpicID || 'No ID'}</div>
+                                </div>
+                                <div class="text-xs px-2 py-1 rounded-full ${statusClass} text-gray-800 dark:text-white">
+                                    ${status}
+                                </div>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                Updated: ${formatDate(epic.LastUpdated)}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            jiraStatusContent.innerHTML = html;
+        }
+
+        // Function to update usage metrics section
+        function updateUsageMetricsSection() {
+            let html = '';
+            
+            if (dashboardData.usageMetrics.length === 0) {
+                html = `<p class="text-gray-500 dark:text-gray-400 text-center">No usage data available</p>`;
+            } else {
+                // Group data by period
+                const periodData = {};
+                dashboardData.usageMetrics.forEach(usage => {
+                    const period = usage.Period || 'Unknown';
+                    if (!periodData[period]) {
+                        periodData[period] = 0;
+                    }
+                    periodData[period] += parseFloat(usage.Value) || 0;
+                });
+                
+                // Sort periods chronologically
+                const sortedPeriods = Object.keys(periodData).sort((a, b) => {
+                    return new Date(a) - new Date(b);
+                });
+                
+                const chartLabels = sortedPeriods.map(formatPeriodLabel);
+                const chartData = sortedPeriods.map(period => periodData[period]);
+                
+                html = `
+                    <div class="w-full h-64">
+                        <canvas id="usageChart"></canvas>
+                    </div>
+                `;
+                
+                usageMetricsContent.innerHTML = html;
+                
+                // Create the chart
+                const ctx = document.getElementById('usageChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: 'Usage',
+                            data: chartData,
+                            backgroundColor: 'rgba(93, 92, 222, 0.2)',
+                            borderColor: 'rgba(93, 92, 222, 1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(160, 160, 160, 0.1)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+                
+                return;
+            }
+            
+            usageMetricsContent.innerHTML = html;
+        }
+
+        // Function to update integrated data table
+        function updateIntegratedDataTable() {
+            const tableBody = document.getElementById('integratedDataBody');
+            tableBody.innerHTML = '';
+            
+            if (dashboardData.integrated.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                        No integrated data available
+                    </td>
+                `;
+                tableBody.appendChild(emptyRow);
+                return;
+            }
+            
+            // Sort integrated data by last activity date
+            dashboardData.integrated.sort((a, b) => {
+                const aDate = a.commits.length > 0 
+                    ? new Date(a.commits[a.commits.length - 1].date || 0) 
+                    : new Date(a.lastUpdated || 0);
+                
+                const bDate = b.commits.length > 0 
+                    ? new Date(b.commits[b.commits.length - 1].date || 0) 
+                    : new Date(b.lastUpdated || 0);
+                
+                return bDate - aDate;
+            });
+            
+            // Add rows to the table
+            dashboardData.integrated.forEach(item => {
+                const row = document.createElement('tr');
+                
+                // Get status color
+                let statusColorClass;
+                switch (item.status) {
+                    case 'Done':
+                    case 'Completed':
+                        statusColorClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                        break;
+                    case 'In Progress':
+                        statusColorClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                        break;
+                    case 'Blocked':
+                        statusColorClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                        break;
+                    case 'In Review':
+                        statusColorClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                        break;
+                    default:
+                        statusColorClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+                }
+                
+                // Calculate last activity date
+                let lastActivityDate = 'N/A';
+                if (item.commits.length > 0) {
+                    const sortedCommits = [...item.commits].sort((a, b) => {
+                        return new Date(b.date || 0) - new Date(a.date || 0);
+                    });
+                    lastActivityDate = formatDate(sortedCommits[0].date);
+                }
+                
+                // Calculate usage trend
+                let usageTrend = 0;
+                let trendDirection = '';
+                let trendColorClass = 'text-gray-500 dark:text-gray-400';
+                
+                if (item.usageData.length >= 2) {
+                    const sortedUsage = [...item.usageData].sort((a, b) => {
+                        return new Date(a.period) - new Date(b.period);
+                    });
+                    
+                    const firstValue = parseFloat(sortedUsage[0].value) || 0;
+                    const lastValue = parseFloat(sortedUsage[sortedUsage.length - 1].value) || 0;
+                    
+                    if (firstValue > 0) {
+                        usageTrend = Math.round(((lastValue - firstValue) / firstValue) * 100);
+                    }
+                    
+                    if (usageTrend > 0) {
+                        trendDirection = '↑';
+                        trendColorClass = 'text-green-500 dark:text-green-400';
+                    } else if (usageTrend < 0) {
+                        trendDirection = '↓';
+                        trendColorClass = 'text-red-500 dark:text-red-400';
+                    } else {
+                        trendDirection = '→';
+                    }
+                }
+                
+                // Calculate total usage
+                const totalUsage = item.usageData.reduce((sum, usage) => {
+                    return sum + (parseFloat(usage.value) || 0);
+                }, 0);
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium">${item.epicName}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${item.epicId}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs rounded-full ${statusColorClass}">
+                            ${item.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        ${item.commits.length}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        ${lastActivityDate}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        ${totalUsage.toFixed(0)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm ${trendColorClass}">
+                            ${usageTrend}% ${trendDirection}
+                        </span>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Helper function to format dates
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return 'Invalid date';
+                
+                const now = new Date();
+                const diffTime = Math.abs(now - date);
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 0) {
+                    return 'Today';
+                } else if (diffDays === 1) {
+                    return 'Yesterday';
+                } else if (diffDays < 7) {
+                    return `${diffDays} days ago`;
+                } else {
+                    return date.toLocaleDateString();
+                }
+            } catch (e) {
+                return 'Invalid date';
+            }
+        }
+
+        // Helper function to format period labels
+        function formatPeriodLabel(period) {
+            try {
+                const date = new Date(period);
+                if (isNaN(date.getTime())) return period;
+                
+                // Format as MMM DD - for example, "Jan 15"
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } catch (e) {
+                return period;
+            }
+        }
+
+        // Function to load sample data
+        function loadSampleData() {
+            showLoadingState();
+            
+            // Sample Git activity data
+            dashboardData.gitActivity = [
+                { CommitID: 'a1b2c3d', Author: 'John Doe', Date: '2023-07-15', CommitMessage: 'Add new feature [JIRA-123]' },
+                { CommitID: 'e4f5g6h', Author: 'Jane Smith', Date: '2023-07-14', CommitMessage: 'Fix bug in login form JIRA-124' },
+                { CommitID: 'i7j8k9l', Author: 'Mike Johnson', Date: '2023-07-13', CommitMessage: 'Update documentation' },
+                { CommitID: 'm1n2o3p', Author: 'Sarah Brown', Date: '2023-07-12', CommitMessage: 'Refactor code [JIRA-125]' },
+                { CommitID: 'q4r5s6t', Author: 'David Wilson', Date: '2023-07-11', CommitMessage: 'Add unit tests for JIRA-123' },
+                { CommitID: 'u7v8w9x', Author: 'Lisa Davis', Date: '2023-07-10', CommitMessage: 'Merge pull request #42' },
+                { CommitID: 'y1z2a3b', Author: 'Robert Taylor', Date: '2023-07-09', CommitMessage: 'Implement feedback form JIRA-126' },
+                { CommitID: 'c4d5e6f', Author: 'Emma White', Date: '2023-07-08', CommitMessage: 'Fix typo in README' }
+            ];
+            
+            // Sample JIRA status data
+            dashboardData.jiraStatus = [
+                { EpicID: 'JIRA-123', EpicName: 'User Authentication', Status: 'Completed', Hypothesis: 'Improved login will increase conversion', LastUpdated: '2023-07-10' },
+                { EpicID: 'JIRA-124', EpicName: 'Dashboard Redesign', Status: 'In Progress', Hypothesis: 'New dashboard will improve user engagement', LastUpdated: '2023-07-14' },
+                { EpicID: 'JIRA-125', EpicName: 'Performance Optimization', Status: 'In Review', Hypothesis: 'Faster load times will reduce bounce rate', LastUpdated: '2023-07-12' },
+                { EpicID: 'JIRA-126', EpicName: 'Feedback System', Status: 'To Do', Hypothesis: 'User feedback will identify pain points', LastUpdated: '2023-07-09' },
+                { EpicID: 'JIRA-127', EpicName: 'Mobile Responsiveness', Status: 'In Progress', Hypothesis: 'Better mobile experience will increase mobile usage', LastUpdated: '2023-07-08' }
+            ];
+            
+            // Sample usage metrics data
+            dashboardData.usageMetrics = [
+                { EpicID: 'JIRA-123', Period: '2023-07-01', Value: '1200', Change: '+5%' },
+                { EpicID: 'JIRA-123', Period: '2023-07-15', Value: '1350', Change: '+12.5%' },
+                { EpicID: 'JIRA-124', Period: '2023-07-01', Value: '850', Change: '0%' },
+                { EpicID: 'JIRA-124', Period: '2023-07-15', Value: '900', Change: '+5.9%' },
+                { EpicID: 'JIRA-125', Period: '2023-07-01', Value: '1500', Change: '+2%' },
+                { EpicID: 'JIRA-125', Period: '2023-07-15', Value: '1620', Change: '+8%' },
+                { EpicID: 'JIRA-126', Period: '2023-07-01', Value: '300', Change: 'N/A' },
+                { EpicID: 'JIRA-126', Period: '2023-07-15', Value: '280', Change: '-6.7%' },
+                { EpicID: 'JIRA-127', Period: '2023-07-01', Value: '750', Change: '+10%' },
+                { EpicID: 'JIRA-127', Period: '2023-07-15', Value: '900', Change: '+20%' }
+            ];
+            
+            // Process and integrate data
+            integrateData();
+            
+            // Update dashboard
+            setTimeout(() => {
+                updateDashboard();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
