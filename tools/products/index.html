@@ -525,7 +525,10 @@
                 return str.split(separatorRegex).map(sku => sku.trim()).filter(sku => sku);
             }
             
-            // First pass: Count rows with multiple SKUs
+            // Find the PRIMARY SKU column index
+            const skuColumnIndex = findSkuColumnIndex(headerRow);
+            
+            // First pass: Count rows with multiple SKUs (for stats only)
             let maxSkuCount = 1;
             let rowsWithMultipleSKUs = 0;
             let totalSKUsAdded = 0;
@@ -545,19 +548,6 @@
                 }
             });
             
-            // Initialize processed data
-            if (mode === 'columns') {
-                // Column mode: Create new header row with additional SKU columns
-                const newHeaderRow = [...headerRow];
-                for (let i = 1; i < maxSkuCount; i++) {
-                    newHeaderRow.push(`${columnToProcess} ${i+1}`);
-                }
-                processedData = [newHeaderRow];
-            } else {
-                // Row mode: Use the original header
-                processedData = [headerRow];
-            }
-            
             // Count valid rows for progress calculation
             const validRows = originalData.filter((row, index) => index > 0 && row && row.length > 0);
             const totalRows = validRows.length;
@@ -565,10 +555,31 @@
             // Initialize progress
             updateProgress(0, totalRows);
             
-            // Process each data row (skip header)
-            // Using setTimeout and chunks to prevent UI freezing with large files
-            const chunkSize = 100; // Process 100 rows at a time
-            let currentRow = 0;
+            // Helper function to find SKU column index
+            function findSkuColumnIndex(headers) {
+                // Try PRIMARY SKU first
+                const primarySkuColumnName = "PRIMARY SKU";
+                const primarySkuIndex = headers.findIndex(header => 
+                    header && typeof header === 'string' && 
+                    header.trim().toUpperCase() === primarySkuColumnName
+                );
+                
+                if (primarySkuIndex !== -1) return primarySkuIndex;
+                
+                // Fall back to SKU
+                const skuColumnName = "SKU";
+                const skuIndex = headers.findIndex(header => 
+                    header && typeof header === 'string' && 
+                    header.trim().toUpperCase() === skuColumnName
+                );
+                
+                if (skuIndex !== -1) {
+                    console.log(`"PRIMARY SKU" column not found, using "${headers[skuIndex]}" column instead.`);
+                    return skuIndex;
+                }
+                
+                return -1;
+            }
             
             function processChunk() {
                 const limit = Math.min(currentRow + chunkSize, totalRows);
@@ -622,7 +633,13 @@
                                 processedData.push(originalRow);
                                 
                                 // Then: Create new rows for each SECONDARY SKU value
+                                // But ONLY for values that don't match the primary SKU (to avoid duplication)
                                 for (let j = 0; j < skus.length; j++) {
+                                    // Skip this secondary SKU if it matches the primary SKU to prevent duplicates
+                                    if (primarySkuIndex !== -1 && row[primarySkuIndex] === skus[j]) {
+                                        continue;
+                                    }
+                                    
                                     const newRow = [...row];
                                     // Move value from SECONDARY SKU to PRIMARY SKU and clear SECONDARY SKU
                                     if (primarySkuIndex !== -1) {
@@ -683,8 +700,167 @@
                 }
             }
             
-            // Start processing
-            setTimeout(processChunk, 0);
+            // Initialize processed data with the header row
+            if (mode === 'columns') {
+                // Column mode: Create new header row with additional SKU columns
+                const newHeaderRow = [...headerRow];
+                for (let i = 1; i < maxSkuCount; i++) {
+                    newHeaderRow.push(`${columnToProcess} ${i+1}`);
+                }
+                processedData = [newHeaderRow];
+            } else {
+                // Row mode: Use the original header
+                processedData = [headerRow];
+            }
+            
+            // Process data - completely different approach for "rows" mode to avoid duplicates
+            if (mode === 'rows') {
+                // Create a map to track unique SKUs
+                const uniqueSkus = new Map();
+                
+                // First pass: collect all unique SKUs and their data
+                for (let i = 1; i < originalData.length; i++) {
+                    const row = originalData[i];
+                    
+                    // Skip empty rows
+                    if (!row || row.length === 0) continue;
+                    
+                    // Get primary SKU value
+                    const primarySku = skuColumnIndex !== -1 ? String(row[skuColumnIndex] || '').trim() : '';
+                    
+                    // Get secondary SKU value
+                    const secondarySku = String(row[columnIndex] || '').trim();
+                    
+                    // Add the primary SKU to the map if not already there
+                    if (primarySku && !uniqueSkus.has(primarySku)) {
+                        uniqueSkus.set(primarySku, [...row]);
+                    }
+                    
+                    // Process secondary SKUs if present
+                    if (secondarySku) {
+                        if (containsSeparator(secondarySku)) {
+                            // Multiple secondary SKUs
+                            const skus = splitBySeparators(secondarySku);
+                            
+                            // Add each secondary SKU to the map if not already there
+                            for (const sku of skus) {
+                                // Skip if same as primary SKU (to avoid duplicates)
+                                if (sku === primarySku) continue;
+                                
+                                if (!uniqueSkus.has(sku)) {
+                                    // Create a new row for this SKU
+                                    const newRow = [...row];
+                                    if (skuColumnIndex !== -1) {
+                                        newRow[skuColumnIndex] = sku; // Replace primary SKU
+                                    }
+                                    newRow[columnIndex] = ''; // Clear secondary SKU
+                                    uniqueSkus.set(sku, newRow);
+                                }
+                            }
+                        } else if (secondarySku !== primarySku) {
+                            // Single secondary SKU different from primary
+                            if (!uniqueSkus.has(secondarySku)) {
+                                // Create a new row for this secondary SKU
+                                const newRow = [...row];
+                                if (skuColumnIndex !== -1) {
+                                    newRow[skuColumnIndex] = secondarySku; // Replace primary SKU
+                                }
+                                newRow[columnIndex] = ''; // Clear secondary SKU
+                                uniqueSkus.set(secondarySku, newRow);
+                            }
+                        }
+                    }
+                }
+                
+                // Second pass: clear all secondary SKU fields
+                for (const [sku, row] of uniqueSkus.entries()) {
+                    row[columnIndex] = ''; // Clear all secondary SKU fields
+                    processedData.push(row);
+                }
+                
+                // Update progress to 100%
+                updateProgress(totalRows, totalRows);
+                
+                // Processing complete, show completion UI
+                setTimeout(() => {
+                    processing.classList.add('hidden');
+                    processingComplete.classList.remove('hidden');
+                    viewResultsBtn.classList.remove('hidden');
+                    
+                    const newRowCount = processedData.length - 1; // Subtract header
+                    const originalRowCount = originalData.length - 1; // Subtract header
+                    const skusDiff = newRowCount - originalRowCount;
+                    
+                    skusSplitInfo.textContent = `Original: ${originalRowCount} rows, Final: ${newRowCount} rows (${skusDiff > 0 ? "+" + skusDiff : skusDiff} rows)`;
+                }, 500);
+            } else {
+                // For column mode, use the original chunked processing
+                const chunkSize = 100;
+                let currentRow = 0;
+                
+                function processChunk() {
+                    const limit = Math.min(currentRow + chunkSize, totalRows);
+                    
+                    for (let i = currentRow; i < limit; i++) {
+                        const rowIndex = i + 1; // +1 because we skip header (index 0)
+                        const row = originalData[rowIndex];
+                        
+                        // Skip empty rows
+                        if (!row || row.length === 0) continue;
+                        
+                        // Get the cell value to process
+                        const cellValue = row[columnIndex];
+                        
+                        if (cellValue && typeof cellValue === 'string' && containsSeparator(cellValue)) {
+                            const skus = splitBySeparators(cellValue);
+                            
+                            if (skus.length > 0) {
+                                // Column mode: Add SKUs as additional columns
+                                const newRow = [...row];
+                                
+                                // Extend the row to accommodate all new columns
+                                while (newRow.length < processedData[0].length) {
+                                    newRow.push('');
+                                }
+                                
+                                // Add first SKU to the original column
+                                newRow[columnIndex] = skus[0];
+                                
+                                // Add additional SKUs to the new columns
+                                for (let j = 1; j < skus.length; j++) {
+                                    newRow[headerRow.length + j - 1] = skus[j];
+                                }
+                                
+                                // Add the row to the result
+                                processedData.push(newRow);
+                            }
+                        } else {
+                            // No SKUs to split, add the row as is
+                            processedData.push([...row]);
+                        }
+                    }
+                    
+                    // Update progress
+                    updateProgress(limit, totalRows);
+                    currentRow = limit;
+                    
+                    if (currentRow < totalRows) {
+                        setTimeout(processChunk, 0); // Continue with next chunk
+                    } else {
+                        // Processing complete, show completion UI
+                        setTimeout(() => {
+                            processing.classList.add('hidden');
+                            processingComplete.classList.remove('hidden');
+                            viewResultsBtn.classList.remove('hidden');
+                            
+                            skusSplitInfo.textContent = `Found ${rowsWithMultipleSKUs} rows with multiple SKUs. Added ${maxSkuCount - 1} new columns.`;
+                        }, 500);
+                    }
+                }
+                
+                // Start column mode processing
+                setTimeout(processChunk, 0);
+            }
         }
         
         function displayResults() {
