@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gainsight API Tester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'bg-light': '#FFFFFF',
+                        'bg-dark': '#181818'
+                    }
+                }
+            },
+            darkMode: 'class'
+        }
+    </script>
+    <style>
+        .code-block {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+    </style>
+</head>
+<body class="bg-bg-light dark:bg-bg-dark text-gray-900 dark:text-gray-100 transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary mb-2">Gainsight API Tester</h1>
+            <p class="text-gray-600 dark:text-gray-400">Test and debug your Gainsight API calls with ease</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Request Configuration -->
+            <div class="space-y-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-primary">Request Configuration</h2>
+                    
+                    <!-- URL and Method -->
+                    <div class="space-y-4">
+                        <div class="flex gap-2">
+                            <select id="method" class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PUT">PUT</option>
+                                <option value="DELETE">DELETE</option>
+                                <option value="PATCH">PATCH</option>
+                            </select>
+                            <input 
+                                type="text" 
+                                id="url" 
+                                placeholder="https://api.gainsight.com/v1/..." 
+                                class="flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                        </div>
+                        
+                        <!-- CORS Proxy Option -->
+                        <div class="flex items-center gap-3">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    id="useCorsProxy" 
+                                    checked
+                                    class="w-4 h-4 text-primary bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-primary focus:ring-2"
+                                >
+                                <span class="text-sm font-medium">Use CORS Proxy</span>
+                            </label>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">Bypass browser CORS restrictions</span>
+                        </div>
+                    </div>
+
+                    <!-- Headers -->
+                    <div class="mt-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-medium">Headers</h3>
+                            <button id="addHeader" class="bg-primary text-white px-3 py-1 rounded-md text-sm hover:bg-opacity-90 transition-colors">
+                                + Add Header
+                            </button>
+                        </div>
+                        <div id="headersContainer" class="space-y-2">
+                            <!-- Default headers will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Request Body -->
+                    <div class="mt-6">
+                        <h3 class="text-lg font-medium mb-3">Request Body</h3>
+                        <div class="mb-2">
+                            <select id="contentType" class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="application/json">JSON</option>
+                                <option value="application/x-www-form-urlencoded">Form Data</option>
+                                <option value="text/plain">Text</option>
+                                <option value="application/xml">XML</option>
+                            </select>
+                        </div>
+                        <textarea 
+                            id="requestBody" 
+                            rows="8" 
+                            placeholder='{"key": "value"}'
+                            class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary code-block"
+                        ></textarea>
+                    </div>
+
+                    <!-- Request Status -->
+                    <div id="requestStatus" class="mt-6 hidden">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                            <div class="flex items-center gap-2">
+                                <div id="statusSpinner" class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 hidden"></div>
+                                <span id="statusText" class="text-sm font-medium text-blue-800 dark:text-blue-200"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Send Button -->
+                    <div class="mt-6 space-y-2">
+                        <button id="sendRequest" class="w-full bg-primary text-white py-3 rounded-md font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            Send Request
+                        </button>
+                        <div class="flex gap-2">
+                            <button id="saveConfig" class="flex-1 bg-green-600 text-white py-2 rounded-md font-medium hover:bg-green-700 transition-colors">
+                                💾 Save Config
+                            </button>
+                            <button id="manageConfigs" class="flex-1 bg-gray-600 text-white py-2 rounded-md font-medium hover:bg-gray-700 transition-colors">
+                                📁 Manage
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Basic Auth Helper -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-medium mb-3">Basic Authentication</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Email</label>
+                            <input 
+                                type="email" 
+                                id="basicAuthEmail" 
+                                placeholder="your.email@company.com"
+                                class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Password</label>
+                            <input 
+                                type="password" 
+                                id="basicAuthPassword" 
+                                placeholder="Your Gainsight password"
+                                class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                        </div>
+                        <button id="applyBasicAuth" class="w-full bg-primary text-white py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors">
+                            Apply Basic Auth
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Templates -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-medium mb-3">Quick Templates</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button class="template-btn text-left p-3 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-template="basicAuth">
+                            <div class="font-medium">Basic Auth</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Login credentials</div>
+                        </button>
+                        <button class="template-btn text-left p-3 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-template="auth">
+                            <div class="font-medium">OAuth Token</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">API credentials</div>
+                        </button>
+                        <button class="template-btn text-left p-3 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-template="customers">
+                            Get Customers
+                        </button>
+                        <button class="template-btn text-left p-3 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-template="accounts">
+                            Get Accounts
+                        </button>
+                        <button class="template-btn text-left p-3 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-template="health">
+                            Health Scores
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Display -->
+            <div class="space-y-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-primary">Response</h2>
+                    
+                    <!-- Status and Time -->
+                    <div id="responseStatus" class="mb-4 hidden">
+                        <div class="flex justify-between items-center">
+                            <span id="statusCode" class="px-3 py-1 rounded-full text-sm font-medium"></span>
+                            <span id="responseTime" class="text-sm text-gray-600 dark:text-gray-400"></span>
+                        </div>
+                    </div>
+
+                    <!-- Response Headers -->
+                    <div id="responseHeadersSection" class="mb-4 hidden">
+                        <h3 class="text-lg font-medium mb-2">Response Headers</h3>
+                        <div id="responseHeaders" class="bg-gray-50 dark:bg-gray-700 rounded-md p-3 code-block text-sm max-h-32 overflow-y-auto"></div>
+                    </div>
+
+                    <!-- Response Body -->
+                    <div>
+                        <h3 class="text-lg font-medium mb-2">Response Body</h3>
+                        <div class="relative">
+                            <button id="copyResponse" class="absolute top-2 right-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors hidden">
+                                Copy
+                            </button>
+                            <pre id="responseBody" class="bg-gray-50 dark:bg-gray-700 rounded-md p-3 code-block text-sm max-h-96 overflow-auto whitespace-pre-wrap">No response yet. Send a request to see the response here.</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p class="text-gray-600 dark:text-gray-400">Sending request...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication Helper -->
+        <div class="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h3 class="font-medium text-blue-800 dark:text-blue-200 mb-2">Basic Auth Setup:</h3>
+            <p class="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                To use your regular Gainsight login credentials with Basic Auth:
+            </p>
+            <ol class="text-sm text-blue-700 dark:text-blue-300 space-y-1 ml-4">
+                <li>1. Click the "Basic Auth" template button</li>
+                <li>2. Replace <code class="bg-blue-100 dark:bg-blue-800/50 px-1 rounded">YOUR_EMAIL:YOUR_PASSWORD</code> in the Authorization header with your actual credentials</li>
+                <li>3. The format should be: <code class="bg-blue-100 dark:bg-blue-800/50 px-1 rounded">Basic [base64_encoded_email:password]</code></li>
+                <li>4. You can manually encode at: <a href="https://www.base64encode.org" target="_blank" class="underline">base64encode.org</a></li>
+            </ol>
+        </div>
+
+        <!-- Configuration Management Modal -->
+        <div id="configModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-primary">Manage Configurations</h2>
+                        <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Export/Import Section -->
+                    <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <h3 class="font-medium mb-3">Export/Import All Configurations</h3>
+                        <div class="flex gap-2 mb-3">
+                            <button id="exportConfigs" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                                📤 Export All
+                            </button>
+                            <input type="file" id="importFile" accept=".json" class="hidden">
+                            <button id="importConfigs" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                                📥 Import
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">Export saves all configurations as a JSON file. Import loads configurations from a JSON file.</p>
+                    </div>
+                    
+                    <!-- Saved Configurations List -->
+                    <div>
+                        <h3 class="font-medium mb-3">Saved Configurations (<span id="configCount">0</span>)</h3>
+                        <div id="configsList" class="space-y-2">
+                            <p class="text-gray-500 dark:text-gray-400 text-center py-4">No saved configurations yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Configuration Modal -->
+        <div id="saveModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold text-primary mb-4">Save Configuration</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Configuration Name</label>
+                            <input 
+                                type="text" 
+                                id="configName" 
+                                placeholder="e.g., Get User Profile, Create Customer..."
+                                class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Description (optional)</label>
+                            <textarea 
+                                id="configDescription" 
+                                rows="3"
+                                placeholder="Brief description of what this request does..."
+                                class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                            ></textarea>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="confirmSave" class="flex-1 bg-green-600 text-white py-2 rounded-md font-medium hover:bg-green-700 transition-colors">
+                                Save
+                            </button>
+                            <button id="cancelSave" class="flex-1 bg-gray-600 text-white py-2 rounded-md font-medium hover:bg-gray-700 transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <h3 class="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Important Notes:</h3>
+            <ul class="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                <li>• Some requests may fail due to CORS policy restrictions when testing from the browser</li>
+                <li>• For production testing, consider using this tool alongside a CORS proxy or testing directly from your server</li>
+                <li>• Always keep your API keys and login credentials secure and avoid sharing them</li>
+                <li>• Basic Auth transmits credentials in base64 encoding - use HTTPS for security</li>
+                <li>• Saved configurations are stored in memory during this session - use Export to save permanently</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode setup
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Global variables
+        let headerCount = 0;
+
+        // Templates
+        const templates = {
+            auth: {
+                method: 'POST',
+                url: 'https://api.gainsight.com/v1/oauth/token',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'grant_type=client_credentials&client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET',
+                contentType: 'application/x-www-form-urlencoded'
+            },
+            basicAuth: {
+                method: 'GET',
+                url: 'https://api.gainsight.com/v1/users/me',
+                headers: {
+                    'Authorization': 'Basic ' + btoa('YOUR_EMAIL:YOUR_PASSWORD'),
+                    'Content-Type': 'application/json'
+                },
+                body: '',
+                contentType: 'application/json'
+            },
+            customers: {
+                method: 'GET',
+                url: 'https://api.gainsight.com/v1/customers',
+                headers: {
+                    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+                    'Content-Type': 'application/json'
+                },
+                body: '',
+                contentType: 'application/json'
+            },
+            accounts: {
+                method: 'GET',
+                url: 'https://api.gainsight.com/v1/accounts',
+                headers: {
+                    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+                    'Content-Type': 'application/json'
+                },
+                body: '',
+                contentType: 'application/json'
+            },
+            health: {
+                method: 'GET',
+                url: 'https://api.gainsight.com/v1/health-scores',
+                headers: {
+                    'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+                    'Content-Type': 'application/json'
+                },
+                body: '',
+                contentType: 'application/json'
+            }
+        };
+
+        // DOM elements
+        const methodSelect = document.getElementById('method');
+        const urlInput = document.getElementById('url');
+        const headersContainer = document.getElementById('headersContainer');
+        const addHeaderBtn = document.getElementById('addHeader');
+        const contentTypeSelect = document.getElementById('contentType');
+        const requestBodyTextarea = document.getElementById('requestBody');
+        const sendRequestBtn = document.getElementById('sendRequest');
+        const responseStatus = document.getElementById('responseStatus');
+        const statusCode = document.getElementById('statusCode');
+        const responseTime = document.getElementById('responseTime');
+        const responseHeadersSection = document.getElementById('responseHeadersSection');
+        const responseHeaders = document.getElementById('responseHeaders');
+        const responseBody = document.getElementById('responseBody');
+        const copyResponseBtn = document.getElementById('copyResponse');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        
+        // Status elements
+        const requestStatus = document.getElementById('requestStatus');
+        const statusSpinner = document.getElementById('statusSpinner');
+        const statusText = document.getElementById('statusText');
+        
+        // Basic Auth elements
+        const basicAuthEmail = document.getElementById('basicAuthEmail');
+        const basicAuthPassword = document.getElementById('basicAuthPassword');
+        const applyBasicAuthBtn = document.getElementById('applyBasicAuth');
+
+        // Status update function
+        function updateStatus(message, showSpinner = false) {
+            console.log('Status:', message);
+            statusText.textContent = message;
+            requestStatus.classList.remove('hidden');
+            
+            if (showSpinner) {
+                statusSpinner.classList.remove('hidden');
+            } else {
+                statusSpinner.classList.add('hidden');
+            }
+        }
+
+        function hideStatus() {
+            requestStatus.classList.add('hidden');
+            statusSpinner.classList.add('hidden');
+        }
+
+        // Add header function
+        function addHeader(key = '', value = '') {
+            headerCount++;
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'flex gap-2 items-center';
+            headerDiv.innerHTML = `
+                <input 
+                    type="text" 
+                    placeholder="Header Key" 
+                    value="${key}"
+                    class="flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary header-key"
+                >
+                <input 
+                    type="text" 
+                    placeholder="Header Value" 
+                    value="${value}"
+                    class="flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary header-value"
+                >
+                <button class="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition-colors remove-header">
+                    ×
+                </button>
+            `;
+            
+            headerDiv.querySelector('.remove-header').addEventListener('click', () => {
+                headerDiv.remove();
+            });
+            
+            headersContainer.appendChild(headerDiv);
+        }
+
+        // Initialize with default headers
+        addHeader('Content-Type', 'application/json');
+        addHeader('Authorization', 'Bearer YOUR_ACCESS_TOKEN');
+        addHeader('X-Group-Id', 'YOUR_GROUP_ID');
+
+        // Add header button event
+        addHeaderBtn.addEventListener('click', () => addHeader());
+
+        // Basic Auth function
+        function applyBasicAuth() {
+            const email = basicAuthEmail.value.trim();
+            const password = basicAuthPassword.value.trim();
+            
+            if (!email || !password) {
+                alert('Please enter both email and password');
+                return;
+            }
+            
+            // Create the basic auth header
+            const credentials = btoa(`${email}:${password}`);
+            const authHeader = `Basic ${credentials}`;
+            
+            // Find existing Authorization header or add new one
+            let authHeaderFound = false;
+            headersContainer.querySelectorAll('div').forEach(headerDiv => {
+                const keyInput = headerDiv.querySelector('.header-key');
+                const valueInput = headerDiv.querySelector('.header-value');
+                
+                if (keyInput.value.toLowerCase() === 'authorization') {
+                    valueInput.value = authHeader;
+                    authHeaderFound = true;
+                }
+            });
+            
+            // If no Authorization header exists, add one
+            if (!authHeaderFound) {
+                addHeader('Authorization', authHeader);
+            }
+            
+            // Set a default URL for testing
+            if (!urlInput.value.trim()) {
+                urlInput.value = 'https://api.gainsight.com/v1/users/me';
+            }
+            
+            // Clear the password field for security
+            basicAuthPassword.value = '';
+            
+            // Show success message
+            applyBasicAuthBtn.textContent = 'Applied!';
+            setTimeout(() => {
+                applyBasicAuthBtn.textContent = 'Apply Basic Auth';
+            }, 2000);
+        }
+
+        // Template buttons
+        document.querySelectorAll('.template-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const templateName = btn.dataset.template;
+                const template = templates[templateName];
+                
+                if (template) {
+                    methodSelect.value = template.method;
+                    urlInput.value = template.url;
+                    contentTypeSelect.value = template.contentType;
+                    requestBodyTextarea.value = template.body;
+                    
+                    // Clear existing headers and add template headers
+                    headersContainer.innerHTML = '';
+                    Object.entries(template.headers).forEach(([key, value]) => {
+                        addHeader(key, value);
+                    });
+                }
+            });
+        });
+
+        // Basic Auth button event
+        applyBasicAuthBtn.addEventListener('click', applyBasicAuth);
+
+        // Send request function
+        async function sendRequest() {
+            console.log('=== STARTING REQUEST ===');
+            updateStatus('Preparing request...', false);
+            
+            const method = methodSelect.value;
+            const originalUrl = urlInput.value.trim();
+            const useCorsProxy = document.getElementById('useCorsProxy').checked;
+            
+            if (!originalUrl) {
+                updateStatus('❌ Error: Please enter a URL', false);
+                setTimeout(hideStatus, 3000);
+                return;
+            }
+
+            // Prepare the final URL (with or without CORS proxy)
+            let finalUrl = originalUrl;
+            if (useCorsProxy) {
+                finalUrl = `https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=${encodeURIComponent(originalUrl)}`;
+                console.log(`Using CORS Proxy`);
+                console.log(`Original URL: ${originalUrl}`);
+                console.log(`Proxy URL: ${finalUrl}`);
+            }
+
+            console.log(`Method: ${method}`);
+            console.log(`Final URL: ${finalUrl}`);
+
+            // Collect headers
+            const headers = {};
+            let headerCount = 0;
+            headersContainer.querySelectorAll('div').forEach(headerDiv => {
+                const key = headerDiv.querySelector('.header-key').value.trim();
+                const value = headerDiv.querySelector('.header-value').value.trim();
+                if (key && value) {
+                    headers[key] = value;
+                    headerCount++;
+                }
+            });
+
+            console.log(`Headers collected: ${headerCount}`);
+            console.log('Headers:', headers);
+
+            // Prepare request options
+            const requestOptions = {
+                method: method,
+                headers: headers,
+                mode: 'cors'
+            };
+
+            // Add body for non-GET requests
+            if (method !== 'GET' && requestBodyTextarea.value.trim()) {
+                requestOptions.body = requestBodyTextarea.value.trim();
+                console.log('Request body added:', requestOptions.body.substring(0, 100) + (requestOptions.body.length > 100 ? '...' : ''));
+            }
+
+            const proxyText = useCorsProxy ? ' (via CORS proxy)' : '';
+            updateStatus(`✅ Request prepared - ${method} ${originalUrl}${proxyText}`, false);
+            setTimeout(() => {
+                updateStatus(`🚀 Sending request${proxyText}...`, true);
+            }, 500);
+
+            // Show loading states
+            loadingIndicator.classList.remove('hidden');
+            sendRequestBtn.disabled = true;
+            sendRequestBtn.textContent = 'Sending...';
+            responseStatus.classList.add('hidden');
+            responseHeadersSection.classList.add('hidden');
+            copyResponseBtn.classList.add('hidden');
+            
+            // Clear previous response
+            responseBody.textContent = 'Request in progress...';
+
+            const startTime = Date.now();
+            console.log('Request started at:', new Date(startTime).toISOString());
+
+            try {
+                const response = await fetch(finalUrl, requestOptions);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                console.log(`Response received in ${duration}ms`);
+                console.log(`Status: ${response.status} ${response.statusText}`);
+                
+                updateStatus(`✅ Response received: ${response.status} ${response.statusText} (${duration}ms)`, false);
+
+                // Show status
+                responseStatus.classList.remove('hidden');
+                statusCode.textContent = `${response.status} ${response.statusText}`;
+                statusCode.className = `px-3 py-1 rounded-full text-sm font-medium ${
+                    response.ok ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 
+                    'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                }`;
+                responseTime.textContent = `${duration}ms`;
+
+                // Show response headers
+                const headerText = Array.from(response.headers.entries())
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join('\n');
+                responseHeaders.textContent = headerText;
+                responseHeadersSection.classList.remove('hidden');
+                
+                console.log('Response headers:', Array.from(response.headers.entries()));
+
+                // Update status for parsing response
+                updateStatus('📄 Parsing response body...', false);
+
+                // Get response body
+                const contentType = response.headers.get('content-type');
+                let responseText;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        const jsonData = await response.json();
+                        responseText = JSON.stringify(jsonData, null, 2);
+                        console.log('JSON response parsed successfully');
+                    } catch (e) {
+                        responseText = await response.text();
+                        console.log('Failed to parse as JSON, using text:', e.message);
+                    }
+                } else {
+                    responseText = await response.text();
+                    console.log('Response parsed as text');
+                }
+
+                responseBody.textContent = responseText;
+                copyResponseBtn.classList.remove('hidden');
+                
+                console.log(`Response body length: ${responseText.length} characters`);
+                
+                // Final status
+                if (response.ok) {
+                    updateStatus('✅ Request completed successfully!', false);
+                } else {
+                    updateStatus(`⚠️ Request completed with ${response.status} error`, false);
+                }
+
+            } catch (error) {
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                console.error('Request failed:', error);
+                updateStatus(`❌ Request failed: ${error.message}`, false);
+                
+                responseBody.textContent = `Error: ${error.message}\n\nThis could be due to:\n• CORS policy restrictions\n• Network connectivity issues\n• Invalid URL or endpoint\n• Authentication problems`;
+                responseStatus.classList.remove('hidden');
+                statusCode.textContent = 'Error';
+                statusCode.className = 'px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+                responseTime.textContent = `${duration}ms`;
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                sendRequestBtn.disabled = false;
+                sendRequestBtn.textContent = 'Send Request';
+                
+                // Hide status after 5 seconds
+                setTimeout(hideStatus, 5000);
+                
+                console.log('=== REQUEST COMPLETED ===');
+            }
+        }
+
+        // Event listeners
+        sendRequestBtn.addEventListener('click', sendRequest);
+
+        // Copy response button
+        copyResponseBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(responseBody.textContent);
+                copyResponseBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyResponseBtn.textContent = 'Copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+            }
+        });
+
+        // Configuration Management System
+        let savedConfigs = [];
+
+        // Get current configuration
+        function getCurrentConfig() {
+            const headers = {};
+            headersContainer.querySelectorAll('div').forEach(headerDiv => {
+                const key = headerDiv.querySelector('.header-key').value.trim();
+                const value = headerDiv.querySelector('.header-value').value.trim();
+                if (key && value) {
+                    headers[key] = value;
+                }
+            });
+
+            return {
+                id: Date.now(),
+                name: '',
+                description: '',
+                method: methodSelect.value,
+                url: urlInput.value.trim(),
+                headers: headers,
+                contentType: contentTypeSelect.value,
+                body: requestBodyTextarea.value.trim(),
+                useCorsProxy: document.getElementById('useCorsProxy').checked,
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        // Load configuration
+        function loadConfig(config) {
+            methodSelect.value = config.method || 'GET';
+            urlInput.value = config.url || '';
+            contentTypeSelect.value = config.contentType || 'application/json';
+            requestBodyTextarea.value = config.body || '';
+            document.getElementById('useCorsProxy').checked = config.useCorsProxy !== false;
+
+            // Clear existing headers
+            headersContainer.innerHTML = '';
+            
+            // Add headers from config
+            if (config.headers && Object.keys(config.headers).length > 0) {
+                Object.entries(config.headers).forEach(([key, value]) => {
+                    addHeader(key, value);
+                });
+            } else {
+                // Add default headers if none exist
+                addHeader('Content-Type', 'application/json');
+                addHeader('Authorization', 'Bearer YOUR_ACCESS_TOKEN');
+                addHeader('X-Group-Id', 'YOUR_GROUP_ID');
+            }
+        }
+
+        // Save configuration
+        function saveConfiguration(name, description) {
+            const config = getCurrentConfig();
+            config.name = name;
+            config.description = description;
+            
+            savedConfigs.push(config);
+            updateConfigsList();
+            console.log('Configuration saved:', config);
+        }
+
+        // Delete configuration
+        function deleteConfig(id) {
+            savedConfigs = savedConfigs.filter(config => config.id !== id);
+            updateConfigsList();
+        }
+
+        // Update configurations list
+        function updateConfigsList() {
+            const configsList = document.getElementById('configsList');
+            const configCount = document.getElementById('configCount');
+            
+            configCount.textContent = savedConfigs.length;
+            
+            if (savedConfigs.length === 0) {
+                configsList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No saved configurations yet</p>';
+                return;
+            }
+
+            configsList.innerHTML = savedConfigs.map(config => `
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-900 dark:text-gray-100">${config.name}</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                ${config.method} ${config.url}
+                            </p>
+                            ${config.description ? `<p class="text-xs text-gray-500 dark:text-gray-500 mt-1">${config.description}</p>` : ''}
+                        </div>
+                        <div class="flex gap-2 ml-4">
+                            <button onclick="loadConfig(${JSON.stringify(config).replace(/"/g, '&quot;')})" 
+                                    class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition-colors">
+                                Load
+                            </button>
+                            <button onclick="deleteConfig(${config.id})" 
+                                    class="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 transition-colors">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                        Saved: ${new Date(config.timestamp).toLocaleString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Export configurations
+        function exportConfigurations() {
+            const dataStr = JSON.stringify(savedConfigs, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `gainsight-api-configs-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        // Import configurations
+        function importConfigurations(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedConfigs = JSON.parse(e.target.result);
+                    if (Array.isArray(importedConfigs)) {
+                        // Merge with existing configs, avoiding duplicates by timestamp
+                        const existingTimestamps = savedConfigs.map(c => c.timestamp);
+                        const newConfigs = importedConfigs.filter(c => !existingTimestamps.includes(c.timestamp));
+                        
+                        savedConfigs = [...savedConfigs, ...newConfigs];
+                        updateConfigsList();
+                        
+                        const importCount = newConfigs.length;
+                        alert(`Successfully imported ${importCount} configuration(s)`);
+                    } else {
+                        alert('Invalid file format. Please select a valid configuration export file.');
+                    }
+                } catch (error) {
+                    alert('Error reading file. Please ensure it\'s a valid JSON file.');
+                    console.error('Import error:', error);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        // Modal management
+        const configModal = document.getElementById('configModal');
+        const saveModal = document.getElementById('saveModal');
+        const configName = document.getElementById('configName');
+        const configDescription = document.getElementById('configDescription');
+
+        // Event listeners for configuration management
+        document.getElementById('saveConfig').addEventListener('click', () => {
+            configName.value = '';
+            configDescription.value = '';
+            saveModal.classList.remove('hidden');
+            configName.focus();
+        });
+
+        document.getElementById('manageConfigs').addEventListener('click', () => {
+            updateConfigsList();
+            configModal.classList.remove('hidden');
+        });
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            configModal.classList.add('hidden');
+        });
+
+        document.getElementById('confirmSave').addEventListener('click', () => {
+            const name = configName.value.trim();
+            if (!name) {
+                alert('Please enter a configuration name');
+                return;
+            }
+            
+            saveConfiguration(name, configDescription.value.trim());
+            saveModal.classList.add('hidden');
+            
+            // Show success message
+            updateStatus('✅ Configuration saved successfully!', false);
+            setTimeout(hideStatus, 3000);
+        });
+
+        document.getElementById('cancelSave').addEventListener('click', () => {
+            saveModal.classList.add('hidden');
+        });
+
+        document.getElementById('exportConfigs').addEventListener('click', () => {
+            if (savedConfigs.length === 0) {
+                alert('No configurations to export');
+                return;
+            }
+            exportConfigurations();
+        });
+
+        document.getElementById('importConfigs').addEventListener('click', () => {
+            document.getElementById('importFile').click();
+        });
+
+        document.getElementById('importFile').addEventListener('change', importConfigurations);
+
+        // Close modals when clicking outside
+        [configModal, saveModal].forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+
+        // Enter key to send request
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                sendRequest();
+            }
+            
+            // Enter key in save modal
+            if (e.key === 'Enter' && !saveModal.classList.contains('hidden')) {
+                if (e.target === configName || e.target === configDescription) {
+                    document.getElementById('confirmSave').click();
+                }
+            }
+            
+            // Escape key to close modals
+            if (e.key === 'Escape') {
+                configModal.classList.add('hidden');
+                saveModal.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
