@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="h-full bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Dark mode toggle -->
+    <div class="fixed top-4 right-4 z-50">
+        <button id="darkModeToggle" class="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+            </svg>
+            <svg class="w-5 h-5 block dark:hidden" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics Dashboard</h1>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">Comprehensive platform metrics and usage analytics</p>
+
+        <!-- File Upload Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Excel File</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Upload your analytics Excel file to generate dynamic charts</p>
+                </div>
+                <div id="loadingIndicator" class="hidden">
+                    <div class="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
+                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-sm font-medium">Processing...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="hidden">
+                <label for="excelFileInput" class="cursor-pointer">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-lg font-medium text-gray-900 dark:text-white mb-2">Click to upload Excel file</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Supports .xlsx and .xls files</p>
+                    </div>
+                </label>
+            </div>
+            
+            <div id="fileInfo" class="hidden mt-4 p-4 bg-green-50 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-700">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-green-600 dark:text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-medium text-green-800 dark:text-green-200" id="fileName"></p>
+                        <p class="text-xs text-green-600 dark:text-green-400" id="fileDetails"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 dark:bg-red-900 rounded-lg border border-red-200 dark:border-red-700">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-red-600 dark:text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <p class="text-sm font-medium text-red-800 dark:text-red-200" id="errorText"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Metrics Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Average Session Duration -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Average Session Duration Over Time</h3>
+                <canvas id="sessionDurationChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Geographic Breakdown -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Countries by Session Count</h3>
+                <canvas id="geographicChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Platform Activity -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Platform Activity Over Time</h3>
+                <canvas id="activityChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Search Analytics -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Search Terms</h3>
+                <canvas id="searchAnalyticsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Download Assets Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Top Downloaded Assets -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Top Downloaded Assets</h3>
+                <canvas id="topAssetsChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Asset Downloads by Business Unit -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Downloads by Business Unit</h3>
+                <canvas id="businessUnitChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Asset Downloads by Brand -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Downloads by Brand</h3>
+                <canvas id="brandChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Monthly Download Trends -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Monthly Download Trends</h3>
+                <canvas id="monthlyTrendsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Collection & Sharing Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Collection Activity -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Collection Activity Over Time</h3>
+                <canvas id="collectionChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Sharing Activity -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sharing Activity Over Time</h3>
+                <canvas id="sharingChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Download Asset - Detail</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Detailed breakdown of asset downloads with business unit and brand classification</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full divide-y divide-gray-200 dark:divide-gray-600">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Asset Title</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Business Unit</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Brand</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">MIME Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Download Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="downloadDetailTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode functionality
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        document.getElementById('darkModeToggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+
+        // Global data variables
+        let currentData = {
+            sessionDuration: [],
+            geographic: [],
+            searchAnalytics: [],
+            downloadAssetDetail: [],
+            downloadAssetSummary: [],
+            searchBar: [],
+            collections: [],
+            sharing: []
+        };
+
+        // Excel file upload functionality
+        document.getElementById('excelFileInput').addEventListener('change', handleFileUpload);
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showLoading(true);
+            hideMessages();
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    console.log('Sheet names:', workbook.SheetNames);
+                    processExcelData(workbook, file);
+                    
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    showError('Error reading Excel file. Please make sure it\'s a valid .xlsx or .xls file.');
+                } finally {
+                    showLoading(false);
+                }
+            };
+            
+            reader.onerror = function() {
+                showError('Error reading file. Please try again.');
+                showLoading(false);
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processExcelData(workbook, file) {
+            try {
+                // Process each sheet
+                workbook.SheetNames.forEach(sheetName => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    if (jsonData.length === 0) return;
+                    
+                    // Convert to objects using first row as headers
+                    const headers = jsonData[0];
+                    const data = jsonData.slice(1).map(row => {
+                        const obj = {};
+                        headers.forEach((header, index) => {
+                            obj[header] = row[index];
+                        });
+                        return obj;
+                    });
+                    
+                    // Map data to appropriate categories based on sheet name
+                    mapSheetData(sheetName, data);
+                });
+
+                // Update UI with new data
+                updateAllCharts();
+                displayDownloadAssetDetailData(currentData.downloadAssetDetail);
+                showFileSuccess(file, workbook.SheetNames.length);
+                
+            } catch (error) {
+                console.error('Error processing Excel data:', error);
+                showError('Error processing Excel data. Please check the file format.');
+            }
+        }
+
+        function mapSheetData(sheetName, data) {
+            const normalizedSheetName = sheetName.toLowerCase().replace(/[^a-z0-9]/g, '');
+            
+            console.log(`Processing sheet: ${sheetName} (${normalizedSheetName})`);
+            console.log('Sample data:', JSON.stringify(data.slice(0, 2), null, 2));
+            
+            if (normalizedSheetName.includes('averagesessionduration') || normalizedSheetName.includes('sessionduration')) {
+                currentData.sessionDuration = data.filter(row => row.date && row.count);
+            } 
+            else if (normalizedSheetName.includes('geographicbreakdown') || normalizedSheetName.includes('geographic')) {
+                currentData.geographic = data.filter(row => row.countryCode && row.count);
+            }
+            else if (normalizedSheetName.includes('searchanalytics')) {
+                currentData.searchAnalytics = data.filter(row => row.term && row.total);
+            }
+            else if (normalizedSheetName.includes('downloadassetdetail')) {
+                // Process download asset detail data
+                const processedData = data.filter(row => row.assetTitle && row.path).map(row => {
+                    const { businessUnit, brand } = extractPathInfo(row.path || '');
+                    return {
+                        ...row,
+                        businessUnit,
+                        brand,
+                        count: parseInt(row.Count) || parseInt(row.count) || 1,
+                        downloadDate: row.DownloadDate || row.downloadDate || new Date().toISOString(),
+                        mimeType: row.mimeType || 'unknown'
+                    };
+                });
+                currentData.downloadAssetDetail = processedData;
+            }
+            else if (normalizedSheetName.includes('downloadasset')) {
+                currentData.downloadAssetSummary = data.filter(row => row.date && row.count);
+            }
+            else if (normalizedSheetName.includes('searchbar')) {
+                currentData.searchBar = data.filter(row => row.date && row.count);
+            }
+            else if (normalizedSheetName.includes('collection')) {
+                currentData.collections = data.filter(row => row.date && row.count);
+            }
+            else if (normalizedSheetName.includes('sharing') || normalizedSheetName.includes('sharelink')) {
+                currentData.sharing = data.filter(row => row.date && row.count);
+            }
+        }
+
+        function showLoading(show) {
+            const indicator = document.getElementById('loadingIndicator');
+            if (show) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
+        function showFileSuccess(file, sheetCount) {
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const fileDetails = document.getElementById('fileDetails');
+            
+            fileName.textContent = `${file.name}`;
+            fileDetails.textContent = `${Math.round(file.size / 1024)} KB • ${sheetCount} sheets processed`;
+            
+            fileInfo.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            
+            errorText.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function hideMessages() {
+            document.getElementById('fileInfo').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        // Initialize with empty data - will be populated when Excel file is uploaded
+
+        // Extract business unit and brand from path
+        function extractPathInfo(path) {
+            const parts = path.split('/');
+            const businessUnit = parts[4] || 'unknown';
+            const brand = parts[5] || 'unknown';
+            return { businessUnit, brand };
+        }
+
+        // Chart instances for updating
+        let chartInstances = {};
+
+        function displayDownloadAssetDetailData(data) {
+            const tableBody = document.getElementById('downloadDetailTableBody');
+            tableBody.innerHTML = '';
+
+            data.slice(0, 50).forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                        <div class="font-medium truncate max-w-xs" title="${item.assetTitle}">
+                            ${item.assetTitle}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            ${item.businessUnit}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            ${item.brand}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMimeTypeColor(item.mimeType)}">
+                            ${item.mimeType}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        ${new Date(item.downloadDate).toLocaleDateString()}
+                    </td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                            ${item.count}
+                        </span>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        function getMimeTypeColor(mimeType) {
+            if (mimeType.includes('pdf')) return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+            if (mimeType.includes('image')) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+            if (mimeType.includes('video')) return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+            if (mimeType.includes('audio')) return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+            if (mimeType.includes('zip')) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+        }
+
+        function createCharts() {
+            createSessionDurationChart();
+            createGeographicChart();
+            createSearchAnalyticsChart();
+            createActivityChart();
+            createTopAssetsChart();
+            createBusinessUnitChart();
+            createBrandChart();
+            createMonthlyTrendsChart();
+            createCollectionChart();
+            createSharingChart();
+        }
+
+        function createSessionDurationChart() {
+            const ctx = document.getElementById('sessionDurationChart');
+            if (!ctx) return;
+
+            // Use uploaded data only
+            if (currentData.sessionDuration.length === 0) return;
+            
+            const sessionData = currentData.sessionDuration.map(d => ({
+                date: d.date,
+                count: parseInt(d.count) || 0
+            }));
+
+            chartInstances['sessionDuration'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sessionData.map(d => new Date(d.date).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Session Duration (seconds)',
+                        data: sessionData.map(d => d.count),
+                        borderColor: '#5D5CDE',
+                        backgroundColor: 'rgba(93, 92, 222, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createGeographicChart() {
+            const ctx = document.getElementById('geographicChart');
+            if (!ctx) return;
+
+            // Use uploaded data only
+            if (currentData.geographic.length === 0) return;
+            
+            const geoData = currentData.geographic
+                .sort((a, b) => (parseInt(b.count) || 0) - (parseInt(a.count) || 0)) // Sort by count descending
+                .slice(0, 10) // Top 10 countries only
+                .map(d => ({
+                    country: d.countryCode,
+                    count: parseInt(d.count) || 0
+                }));
+
+            chartInstances['geographic'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: geoData.map(d => d.country),
+                    datasets: [{
+                        label: 'Session Count',
+                        data: geoData.map(d => d.count),
+                        backgroundColor: '#5D5CDE',
+                        borderColor: '#4F46E5',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createSearchAnalyticsChart() {
+            const ctx = document.getElementById('searchAnalyticsChart');
+            if (!ctx) return;
+
+            // Use uploaded data only
+            if (currentData.searchAnalytics.length === 0) return;
+            
+            // Group by term and sum totals
+            const termTotals = {};
+            currentData.searchAnalytics.forEach(item => {
+                if (!termTotals[item.term]) {
+                    termTotals[item.term] = 0;
+                }
+                termTotals[item.term] += parseInt(item.total) || 0;
+            });
+            
+            const searchData = Object.entries(termTotals)
+                .map(([term, total]) => ({ term, total }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 10); // Top 10 search terms
+
+            chartInstances['searchAnalytics'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: searchData.map(d => d.term),
+                    datasets: [{
+                        label: 'Search Count',
+                        data: searchData.map(d => d.total),
+                        backgroundColor: '#10B981',
+                        borderColor: '#059669',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280',
+                                maxRotation: 45
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createActivityChart() {
+            const ctx = document.getElementById('activityChart');
+            if (!ctx) return;
+
+            const activityData = [
+                { date: '2025-04-14', searchBar: 293, downloads: 67, sharing: 12, collections: 96 },
+                { date: '2025-04-21', searchBar: 309, downloads: 85, sharing: 27, collections: 30 },
+                { date: '2025-04-28', searchBar: 295, downloads: 48, sharing: 14, collections: 24 },
+                { date: '2025-05-05', searchBar: 675, downloads: 83, sharing: 10, collections: 25 },
+                { date: '2025-05-12', searchBar: 656, downloads: 124, sharing: 43, collections: 31 },
+                { date: '2025-05-19', searchBar: 773, downloads: 79, sharing: 27, collections: 201 },
+                { date: '2025-05-26', searchBar: 582, downloads: 51, sharing: 32, collections: 128 },
+                { date: '2025-06-02', searchBar: 542, downloads: 56, sharing: 28, collections: 62 }
+            ];
+
+            chartInstances['activity'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: activityData.map(d => new Date(d.date).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Search Bar Usage',
+                        data: activityData.map(d => d.searchBar),
+                        borderColor: '#F59E0B',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Downloads',
+                        data: activityData.map(d => d.downloads),
+                        borderColor: '#EF4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Collections',
+                        data: activityData.map(d => d.collections),
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createTopAssetsChart() {
+            const ctx = document.getElementById('topAssetsChart');
+            if (!ctx) return;
+
+            // Get top assets by download count
+            const topAssets = currentData.downloadAssetDetail
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+
+            chartInstances['topAssets'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topAssets.map(d => d.assetTitle.substring(0, 30) + '...'),
+                    datasets: [{
+                        label: 'Downloads',
+                        data: topAssets.map(d => d.count),
+                        backgroundColor: '#06B6D4',
+                        borderColor: '#0891B2',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        },
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createBusinessUnitChart() {
+            const ctx = document.getElementById('businessUnitChart');
+            if (!ctx) return;
+
+            // Aggregate downloads by business unit
+            const businessUnits = {};
+            currentData.downloadAssetDetail.forEach(item => {
+                businessUnits[item.businessUnit] = (businessUnits[item.businessUnit] || 0) + item.count;
+            });
+
+            const businessUnitData = Object.entries(businessUnits)
+                .sort((a, b) => b[1] - a[1]);
+
+            chartInstances['businessUnit'] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: businessUnitData.map(d => d[0]),
+                    datasets: [{
+                        data: businessUnitData.map(d => d[1]),
+                        backgroundColor: [
+                            '#5D5CDE', '#10B981', '#F59E0B', '#EF4444', 
+                            '#8B5CF6', '#06B6D4', '#84CC16', '#F97316',
+                            '#EC4899', '#6B7280'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createBrandChart() {
+            const ctx = document.getElementById('brandChart');
+            if (!ctx) return;
+
+            // Aggregate downloads by brand
+            const brands = {};
+            currentData.downloadAssetDetail.forEach(item => {
+                brands[item.brand] = (brands[item.brand] || 0) + item.count;
+            });
+
+            const brandData = Object.entries(brands)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8); // Top 8 brands
+
+            chartInstances['brand'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: brandData.map(d => d[0]),
+                    datasets: [{
+                        label: 'Downloads',
+                        data: brandData.map(d => d[1]),
+                        backgroundColor: '#8B5CF6',
+                        borderColor: '#7C3AED',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280',
+                                maxRotation: 45
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createMonthlyTrendsChart() {
+            const ctx = document.getElementById('monthlyTrendsChart');
+            if (!ctx) return;
+
+            // Use uploaded data only - check download summary first, then fall back to aggregating download detail data
+            let downloadTrends = [];
+            
+            if (currentData.downloadAssetSummary.length > 0) {
+                downloadTrends = currentData.downloadAssetSummary.map(d => ({
+                    date: d.date,
+                    downloads: parseInt(d.count) || 0
+                }));
+            } else if (currentData.downloadAssetDetail.length > 0) {
+                // Aggregate by date from detail data
+                const dateAggregates = {};
+                currentData.downloadAssetDetail.forEach(item => {
+                    const dateKey = item.downloadDate.split(' ')[0]; // Get date part
+                    dateAggregates[dateKey] = (dateAggregates[dateKey] || 0) + item.count;
+                });
+                
+                downloadTrends = Object.entries(dateAggregates)
+                    .map(([date, downloads]) => ({ date, downloads }))
+                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+            }
+            
+            if (downloadTrends.length === 0) return;
+
+            chartInstances['monthlyTrends'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: downloadTrends.map(d => new Date(d.date).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Total Downloads',
+                        data: downloadTrends.map(d => d.downloads),
+                        borderColor: '#06B6D4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createCollectionChart() {
+            const ctx = document.getElementById('collectionChart');
+            if (!ctx) return;
+
+            const collectionData = [
+                { date: '2025-04-14', addToCollection: 96, viewCollections: 101 },
+                { date: '2025-04-21', addToCollection: 30, viewCollections: 138 },
+                { date: '2025-04-28', addToCollection: 24, viewCollections: 79 },
+                { date: '2025-05-05', addToCollection: 25, viewCollections: 51 },
+                { date: '2025-05-12', addToCollection: 31, viewCollections: 162 },
+                { date: '2025-05-19', addToCollection: 201, viewCollections: 113 },
+                { date: '2025-05-26', addToCollection: 128, viewCollections: 84 },
+                { date: '2025-06-02', addToCollection: 62, viewCollections: 81 }
+            ];
+
+            chartInstances['collection'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: collectionData.map(d => new Date(d.date).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Add to Collection',
+                        data: collectionData.map(d => d.addToCollection),
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'View Collections',
+                        data: collectionData.map(d => d.viewCollections),
+                        borderColor: '#06B6D4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createSharingChart() {
+            const ctx = document.getElementById('sharingChart');
+            if (!ctx) return;
+
+            const sharingData = [
+                { date: '2025-04-14', shareLink: 12 },
+                { date: '2025-04-21', shareLink: 27 },
+                { date: '2025-04-28', shareLink: 14 },
+                { date: '2025-05-05', shareLink: 10 },
+                { date: '2025-05-12', shareLink: 43 },
+                { date: '2025-05-19', shareLink: 27 },
+                { date: '2025-05-26', shareLink: 32 },
+                { date: '2025-06-02', shareLink: 28 }
+            ];
+
+            chartInstances['sharing'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sharingData.map(d => new Date(d.date).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Share Links',
+                        data: sharingData.map(d => d.shareLink),
+                        backgroundColor: '#F59E0B',
+                        borderColor: '#D97706',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#E5E7EB' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: document.documentElement.classList.contains('dark') ? '#9CA3AF' : '#6B7280'
+                            },
+                            grid: {
+                                color: document.documentElement.classList.contains('dark') ? '#374151' : '#E5E7EB'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateAllCharts() {
+            // Destroy existing charts before creating new ones
+            Object.values(chartInstances).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            chartInstances = {};
+            
+            // Recreate all charts with new data
+            createCharts();
+        }
+
+        function initializeApp() {
+            displayDownloadAssetDetailData(currentData.downloadAssetDetail);
+            createCharts();
+        }
+
+        // Initialize the app
+        initializeApp();
+    </script>
+</body>
+</html>
