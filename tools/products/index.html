@@ -77,17 +77,34 @@
                     </div>
                     
                     <div class="mt-4">
-                        <label for="column-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Column to process:
+                        <label for="primary-sku-column" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Primary SKU column:
                         </label>
                         <div class="flex items-center">
-                            <input type="text" id="column-name" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary" value="SECONDARY SKU" placeholder="Enter column name">
+                            <input type="text" id="primary-sku-column" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary" value="SKU" placeholder="Enter primary SKU column name">
                             <div class="ml-2 relative group">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <div class="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 rounded-lg bg-gray-800 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                                    The name of the column that contains multiple SKUs.
+                                    The name of the column that contains the main/primary SKUs.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <label for="column-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Secondary SKU column:
+                        </label>
+                        <div class="flex items-center">
+                            <input type="text" id="column-name" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary" value="SECONDARY SKU" placeholder="Enter secondary SKU column name">
+                            <div class="ml-2 relative group">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 rounded-lg bg-gray-800 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                                    The name of the column that contains multiple SKUs to be split.
                                 </div>
                             </div>
                         </div>
@@ -130,6 +147,11 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Available columns:
                         </label>
+                        <div class="mb-2 text-xs text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                            <strong>💡 Quick selection:</strong> 
+                            <span class="inline-block bg-primary text-white px-2 py-0.5 rounded text-xs mr-1">Click</span> = Set Primary SKU column • 
+                            <span class="inline-block bg-green-600 text-white px-2 py-0.5 rounded text-xs mr-1">Ctrl+Click</span> = Set Secondary SKU column
+                        </div>
                         <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2 overflow-x-auto max-h-20 text-xs">
                             <div id="headers-list" class="whitespace-nowrap"></div>
                         </div>
@@ -158,7 +180,40 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                     <p class="mt-4 text-gray-700 dark:text-gray-300">Processing complete!</p>
-                    <div id="skus-split-info" class="mt-2 text-sm text-gray-600 dark:text-gray-400"></div>
+                    <div id="processing-stats" class="mt-4 bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-left max-w-md mx-auto">
+                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-3">Processing Statistics</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Initial rows:</span>
+                                <span id="stat-initial-rows" class="font-medium text-gray-800 dark:text-gray-200">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Empty primary SKU rows:</span>
+                                <span id="stat-empty-primary-sku" class="font-medium text-orange-600 dark:text-orange-400">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Original duplicates:</span>
+                                <span id="stat-original-duplicates" class="font-medium text-orange-600 dark:text-orange-400">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Final rows:</span>
+                                <span id="stat-final-rows" class="font-medium text-gray-800 dark:text-gray-200">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Rows added:</span>
+                                <span id="stat-rows-added" class="font-medium text-green-600 dark:text-green-400">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Processing duplicates removed:</span>
+                                <span id="stat-duplicates-removed" class="font-medium text-red-600 dark:text-red-400">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Unique rows:</span>
+                                <span id="stat-unique-skus" class="font-medium text-blue-600 dark:text-blue-400">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="skus-split-info" class="mt-3 text-sm text-gray-600 dark:text-gray-400"></div>
                 </div>
                 <div id="processing-error" class="hidden text-center py-8">
                     <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -363,8 +418,26 @@
                             badge.textContent = header;
                             
                             // Click to set as the column to process
-                            badge.addEventListener('click', () => {
-                                document.getElementById('column-name').value = header;
+                            badge.addEventListener('click', (event) => {
+                                if (event.ctrlKey || event.metaKey) {
+                                    // Ctrl+click (or Cmd+click on Mac) to set secondary SKU column
+                                    document.getElementById('column-name').value = header;
+                                    badge.style.backgroundColor = '#10b981'; // Green background to indicate secondary
+                                    badge.style.color = 'white';
+                                    setTimeout(() => {
+                                        badge.style.backgroundColor = '';
+                                        badge.style.color = '';
+                                    }, 1000);
+                                } else {
+                                    // Regular click to set primary SKU column
+                                    document.getElementById('primary-sku-column').value = header;
+                                    badge.style.backgroundColor = '#5D5CDE'; // Primary color background
+                                    badge.style.color = 'white';
+                                    setTimeout(() => {
+                                        badge.style.backgroundColor = '';
+                                        badge.style.color = '';
+                                    }, 1000);
+                                }
                             });
                             
                             headersList.appendChild(badge);
@@ -488,10 +561,15 @@
                 throw new Error('No data found in the Excel file');
             }
             
-            // Get the user-specified column name
+            // Get the user-specified column names
+            const primarySkuColumn = document.getElementById('primary-sku-column').value.trim();
             const columnToProcess = document.getElementById('column-name').value.trim();
+            
+            if (!primarySkuColumn) {
+                throw new Error('Please enter a primary SKU column name');
+            }
             if (!columnToProcess) {
-                throw new Error('Please enter a column name to process');
+                throw new Error('Please enter a secondary SKU column name to process');
             }
             
             // Determine which mode to use
@@ -525,8 +603,18 @@
                 return str.split(separatorRegex).map(sku => sku.trim()).filter(sku => sku);
             }
             
-            // Find the PRIMARY SKU column index
-            const skuColumnIndex = findSkuColumnIndex(headerRow);
+            // Find the user-specified PRIMARY SKU column index
+            const skuColumnIndex = headerRow.findIndex(header => 
+                header && typeof header === 'string' && header.toUpperCase() === primarySkuColumn.toUpperCase()
+            );
+            
+            if (skuColumnIndex === -1) {
+                throw new Error(`Primary SKU column '${primarySkuColumn}' not found in the Excel file. Please check the column name and try again.`);
+            }
+            
+            // Check for original duplicates and empty primary SKU rows before processing
+            const originalDuplicates = detectOriginalDuplicates(originalData, skuColumnIndex);
+            const emptyPrimarySkuRows = countEmptyPrimarySkuRows(originalData, skuColumnIndex);
             
             // First pass: Count rows with multiple SKUs (for stats only)
             let maxSkuCount = 1;
@@ -579,6 +667,62 @@
                 }
                 
                 return -1;
+            }
+            
+            // Function to detect original duplicates in the dataset
+            function detectOriginalDuplicates(data, primarySkuColumnIndex) {
+                if (!data || data.length <= 1 || primarySkuColumnIndex === -1) return 0;
+                
+                const skuCounts = new Map();
+                let duplicateCount = 0;
+                
+                // Count occurrences of each SKU in the original data
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    if (!row || row.length === 0) continue;
+                    
+                    const skuValue = row[primarySkuColumnIndex];
+                    if (!skuValue || typeof skuValue !== 'string') continue;
+                    
+                    const sku = String(skuValue).trim();
+                    if (!sku) continue;
+                    
+                    skuCounts.set(sku, (skuCounts.get(sku) || 0) + 1);
+                }
+                
+                // Count how many rows are duplicates (total occurrences - 1 for each unique SKU)
+                for (const [sku, count] of skuCounts.entries()) {
+                    if (count > 1) {
+                        duplicateCount += count - 1; // All occurrences except the first are duplicates
+                    }
+                }
+                
+                return duplicateCount;
+            }
+            
+            // Function to count rows with empty primary SKU cells
+            function countEmptyPrimarySkuRows(data, primarySkuColumnIndex) {
+                if (!data || data.length <= 1 || primarySkuColumnIndex === -1) return 0;
+                
+                let emptyCount = 0;
+                
+                // Count rows with empty or missing primary SKU values
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    if (!row || row.length === 0) continue;
+                    
+                    const skuValue = row[primarySkuColumnIndex];
+                    
+                    // Count as empty if the value is null, undefined, empty string, or whitespace only
+                    if (!skuValue || 
+                        (typeof skuValue === 'string' && skuValue.trim() === '') ||
+                        skuValue === null || 
+                        skuValue === undefined) {
+                        emptyCount++;
+                    }
+                }
+                
+                return emptyCount;
             }
             
             function processChunk() {
@@ -713,12 +857,18 @@
                 processedData = [headerRow];
             }
             
-            // Process data - completely different approach for "rows" mode to avoid duplicates
+            // Process data - use row-based deduplication for "rows" mode
             if (mode === 'rows') {
-                // Create a map to track unique SKUs
-                const uniqueSkus = new Map();
+                // Create a set to track unique row combinations
+                const uniqueRowsSet = new Set();
+                const uniqueRowsArray = [];
                 
-                // First pass: collect all unique SKUs and their data
+                // Helper function to create a unique key for a row
+                function createRowKey(row) {
+                    return JSON.stringify(row);
+                }
+                
+                // First pass: collect all rows from original data (with cleared secondary SKU)
                 for (let i = 1; i < originalData.length; i++) {
                     const row = originalData[i];
                     
@@ -731,9 +881,16 @@
                     // Get secondary SKU value
                     const secondarySku = String(row[columnIndex] || '').trim();
                     
-                    // Add the primary SKU to the map if not already there
-                    if (primarySku && !uniqueSkus.has(primarySku)) {
-                        uniqueSkus.set(primarySku, [...row]);
+                    // Add the original row with cleared secondary SKU
+                    if (primarySku) {
+                        const originalRowCopy = [...row];
+                        originalRowCopy[columnIndex] = ''; // Clear secondary SKU
+                        const originalRowKey = createRowKey(originalRowCopy);
+                        
+                        if (!uniqueRowsSet.has(originalRowKey)) {
+                            uniqueRowsSet.add(originalRowKey);
+                            uniqueRowsArray.push(originalRowCopy);
+                        }
                     }
                     
                     // Process secondary SKUs if present
@@ -742,44 +899,84 @@
                             // Multiple secondary SKUs
                             const skus = splitBySeparators(secondarySku);
                             
-                            // Add each secondary SKU to the map if not already there
+                            // Add each secondary SKU as a new row
                             for (const sku of skus) {
                                 // Skip if same as primary SKU (to avoid duplicates)
                                 if (sku === primarySku) continue;
                                 
-                                if (!uniqueSkus.has(sku)) {
-                                    // Create a new row for this SKU
-                                    const newRow = [...row];
-                                    if (skuColumnIndex !== -1) {
-                                        newRow[skuColumnIndex] = sku; // Replace primary SKU
-                                    }
-                                    newRow[columnIndex] = ''; // Clear secondary SKU
-                                    uniqueSkus.set(sku, newRow);
+                                // Create a new row for this SKU
+                                const newRow = [...row];
+                                if (skuColumnIndex !== -1) {
+                                    newRow[skuColumnIndex] = sku; // Replace primary SKU
+                                }
+                                newRow[columnIndex] = ''; // Clear secondary SKU
+                                
+                                const newRowKey = createRowKey(newRow);
+                                if (!uniqueRowsSet.has(newRowKey)) {
+                                    uniqueRowsSet.add(newRowKey);
+                                    uniqueRowsArray.push(newRow);
                                 }
                             }
                         } else if (secondarySku !== primarySku) {
                             // Single secondary SKU different from primary
-                            if (!uniqueSkus.has(secondarySku)) {
-                                // Create a new row for this secondary SKU
-                                const newRow = [...row];
-                                if (skuColumnIndex !== -1) {
-                                    newRow[skuColumnIndex] = secondarySku; // Replace primary SKU
-                                }
-                                newRow[columnIndex] = ''; // Clear secondary SKU
-                                uniqueSkus.set(secondarySku, newRow);
+                            const newRow = [...row];
+                            if (skuColumnIndex !== -1) {
+                                newRow[skuColumnIndex] = secondarySku; // Replace primary SKU
+                            }
+                            newRow[columnIndex] = ''; // Clear secondary SKU
+                            
+                            const newRowKey = createRowKey(newRow);
+                            if (!uniqueRowsSet.has(newRowKey)) {
+                                uniqueRowsSet.add(newRowKey);
+                                uniqueRowsArray.push(newRow);
                             }
                         }
                     }
                 }
                 
-                // Second pass: clear all secondary SKU fields
-                for (const [sku, row] of uniqueSkus.entries()) {
-                    row[columnIndex] = ''; // Clear all secondary SKU fields
+                // Add all unique rows to processed data
+                uniqueRowsArray.forEach(row => {
                     processedData.push(row);
-                }
+                });
                 
                 // Update progress to 100%
                 updateProgress(totalRows, totalRows);
+                
+                // Calculate statistics
+                const initialRowCount = originalData.length - 1; // Subtract header
+                const finalRowCount = processedData.length - 1; // Subtract header
+                const uniqueRowCount = uniqueRowsArray.length;
+                
+                // Calculate how many rows we would have had without deduplication
+                let totalPotentialRows = 0;
+                for (let i = 1; i < originalData.length; i++) {
+                    const row = originalData[i];
+                    if (!row || row.length === 0) continue;
+                    
+                    const secondarySku = String(row[columnIndex] || '').trim();
+                    if (secondarySku) {
+                        if (containsSeparator(secondarySku)) {
+                            const skus = splitBySeparators(secondarySku);
+                            totalPotentialRows += 1 + skus.length; // Original row + all secondary SKUs
+                        } else {
+                            totalPotentialRows += 2; // Original row + secondary SKU row
+                        }
+                    } else {
+                        totalPotentialRows += 1; // Just the original row
+                    }
+                }
+                
+                const duplicatesRemoved = totalPotentialRows - finalRowCount;
+                const rowsAdded = finalRowCount - initialRowCount;
+                
+                // Update statistics in UI
+                document.getElementById('stat-initial-rows').textContent = initialRowCount.toLocaleString();
+                document.getElementById('stat-empty-primary-sku').textContent = emptyPrimarySkuRows.toLocaleString();
+                document.getElementById('stat-original-duplicates').textContent = originalDuplicates.toLocaleString();
+                document.getElementById('stat-final-rows').textContent = finalRowCount.toLocaleString();
+                document.getElementById('stat-rows-added').textContent = rowsAdded >= 0 ? `+${rowsAdded.toLocaleString()}` : rowsAdded.toLocaleString();
+                document.getElementById('stat-duplicates-removed').textContent = duplicatesRemoved.toLocaleString();
+                document.getElementById('stat-unique-skus').textContent = uniqueRowCount.toLocaleString();
                 
                 // Processing complete, show completion UI
                 setTimeout(() => {
@@ -787,11 +984,7 @@
                     processingComplete.classList.remove('hidden');
                     viewResultsBtn.classList.remove('hidden');
                     
-                    const newRowCount = processedData.length - 1; // Subtract header
-                    const originalRowCount = originalData.length - 1; // Subtract header
-                    const skusDiff = newRowCount - originalRowCount;
-                    
-                    skusSplitInfo.textContent = `Original: ${originalRowCount} rows, Final: ${newRowCount} rows (${skusDiff > 0 ? "+" + skusDiff : skusDiff} rows)`;
+                    skusSplitInfo.textContent = `Processing mode: ${mode} • Efficiency: ${Math.round((finalRowCount / totalPotentialRows) * 100)}% (removed ${duplicatesRemoved} duplicate${duplicatesRemoved !== 1 ? 's' : ''})`;
                 }, 500);
             } else {
                 // For column mode, use the original chunked processing
