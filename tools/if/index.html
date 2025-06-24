@@ -1,0 +1,1220 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Intelligent Framework - SaaS MVP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
+    <style>
+        .fa-solid, .fa-regular { font-family: 'Font Awesome 6 Free'; }
+        .fa-solid { font-weight: 900; }
+        .fa-regular { font-weight: 400; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#00bcd4',
+                        success: '#4caf50',
+                        background: {
+                            light: '#FFFFFF',
+                            dark: '#181818'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #5D5CDE 0%, #00bcd4 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(93, 92, 222, 0.15);
+        }
+        .health-score-good { color: #4caf50; }
+        .health-score-warning { color: #ff9800; }
+        .health-score-danger { color: #f44336; }
+        .risk-low { background-color: #e8f5e8; color: #2e7d32; }
+        .risk-medium { background-color: #fff3e0; color: #f57c00; }
+        .risk-high { background-color: #ffebee; color: #d32f2f; }
+        .dark .risk-low { background-color: #1b5e20; color: #81c784; }
+        .dark .risk-medium { background-color: #e65100; color: #ffb74d; }
+        .dark .risk-high { background-color: #b71c1c; color: #ef5350; }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
+    <!-- Navigation -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold text-white">The Intelligent Framework</h1>
+                        <p class="text-sm text-blue-100">Customer Funnel Alignment Platform</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-white text-sm">
+                        <span class="font-medium">Demo Account</span>
+                        <div class="text-xs text-blue-100">SaaS Co. ($15M ARR)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Dashboard Tabs -->
+        <div class="mb-8">
+            <div class="border-b border-gray-200 dark:border-gray-700">
+                <nav class="-mb-px flex space-x-8 overflow-x-auto" id="tabNavigation">
+                    <button class="tab-button border-b-2 border-primary text-primary px-1 py-4 text-sm font-medium whitespace-nowrap" data-tab="overview">
+                        📊 Overview
+                    </button>
+                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-1 py-4 text-sm font-medium whitespace-nowrap" data-tab="funnel">
+                        🔍 Customer Funnel
+                    </button>
+                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-1 py-4 text-sm font-medium whitespace-nowrap" data-tab="insights">
+                        🤖 AI Insights
+                    </button>
+                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-1 py-4 text-sm font-medium whitespace-nowrap" data-tab="playbooks">
+                        📚 Playbooks
+                    </button>
+                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-1 py-4 text-sm font-medium whitespace-nowrap" data-tab="analytics">
+                        📈 Analytics
+                    </button>
+                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-1 py-4 text-sm font-medium whitespace-nowrap" data-tab="integrations">
+                        🔗 Integrations
+                    </button>
+                    <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-1 py-4 text-sm font-medium whitespace-nowrap" data-tab="exports">
+                        💾 Data Export
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tabContent">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content">
+                <!-- Key Metrics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 card-hover">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center">
+                                <span class="text-primary text-xl font-bold">$</span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total ARR</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white">$15.2M</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 card-hover">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-success bg-opacity-10 rounded-full flex items-center justify-center">
+                                <span class="text-success text-xl font-bold">%</span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Retention Rate</p>
+                                <p class="text-2xl font-bold text-success">87%</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 card-hover">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-orange-500 bg-opacity-10 rounded-full flex items-center justify-center">
+                                <span class="text-orange-500 text-xl font-bold">⚠</span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">At Risk Customers</p>
+                                <p class="text-2xl font-bold text-orange-500">23</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 card-hover">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-secondary bg-opacity-10 rounded-full flex items-center justify-center">
+                                <span class="text-secondary text-xl font-bold">📈</span>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Health Score</p>
+                                <p class="text-2xl font-bold health-score-good">78</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Revenue Trend Chart -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                    <h3 class="text-lg font-semibold mb-4">Revenue Trend & Customer Health</h3>
+                    <div class="h-64">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Insights -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Recent AI Insights</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-3 p-4 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg">
+                            <div class="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                            <div>
+                                <p class="font-medium">High-value customers showing early warning signs</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">3 customers with >$500K ARR have decreased usage by 30% this month</p>
+                                <button class="text-primary text-sm font-medium mt-1 hover:underline">View Action Plan →</button>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3 p-4 bg-green-50 dark:bg-green-900 dark:bg-opacity-20 rounded-lg">
+                            <div class="w-2 h-2 bg-success rounded-full mt-2"></div>
+                            <div>
+                                <p class="font-medium">Successful onboarding pattern identified</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Customers completing feature training within 7 days show 90% higher retention</p>
+                                <button class="text-success text-sm font-medium mt-1 hover:underline">Apply to All New Customers →</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Funnel Tab -->
+            <div id="funnel" class="tab-content hidden">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold mb-2">Customer Funnel Dashboard</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Track customers through their journey and identify optimization opportunities</p>
+                </div>
+
+                <!-- Funnel Stages -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
+                        <h3 class="font-semibold text-lg mb-2">New</h3>
+                        <p class="text-3xl font-bold text-primary">42</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Last 30 days</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
+                        <h3 class="font-semibold text-lg mb-2">Onboarding</h3>
+                        <p class="text-3xl font-bold text-secondary">18</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">In progress</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
+                        <h3 class="font-semibold text-lg mb-2">Active</h3>
+                        <p class="text-3xl font-bold text-success">156</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Healthy customers</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
+                        <h3 class="font-semibold text-lg mb-2">At Risk</h3>
+                        <p class="text-3xl font-bold text-red-500">23</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Need attention</p>
+                    </div>
+                </div>
+
+                <!-- Customer List -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold">Customer Details</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stage</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Health Score</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ARR</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Risk Level</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Activity</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="customerTable">
+                                <!-- Customer rows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights Tab -->
+            <div id="insights" class="tab-content hidden">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold mb-2">AI-Driven Insights & Recommendations</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Actionable insights powered by customer success patterns</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Insights List -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">Active Insights</h3>
+                        <div class="space-y-4" id="insightsList">
+                            <!-- Insights will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Action Items -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">Recommended Actions</h3>
+                        <div class="space-y-3" id="actionsList">
+                            <!-- Actions will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playbooks Tab -->
+            <div id="playbooks" class="tab-content hidden">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold mb-2">Operational Playbooks</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Proven strategies and workflows for customer success</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="playbooksGrid">
+                    <!-- Playbooks will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Advanced Analytics Tab -->
+            <div id="analytics" class="tab-content hidden">
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2">Advanced Analytics</h2>
+                        <p class="text-gray-600 dark:text-gray-400">Deep insights into customer behavior and business performance</p>
+                    </div>
+                    <button onclick="exportAnalytics()" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                        📊 Export Report
+                    </button>
+                </div>
+
+                <!-- Analytics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Customer Lifetime Value</h3>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">$3.2M</p>
+                        <div class="flex items-center mt-2">
+                            <span class="text-success text-sm">↗ 12%</span>
+                            <span class="text-gray-500 text-sm ml-1">vs last quarter</span>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Churn Prediction Accuracy</h3>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">94.2%</p>
+                        <div class="flex items-center mt-2">
+                            <span class="text-success text-sm">↗ 3%</span>
+                            <span class="text-gray-500 text-sm ml-1">improved</span>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Time to Value</h3>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">18 days</p>
+                        <div class="flex items-center mt-2">
+                            <span class="text-success text-sm">↘ 5 days</span>
+                            <span class="text-gray-500 text-sm ml-1">faster</span>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Net Revenue Retention</h3>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">115%</p>
+                        <div class="flex items-center mt-2">
+                            <span class="text-success text-sm">↗ 8%</span>
+                            <span class="text-gray-500 text-sm ml-1">growth</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Cohort Analysis -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">Customer Cohort Analysis</h3>
+                        <div class="h-64">
+                            <canvas id="cohortChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Churn Risk Distribution -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">Churn Risk Distribution</h3>
+                        <div class="h-64">
+                            <canvas id="churnRiskChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Segmentation Analysis -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                    <h3 class="text-lg font-semibold mb-4">Customer Segmentation Analysis</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Segment</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Count</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Avg ARR</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Health Score</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Retention Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium">Enterprise</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">34</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">$650K</td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><span class="health-score-good">89</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-success">95%</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium">Mid-Market</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">87</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">$285K</td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><span class="health-score-good">82</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-success">91%</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium">SMB</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">118</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">$95K</td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><span class="health-score-warning">73</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-orange-500">78%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Predictive Insights -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Predictive Insights</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 p-4 rounded-lg">
+                            <h4 class="font-medium text-blue-900 dark:text-blue-200">Revenue Forecast</h4>
+                            <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">Expected to reach $18.5M ARR by Q4 based on current trends</p>
+                        </div>
+                        <div class="bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20 p-4 rounded-lg">
+                            <h4 class="font-medium text-yellow-900 dark:text-yellow-200">Churn Risk Alert</h4>
+                            <p class="text-sm text-yellow-700 dark:text-yellow-300 mt-1">15 customers likely to churn in next 30 days without intervention</p>
+                        </div>
+                        <div class="bg-green-50 dark:bg-green-900 dark:bg-opacity-20 p-4 rounded-lg">
+                            <h4 class="font-medium text-green-900 dark:text-green-200">Expansion Opportunity</h4>
+                            <p class="text-sm text-green-700 dark:text-green-300 mt-1">$2.3M potential upsell revenue identified across 28 accounts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Integrations Tab -->
+            <div id="integrations" class="tab-content hidden">
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2">Integrations & Data Sources</h2>
+                        <p class="text-gray-600 dark:text-gray-400">Connect your existing tools and data sources</p>
+                    </div>
+                    <button onclick="refreshIntegrations()" class="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                        🔄 Refresh Status
+                    </button>
+                </div>
+
+                <!-- Integration Status Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-2">Active Integrations</h3>
+                        <p class="text-3xl font-bold text-success">7</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Connected & syncing</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-2">Data Points Synced</h3>
+                        <p class="text-3xl font-bold text-primary">2.4M</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Last 24 hours</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-2">Sync Health</h3>
+                        <p class="text-3xl font-bold text-success">98.2%</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Uptime</p>
+                    </div>
+                </div>
+
+                <!-- Connected Apps -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                    <h3 class="text-lg font-semibold mb-4">Connected Applications</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="integrationsGrid">
+                        <!-- Integration cards will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Available Integrations -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Available Integrations</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="availableIntegrationsGrid">
+                        <!-- Available integration cards will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Export Tab -->
+            <div id="exports" class="tab-content hidden">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold mb-2">Data Export & Reports</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Export your data and generate custom reports</p>
+                </div>
+
+                <!-- Quick Export Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <button onclick="exportCustomers()" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                        <div class="text-2xl mb-2">👥</div>
+                        <h3 class="font-semibold mb-1">Customer Data</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Export customer list with health scores and metrics</p>
+                    </button>
+                    <button onclick="exportInsights()" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                        <div class="text-2xl mb-2">🧠</div>
+                        <h3 class="font-semibold mb-1">AI Insights</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Export insights and recommendations</p>
+                    </button>
+                    <button onclick="exportAnalyticsReport()" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                        <div class="text-2xl mb-2">📊</div>
+                        <h3 class="font-semibold mb-1">Analytics Report</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Comprehensive analytics and trends</p>
+                    </button>
+                    <button onclick="exportPlaybooks()" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-left">
+                        <div class="text-2xl mb-2">📚</div>
+                        <h3 class="font-semibold mb-1">Playbooks</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Export operational playbooks and templates</p>
+                    </button>
+                </div>
+
+                <!-- Custom Export Builder -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                    <h3 class="text-lg font-semibold mb-4">Custom Export Builder</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Data Type</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
+                                <option>Customer Data</option>
+                                <option>Analytics Metrics</option>
+                                <option>AI Insights</option>
+                                <option>Playbook Usage</option>
+                                <option>Integration Logs</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Date Range</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
+                                <option>Last 30 days</option>
+                                <option>Last 90 days</option>
+                                <option>Last 6 months</option>
+                                <option>Last year</option>
+                                <option>All time</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Export Format</label>
+                            <select id="exportFormat" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
+                                <option value="csv">CSV</option>
+                                <option value="excel">Excel (.xlsx)</option>
+                                <option value="pdf">PDF Report</option>
+                                <option value="json">JSON</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="generateCustomExport()" class="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-opacity-90 transition-colors">
+                                Generate Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export History -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Export History</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Export Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Format</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="exportHistoryTable">
+                                <!-- Export history will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Sample data
+        const customers = [
+            { name: "TechFlow Inc", stage: "Active", health: 92, arr: 750000, risk: "Low", lastActivity: "2 hours ago" },
+            { name: "DataSync Corp", stage: "At Risk", health: 45, arr: 520000, risk: "High", lastActivity: "5 days ago" },
+            { name: "CloudBase Systems", stage: "Active", health: 88, arr: 340000, risk: "Low", lastActivity: "1 day ago" },
+            { name: "ScaleUp Solutions", stage: "Onboarding", health: 72, arr: 180000, risk: "Medium", lastActivity: "3 hours ago" },
+            { name: "GrowthHack Labs", stage: "At Risk", health: 38, arr: 420000, risk: "High", lastActivity: "8 days ago" },
+            { name: "InnovateCo", stage: "Active", health: 85, arr: 290000, risk: "Low", lastActivity: "4 hours ago" },
+            { name: "StartupX", stage: "New", health: 65, arr: 95000, risk: "Medium", lastActivity: "1 hour ago" },
+            { name: "Enterprise Plus", stage: "Active", health: 94, arr: 890000, risk: "Low", lastActivity: "30 minutes ago" }
+        ];
+
+        const insights = [
+            {
+                trigger: "Low engagement pattern detected",
+                description: "5 high-ARR customers show decreased feature usage",
+                customers: ["DataSync Corp", "GrowthHack Labs"],
+                priority: "High",
+                action: "Schedule retention calls within 48 hours"
+            },
+            {
+                trigger: "Successful onboarding pattern",
+                description: "Customers completing training early show 90% retention",
+                customers: ["ScaleUp Solutions"],
+                priority: "Medium", 
+                action: "Apply accelerated training to all new customers"
+            },
+            {
+                trigger: "Upsell opportunity identified",
+                description: "3 customers exceed usage thresholds for premium features",
+                customers: ["TechFlow Inc", "Enterprise Plus"],
+                priority: "Medium",
+                action: "Present premium plan upgrade options"
+            }
+        ];
+
+        const playbooks = [
+            {
+                name: "High Churn Risk Outreach",
+                purpose: "Re-engage at-risk customers proactively",
+                steps: ["Identify customers with health score < 50", "Send personalized retention email", "Schedule follow-up call within 7 days", "Offer targeted incentives or support"],
+                status: "Active",
+                icon: "⚠️"
+            },
+            {
+                name: "New Customer Onboarding",
+                purpose: "Ensure successful customer activation",
+                steps: ["Send welcome package within 24 hours", "Schedule kickoff call", "Complete feature training", "Set success milestones"],
+                status: "Active",
+                icon: "🚀"
+            },
+            {
+                name: "Quarterly Health Check",
+                purpose: "Proactive relationship management",
+                steps: ["Review customer metrics", "Assess goal achievement", "Identify growth opportunities", "Plan next quarter strategy"],
+                status: "Active",
+                icon: "📊"
+            },
+            {
+                name: "Upsell Opportunity Process",
+                purpose: "Convert usage growth into revenue growth",
+                steps: ["Monitor usage patterns", "Identify upgrade triggers", "Prepare value proposition", "Present upgrade options"],
+                status: "Draft",
+                icon: "💰"
+            }
+        ];
+
+        // Tab switching functionality
+        function initTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    
+                    // Update button states
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('border-primary', 'text-primary');
+                        btn.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    button.classList.remove('border-transparent', 'text-gray-500');
+                    button.classList.add('border-primary', 'text-primary');
+                    
+                    // Update content visibility
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    document.getElementById(targetTab).classList.remove('hidden');
+                });
+            });
+        }
+
+        // Populate customer table
+        function populateCustomerTable() {
+            const tableBody = document.getElementById('customerTable');
+            tableBody.innerHTML = customers.map(customer => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-medium">${customer.name}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full ${getStageColor(customer.stage)}">${customer.stage}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="font-bold ${getHealthColor(customer.health)}">${customer.health}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap font-medium">
+                        $${(customer.arr / 1000).toFixed(0)}K
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-medium rounded risk-${customer.risk.toLowerCase()}">${customer.risk}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        ${customer.lastActivity}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Populate insights
+        function populateInsights() {
+            const insightsList = document.getElementById('insightsList');
+            const actionsList = document.getElementById('actionsList');
+
+            insightsList.innerHTML = insights.map(insight => `
+                <div class="p-4 border rounded-lg ${insight.priority === 'High' ? 'border-red-300 bg-red-50 dark:bg-red-900 dark:bg-opacity-20' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'}">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-medium">${insight.trigger}</h4>
+                        <span class="px-2 py-1 text-xs font-medium rounded ${insight.priority === 'High' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200'}">${insight.priority}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">${insight.description}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-500">Affects: ${insight.customers.join(', ')}</p>
+                </div>
+            `).join('');
+
+            actionsList.innerHTML = insights.map(insight => `
+                <div class="flex items-start space-x-3 p-3 border rounded-lg border-gray-200 dark:border-gray-600">
+                    <div class="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                    <div class="flex-1">
+                        <p class="font-medium text-sm">${insight.action}</p>
+                        <button class="text-primary text-xs font-medium mt-1 hover:underline">Execute Action →</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Populate playbooks
+        function populatePlaybooks() {
+            const playbooksGrid = document.getElementById('playbooksGrid');
+            
+            playbooksGrid.innerHTML = playbooks.map(playbook => `
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 card-hover">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="text-2xl">${playbook.icon}</div>
+                        <span class="px-2 py-1 text-xs font-medium rounded ${playbook.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'}">${playbook.status}</span>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">${playbook.name}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">${playbook.purpose}</p>
+                    <div class="space-y-2">
+                        <p class="text-sm font-medium">Steps:</p>
+                        <ol class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                            ${playbook.steps.map((step, index) => `<li>${index + 1}. ${step}</li>`).join('')}
+                        </ol>
+                    </div>
+                    <button class="mt-4 w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark transition-colors">
+                        Use Playbook
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Helper functions
+        function getStageColor(stage) {
+            const colors = {
+                'New': 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200',
+                'Onboarding': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200',
+                'Active': 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200',
+                'At Risk': 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200'
+            };
+            return colors[stage] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getHealthColor(score) {
+            if (score >= 80) return 'health-score-good';
+            if (score >= 60) return 'health-score-warning';
+            return 'health-score-danger';
+        }
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Monthly ARR',
+                        data: [12.5, 13.2, 13.8, 14.1, 14.7, 15.2],
+                        borderColor: '#5D5CDE',
+                        backgroundColor: 'rgba(93, 92, 222, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Avg Health Score',
+                        data: [72, 75, 76, 74, 77, 78],
+                        borderColor: '#4caf50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: isDark ? '#ffffff' : '#374151'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: isDark ? '#9ca3af' : '#6b7280' },
+                            grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            ticks: { 
+                                color: isDark ? '#9ca3af' : '#6b7280',
+                                callback: function(value) { return '$' + value + 'M'; }
+                            },
+                            grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            ticks: { 
+                                color: isDark ? '#9ca3af' : '#6b7280',
+                                max: 100
+                            },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Additional sample data for new features
+        const integrations = [
+            { name: "Salesforce", type: "CRM", status: "Connected", lastSync: "2 min ago", records: "1,234", icon: "🏢" },
+            { name: "HubSpot", type: "Marketing", status: "Connected", lastSync: "5 min ago", records: "856", icon: "📧" },
+            { name: "Stripe", type: "Payments", status: "Connected", lastSync: "1 min ago", records: "432", icon: "💳" },
+            { name: "Zendesk", type: "Support", status: "Connected", lastSync: "10 min ago", records: "675", icon: "🎧" },
+            { name: "Intercom", type: "Communication", status: "Connected", lastSync: "3 min ago", records: "289", icon: "💬" },
+            { name: "Google Analytics", type: "Analytics", status: "Connected", lastSync: "15 min ago", records: "2,145", icon: "📊" },
+            { name: "Slack", type: "Communication", status: "Connected", lastSync: "1 min ago", records: "45", icon: "💬" }
+        ];
+
+        const availableIntegrations = [
+            { name: "Microsoft Dynamics", type: "CRM", icon: "🏢" },
+            { name: "Pipedrive", type: "CRM", icon: "🏢" },
+            { name: "Mailchimp", type: "Marketing", icon: "📧" },
+            { name: "Mixpanel", type: "Analytics", icon: "📊" },
+            { name: "Freshdesk", type: "Support", icon: "🎧" },
+            { name: "Segment", type: "Data", icon: "🔗" },
+            { name: "Amplitude", type: "Analytics", icon: "📊" },
+            { name: "ChartMogul", type: "Revenue", icon: "💰" }
+        ];
+
+        const exportHistory = [
+            { type: "Customer Data", date: "2024-01-15", format: "CSV", status: "Completed", fileName: "customers_2024-01-15.csv" },
+            { type: "Analytics Report", date: "2024-01-14", format: "PDF", status: "Completed", fileName: "analytics_report_Q1.pdf" },
+            { type: "AI Insights", date: "2024-01-13", format: "Excel", status: "Completed", fileName: "insights_weekly.xlsx" },
+            { type: "Customer Data", date: "2024-01-12", format: "JSON", status: "Failed", fileName: "customers_backup.json" },
+            { type: "Playbooks", date: "2024-01-10", format: "PDF", status: "Completed", fileName: "playbooks_v2.pdf" }
+        ];
+
+        // Populate integrations
+        function populateIntegrations() {
+            const integrationsGrid = document.getElementById('integrationsGrid');
+            const availableGrid = document.getElementById('availableIntegrationsGrid');
+
+            integrationsGrid.innerHTML = integrations.map(integration => `
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-3">${integration.icon}</span>
+                            <div>
+                                <h4 class="font-medium">${integration.name}</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">${integration.type}</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">
+                            ${integration.status}
+                        </span>
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        <p>Last sync: ${integration.lastSync}</p>
+                        <p>Records: ${integration.records}</p>
+                    </div>
+                    <button class="mt-3 w-full bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 py-1 px-3 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-500">
+                        Configure
+                    </button>
+                </div>
+            `).join('');
+
+            availableGrid.innerHTML = availableIntegrations.map(integration => `
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:border-primary transition-colors">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-3">${integration.icon}</span>
+                        <div>
+                            <h4 class="font-medium">${integration.name}</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">${integration.type}</p>
+                        </div>
+                    </div>
+                    <button onclick="connectIntegration('${integration.name}')" class="w-full bg-primary text-white py-1 px-3 rounded text-sm hover:bg-opacity-90">
+                        Connect
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Populate export history
+        function populateExportHistory() {
+            const historyTable = document.getElementById('exportHistoryTable');
+            
+            historyTable.innerHTML = exportHistory.map(export_ => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 whitespace-nowrap font-medium">${export_.type}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${export_.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${export_.format}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-medium rounded ${export_.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200'}">
+                            ${export_.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${export_.status === 'Completed' ? 
+                            `<button onclick="downloadFile('${export_.fileName}')" class="text-primary hover:underline text-sm">Download</button>` :
+                            `<button onclick="retryExport('${export_.fileName}')" class="text-orange-500 hover:underline text-sm">Retry</button>`
+                        }
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Initialize advanced analytics charts
+        function initAdvancedCharts() {
+            // Cohort Analysis Chart
+            const cohortCtx = document.getElementById('cohortChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            new Chart(cohortCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'],
+                    datasets: [{
+                        label: 'Jan 2024 Cohort',
+                        data: [100, 92, 87, 83, 80, 78],
+                        borderColor: '#5D5CDE',
+                        backgroundColor: 'rgba(93, 92, 222, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Feb 2024 Cohort',
+                        data: [100, 89, 84, 81, 79, null],
+                        borderColor: '#00bcd4',
+                        backgroundColor: 'rgba(0, 188, 212, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Mar 2024 Cohort',
+                        data: [100, 91, 86, 82, null, null],
+                        borderColor: '#4caf50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: isDark ? '#ffffff' : '#374151' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: isDark ? '#9ca3af' : '#6b7280' },
+                            grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: isDark ? '#9ca3af' : '#6b7280',
+                                callback: function(value) { return value + '%'; }
+                            },
+                            grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                        }
+                    }
+                }
+            });
+
+            // Churn Risk Distribution Chart
+            const churnCtx = document.getElementById('churnRiskChart').getContext('2d');
+            
+            new Chart(churnCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                    datasets: [{
+                        data: [156, 34, 23],
+                        backgroundColor: ['#4caf50', '#ff9800', '#f44336'],
+                        borderWidth: 2,
+                        borderColor: isDark ? '#374151' : '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: isDark ? '#ffffff' : '#374151' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Export functions
+        function exportCustomers() {
+            showNotification('Exporting customer data...', 'info');
+            setTimeout(() => {
+                const csvContent = generateCustomerCSV();
+                downloadCSV(csvContent, 'customers_export.csv');
+                showNotification('Customer data exported successfully!', 'success');
+                addToExportHistory('Customer Data', 'CSV', 'customers_export.csv');
+            }, 1500);
+        }
+
+        function exportInsights() {
+            showNotification('Exporting AI insights...', 'info');
+            setTimeout(() => {
+                const csvContent = generateInsightsCSV();
+                downloadCSV(csvContent, 'insights_export.csv');
+                showNotification('Insights exported successfully!', 'success');
+                addToExportHistory('AI Insights', 'CSV', 'insights_export.csv');
+            }, 1500);
+        }
+
+        function exportAnalyticsReport() {
+            showNotification('Generating analytics report...', 'info');
+            setTimeout(() => {
+                generatePDFReport();
+                showNotification('Analytics report generated successfully!', 'success');
+                addToExportHistory('Analytics Report', 'PDF', 'analytics_report.pdf');
+            }, 2000);
+        }
+
+        function exportPlaybooks() {
+            showNotification('Exporting playbooks...', 'info');
+            setTimeout(() => {
+                const csvContent = generatePlaybooksCSV();
+                downloadCSV(csvContent, 'playbooks_export.csv');
+                showNotification('Playbooks exported successfully!', 'success');
+                addToExportHistory('Playbooks', 'CSV', 'playbooks_export.csv');
+            }, 1500);
+        }
+
+        function generateCustomExport() {
+            const format = document.getElementById('exportFormat').value;
+            showNotification(`Generating custom ${format.toUpperCase()} export...`, 'info');
+            setTimeout(() => {
+                if (format === 'pdf') {
+                    generatePDFReport();
+                } else {
+                    const csvContent = generateCustomerCSV();
+                    downloadCSV(csvContent, `custom_export.${format}`);
+                }
+                showNotification(`Custom ${format.toUpperCase()} export completed!`, 'success');
+                addToExportHistory('Custom Export', format.toUpperCase(), `custom_export.${format}`);
+            }, 2000);
+        }
+
+        // CSV generation functions
+        function generateCustomerCSV() {
+            const headers = ['Customer Name', 'Stage', 'Health Score', 'ARR', 'Risk Level', 'Last Activity'];
+            const rows = customers.map(customer => [
+                customer.name,
+                customer.stage,
+                customer.health,
+                customer.arr,
+                customer.risk,
+                customer.lastActivity
+            ]);
+            
+            return [headers, ...rows].map(row => row.join(',')).join('\n');
+        }
+
+        function generateInsightsCSV() {
+            const headers = ['Trigger', 'Description', 'Priority', 'Action', 'Affected Customers'];
+            const rows = insights.map(insight => [
+                insight.trigger,
+                insight.description,
+                insight.priority,
+                insight.action,
+                insight.customers.join('; ')
+            ]);
+            
+            return [headers, ...rows].map(row => row.join(',')).join('\n');
+        }
+
+        function generatePlaybooksCSV() {
+            const headers = ['Name', 'Purpose', 'Status', 'Steps'];
+            const rows = playbooks.map(playbook => [
+                playbook.name,
+                playbook.purpose,
+                playbook.status,
+                playbook.steps.join('; ')
+            ]);
+            
+            return [headers, ...rows].map(row => row.join(',')).join('\n');
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function generatePDFReport() {
+            // This would integrate with jsPDF for actual PDF generation
+            // For demo purposes, we'll simulate the download
+            const blob = new Blob(['Demo PDF Report Content'], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'analytics_report.pdf';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Utility functions
+        function connectIntegration(name) {
+            showNotification(`Connecting to ${name}...`, 'info');
+            setTimeout(() => {
+                showNotification(`Successfully connected to ${name}!`, 'success');
+                // In a real app, this would refresh the integrations list
+            }, 2000);
+        }
+
+        function refreshIntegrations() {
+            showNotification('Refreshing integration status...', 'info');
+            setTimeout(() => {
+                showNotification('Integration status updated!', 'success');
+            }, 1500);
+        }
+
+        function downloadFile(fileName) {
+            showNotification(`Downloading ${fileName}...`, 'info');
+            // Simulate file download
+        }
+
+        function retryExport(fileName) {
+            showNotification(`Retrying export for ${fileName}...`, 'info');
+            setTimeout(() => {
+                showNotification('Export completed successfully!', 'success');
+                populateExportHistory(); // Refresh the table
+            }, 2000);
+        }
+
+        function addToExportHistory(type, format, fileName) {
+            const newExport = {
+                type: type,
+                date: new Date().toISOString().split('T')[0],
+                format: format,
+                status: 'Completed',
+                fileName: fileName
+            };
+            exportHistory.unshift(newExport);
+            populateExportHistory();
+        }
+
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500 text-white' : 
+                type === 'error' ? 'bg-red-500 text-white' : 
+                'bg-blue-500 text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function exportAnalytics() {
+            showNotification('Exporting analytics data...', 'info');
+            setTimeout(() => {
+                const csvContent = generateAnalyticsCSV();
+                downloadCSV(csvContent, 'analytics_export.csv');
+                showNotification('Analytics data exported successfully!', 'success');
+                addToExportHistory('Analytics Data', 'CSV', 'analytics_export.csv');
+            }, 1500);
+        }
+
+        function generateAnalyticsCSV() {
+            const headers = ['Metric', 'Value', 'Change', 'Period'];
+            const rows = [
+                ['Customer Lifetime Value', '$3.2M', '+12%', 'Q1 2024'],
+                ['Churn Prediction Accuracy', '94.2%', '+3%', 'Current'],
+                ['Time to Value', '18 days', '-5 days', 'Q1 2024'],
+                ['Net Revenue Retention', '115%', '+8%', 'Q1 2024']
+            ];
+            
+            return [headers, ...rows].map(row => row.join(',')).join('\n');
+        }
+
+        // Initialize everything when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initTabs();
+            populateCustomerTable();
+            populateInsights();
+            populatePlaybooks();
+            populateIntegrations();
+            populateExportHistory();
+            initChart();
+            initAdvancedCharts();
+        });
+    </script>
+</body>
+</html>
