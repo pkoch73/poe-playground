@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON-LD Website Crawler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'bg-light': '#FFFFFF',
+                        'bg-dark': '#181818'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-bg-light dark:bg-bg-dark text-gray-900 dark:text-gray-100 min-h-screen transition-colors">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                JSON-LD Website Crawler
+            </h1>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">
+                Extract and analyze JSON-LD structured data from any website
+            </p>
+        </div>
+
+        <!-- URL Input Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <label for="websiteUrl" class="block text-sm font-medium mb-2">Website URL</label>
+                        <input 
+                            type="url" 
+                            id="websiteUrl" 
+                            placeholder="https://example.com"
+                            class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 transition-colors"
+                        >
+                    </div>
+                    <div class="sm:flex-none">
+                        <label class="block text-sm font-medium mb-2 sm:invisible">Action</label>
+                        <button 
+                            id="crawlBtn"
+                            class="w-full sm:w-auto px-6 py-3 bg-primary hover:bg-purple-600 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span id="crawlBtnText">Start Crawl</span>
+                            <span id="crawlBtnLoader" class="hidden">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span id="crawlProgress">Crawling...</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Crawl Settings -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h3 class="text-sm font-medium mb-3">Crawl Settings</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label for="maxPages" class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Max Pages</label>
+                            <input 
+                                type="number" 
+                                id="maxPages" 
+                                value="10" 
+                                min="1" 
+                                max="50"
+                                class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                            >
+                        </div>
+                        <div>
+                            <label for="maxDepth" class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Max Depth</label>
+                            <input 
+                                type="number" 
+                                id="maxDepth" 
+                                value="2" 
+                                min="1" 
+                                max="5"
+                                class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                            >
+                        </div>
+                        <div>
+                            <label for="crawlDelay" class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Delay (ms)</label>
+                            <input 
+                                type="number" 
+                                id="crawlDelay" 
+                                value="1000" 
+                                min="500" 
+                                max="5000" 
+                                step="500"
+                                class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Crawl Progress Section -->
+        <div id="progressSection" class="hidden bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200">Crawling Progress</h3>
+                <button id="stopCrawl" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors">
+                    Stop Crawl
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                    <span>Pages crawled: <span id="pagesCrawled">0</span> / <span id="totalPagesToCrawl">0</span></span>
+                    <span>JSON-LD objects found: <span id="objectsFound">0</span></span>
+                </div>
+                <div class="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                    <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div id="currentPageStatus" class="text-sm text-blue-700 dark:text-blue-300">
+                    Ready to start...
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <!-- Summary Stats -->
+            <div id="summaryStats" class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div class="text-2xl font-bold text-primary" id="totalObjects">0</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Total Objects</div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div class="text-2xl font-bold text-green-600" id="uniqueObjects">0</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Unique Objects</div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div class="text-2xl font-bold text-orange-600" id="duplicateObjects">0</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Duplicates</div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div class="text-2xl font-bold text-blue-600" id="uniqueTypes">0</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Unique Types</div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div class="text-2xl font-bold text-green-600" id="pagesWithJsonLD">0</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Pages w/ JSON-LD</div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div class="text-2xl font-bold text-red-600" id="pagesWithoutJsonLD">0</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Pages w/o JSON-LD</div>
+                </div>
+            </div>
+
+            <!-- Detailed Statistics -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Object Types Analysis -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold">Object Types Usage</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="typeStats" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- Duplicate Analysis -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold">Duplicate Analysis</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="duplicateStats"></div>
+                    </div>
+                </div>
+
+                <!-- Sub-Objects Analysis -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold">Sub-Objects (Nested @type)</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="subObjectStats"></div>
+                    </div>
+                </div>
+
+                <!-- Duplicate References -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold">Duplicate URL References</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="duplicateReferencesStats"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+                <div class="flex flex-col sm:flex-row gap-4 items-center">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="showDuplicates" class="w-4 h-4 text-primary">
+                        <label for="showDuplicates" class="text-sm">Highlight duplicates</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="typeFilter" class="text-sm">Filter by type:</label>
+                        <select id="typeFilter" class="px-3 py-1 text-base border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700">
+                            <option value="">All types</option>
+                        </select>
+                    </div>
+                    <button id="expandAll" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded transition-colors">
+                        Expand All
+                    </button>
+                    <button id="collapseAll" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded transition-colors">
+                        Collapse All
+                    </button>
+                    <button id="downloadReport" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">
+                        📊 Download Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tree View -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg mb-8">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-xl font-semibold">JSON-LD Structure Tree</h2>
+                </div>
+                <div class="p-6">
+                    <div id="treeContainer" class="font-mono text-sm"></div>
+                </div>
+            </div>
+
+            <!-- Pages Without JSON-LD -->
+            <div id="pagesWithoutJsonLDSection" class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-semibold">Pages Without JSON-LD</h2>
+                        <span class="text-sm text-gray-500 dark:text-gray-400" id="pagesWithoutCount">0 pages</span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div id="pagesWithoutJsonLDList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Section -->
+        <div id="errorSection" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 text-red-600 mt-1 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <div>
+                    <h3 class="text-red-800 dark:text-red-200 font-medium">Error</h3>
+                    <p id="errorMessage" class="text-red-700 dark:text-red-300 mt-1"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        class JSONLDCrawler {
+            constructor() {
+                this.jsonldObjects = [];
+                this.subObjects = [];
+                this.duplicateGroups = [];
+                this.duplicateReferences = new Map();
+                this.crawlQueue = [];
+                this.crawledUrls = new Set();
+                this.pagesWithoutJsonLD = new Set();
+                this.isCrawling = false;
+                this.shouldStop = false;
+                this.baseUrl = '';
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                document.getElementById('crawlBtn').addEventListener('click', () => this.startCrawl());
+                document.getElementById('websiteUrl').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.startCrawl();
+                });
+                document.getElementById('stopCrawl').addEventListener('click', () => this.stopCrawl());
+                document.getElementById('showDuplicates').addEventListener('change', () => this.renderTree());
+                document.getElementById('typeFilter').addEventListener('change', () => this.renderTree());
+                document.getElementById('expandAll').addEventListener('click', () => this.toggleAll(true));
+                document.getElementById('collapseAll').addEventListener('click', () => this.toggleAll(false));
+                document.getElementById('downloadReport').addEventListener('click', () => this.downloadReport());
+            }
+
+            async startCrawl() {
+                if (this.isCrawling) {
+                    this.stopCrawl();
+                    return;
+                }
+
+                const url = document.getElementById('websiteUrl').value.trim();
+                if (!url) {
+                    this.showError("Please enter a valid URL");
+                    return;
+                }
+
+                if (!this.isValidUrl(url)) {
+                    this.showError("Please enter a valid URL (must start with http:// or https://)");
+                    return;
+                }
+
+                this.hideError();
+                this.hideResults();
+                this.resetCrawlState();
+
+                const maxPages = parseInt(document.getElementById('maxPages').value);
+                const maxDepth = parseInt(document.getElementById('maxDepth').value);
+
+                this.baseUrl = new URL(url).origin;
+                this.crawlQueue = [{ url, depth: 0 }];
+                this.isCrawling = true;
+                this.shouldStop = false;
+
+                this.showProgress();
+                this.updateProgress();
+
+                await this.processCrawlQueue(maxPages, maxDepth);
+            }
+
+            stopCrawl() {
+                this.shouldStop = true;
+                this.isCrawling = false;
+                this.hideProgress();
+                this.setLoading(false);
+                
+                if (this.jsonldObjects.length > 0) {
+                    this.finalizeCrawl();
+                }
+            }
+
+            resetCrawlState() {
+                this.jsonldObjects = [];
+                this.subObjects = [];
+                this.duplicateGroups = [];
+                this.duplicateReferences.clear();
+                this.crawlQueue = [];
+                this.crawledUrls.clear();
+                this.pagesWithoutJsonLD.clear();
+            }
+
+            async processCrawlQueue(maxPages, maxDepth) {
+                const delay = parseInt(document.getElementById('crawlDelay').value);
+
+                while (this.crawlQueue.length > 0 && this.crawledUrls.size < maxPages && !this.shouldStop) {
+                    const { url, depth } = this.crawlQueue.shift();
+
+                    if (this.crawledUrls.has(url) || depth > maxDepth) {
+                        continue;
+                    }
+
+                    this.updateCurrentPageStatus(`Crawling: ${this.shortenUrl(url)}`);
+                    
+                    try {
+                        await this.crawlPage(url, depth, maxDepth);
+                        this.crawledUrls.add(url);
+                        this.updateProgress();
+
+                        // Add delay between requests to be respectful
+                        if (this.crawlQueue.length > 0 && !this.shouldStop) {
+                            await this.sleep(delay);
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to crawl ${url}:`, error);
+                    }
+                }
+
+                this.isCrawling = false;
+                this.hideProgress();
+                this.setLoading(false);
+
+                // Always finalize crawl to show results, even if no JSON-LD found
+                this.finalizeCrawl();
+            }
+
+            async crawlPage(url, depth, maxDepth) {
+                try {
+                    const proxyUrl = `https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=${encodeURIComponent(url)}`;
+                    const response = await fetch(proxyUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const htmlContent = await response.text();
+                    
+                    if (!htmlContent) {
+                        throw new Error("No content received");
+                    }
+                    
+                    // Extract JSON-LD from this page
+                    this.extractJSONLDFromPage(htmlContent, url);
+                    
+                    // Extract links for further crawling if not at max depth
+                    if (depth < maxDepth) {
+                        this.extractLinks(htmlContent, url, depth + 1);
+                    }
+                    
+                } catch (err) {
+                    console.error(`Error crawling ${url}:`, err);
+                    throw err;
+                }
+            }
+
+            extractJSONLDFromPage(htmlContent, sourceUrl) {
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlContent, 'text/html');
+                    const jsonldScripts = doc.querySelectorAll('script[type="application/ld+json"]');
+                    
+                    let foundJsonLD = false;
+                    
+                    jsonldScripts.forEach((script, index) => {
+                        try {
+                            const jsonText = script.textContent.trim();
+                            if (jsonText) {
+                                const jsonData = JSON.parse(jsonText);
+                                
+                                if (Array.isArray(jsonData)) {
+                                    jsonData.forEach(obj => {
+                                        if (obj && typeof obj === 'object') {
+                                            obj._sourceUrl = sourceUrl; // Add source URL for tracking
+                                            this.jsonldObjects.push(obj);
+                                            foundJsonLD = true;
+                                        }
+                                    });
+                                } else if (jsonData && typeof jsonData === 'object') {
+                                    jsonData._sourceUrl = sourceUrl;
+                                    this.jsonldObjects.push(jsonData);
+                                    foundJsonLD = true;
+                                }
+                            }
+                        } catch (parseError) {
+                            console.warn(`Failed to parse JSON-LD script ${index + 1} from ${sourceUrl}:`, parseError);
+                        }
+                    });
+                    
+                    // Track pages without JSON-LD
+                    if (!foundJsonLD) {
+                        this.pagesWithoutJsonLD.add(sourceUrl);
+                    }
+                } catch (error) {
+                    console.error(`Error extracting JSON-LD from ${sourceUrl}:`, error);
+                    this.pagesWithoutJsonLD.add(sourceUrl);
+                }
+            }
+
+            extractLinks(htmlContent, currentUrl, nextDepth) {
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlContent, 'text/html');
+                    const links = doc.querySelectorAll('a[href]');
+                    const currentUrlObj = new URL(currentUrl);
+                    
+                    const maxPages = parseInt(document.getElementById('maxPages').value);
+                    
+                    links.forEach(link => {
+                        try {
+                            const href = link.getAttribute('href');
+                            if (!href) return;
+                            
+                            // Resolve relative URLs
+                            const absoluteUrl = new URL(href, currentUrl).href;
+                            const linkUrlObj = new URL(absoluteUrl);
+                            
+                            // Only crawl pages from the same domain
+                            if (linkUrlObj.origin !== this.baseUrl) return;
+                            
+                            // Skip non-HTML links (images, PDFs, etc.)
+                            if (this.isNonHTMLResource(absoluteUrl)) return;
+                            
+                            // Skip anchors and query parameters for cleaner crawling
+                            const cleanUrl = `${linkUrlObj.origin}${linkUrlObj.pathname}`;
+                            
+                            // Add to queue if not already crawled or queued
+                            if (!this.crawledUrls.has(cleanUrl) && 
+                                !this.crawlQueue.some(item => item.url === cleanUrl) &&
+                                this.crawlQueue.length + this.crawledUrls.size < maxPages) {
+                                this.crawlQueue.push({ url: cleanUrl, depth: nextDepth });
+                            }
+                        } catch (urlError) {
+                            // Skip invalid URLs
+                        }
+                    });
+                } catch (error) {
+                    console.error(`Error extracting links from ${currentUrl}:`, error);
+                }
+            }
+
+            isNonHTMLResource(url) {
+                const nonHTMLExtensions = [
+                    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+                    '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp',
+                    '.mp4', '.mp3', '.avi', '.mov', '.zip', '.rar', '.tar',
+                    '.css', '.js', '.xml', '.json', '.csv'
+                ];
+                
+                const pathname = new URL(url).pathname.toLowerCase();
+                return nonHTMLExtensions.some(ext => pathname.endsWith(ext));
+            }
+
+            finalizeCrawl() {
+                console.log(`Crawl completed. Found ${this.jsonldObjects.length} JSON-LD objects from ${this.crawledUrls.size} pages`);
+                
+                this.extractSubObjects();
+                this.findDuplicateReferences();
+                this.findDuplicates();
+                this.updateStats();
+                this.populateTypeFilter();
+                this.renderDetailedStats();
+                this.renderTree();
+                this.showResults();
+            }
+
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            shortenUrl(url) {
+                try {
+                    const urlObj = new URL(url);
+                    const path = urlObj.pathname;
+                    if (path.length > 40) {
+                        return urlObj.hostname + path.substring(0, 37) + '...';
+                    }
+                    return urlObj.hostname + path;
+                } catch {
+                    return url.length > 50 ? url.substring(0, 47) + '...' : url;
+                }
+            }
+
+            updateProgress() {
+                const maxPages = parseInt(document.getElementById('maxPages').value);
+                const crawled = this.crawledUrls.size;
+                const totalToCrawl = Math.min(maxPages, this.crawlQueue.length + crawled);
+                
+                document.getElementById('pagesCrawled').textContent = crawled;
+                document.getElementById('totalPagesToCrawl').textContent = totalToCrawl || maxPages;
+                document.getElementById('objectsFound').textContent = this.jsonldObjects.length;
+                
+                const progressPercent = totalToCrawl > 0 ? (crawled / totalToCrawl) * 100 : 0;
+                document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            }
+
+            updateCurrentPageStatus(status) {
+                document.getElementById('currentPageStatus').textContent = status;
+            }
+
+            showProgress() {
+                document.getElementById('progressSection').classList.remove('hidden');
+                this.setLoading(true);
+            }
+
+            hideProgress() {
+                document.getElementById('progressSection').classList.add('hidden');
+            }
+
+            extractJSONLD(htmlContent) {
+                try {
+                    // Create a temporary DOM parser
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlContent, 'text/html');
+                    
+                    // Find all script tags with type="application/ld+json"
+                    const jsonldScripts = doc.querySelectorAll('script[type="application/ld+json"]');
+                    
+                    if (jsonldScripts.length === 0) {
+                        this.showError("No JSON-LD script tags found on this website");
+                        return;
+                    }
+                    
+                    const extractedObjects = [];
+                    
+                    jsonldScripts.forEach((script, index) => {
+                        try {
+                            const jsonText = script.textContent.trim();
+                            if (jsonText) {
+                                const jsonData = JSON.parse(jsonText);
+                                
+                                // Handle both single objects and arrays
+                                if (Array.isArray(jsonData)) {
+                                    extractedObjects.push(...jsonData);
+                                } else {
+                                    extractedObjects.push(jsonData);
+                                }
+                            }
+                        } catch (parseError) {
+                            console.warn(`Failed to parse JSON-LD script ${index + 1}:`, parseError);
+                        }
+                    });
+                    
+                    this.jsonldObjects = extractedObjects.filter(obj => obj && typeof obj === 'object');
+                    
+                    if (this.jsonldObjects.length === 0) {
+                        this.showError("No valid JSON-LD objects found on this website");
+                        return;
+                    }
+                    
+                    console.log(`Found ${this.jsonldObjects.length} JSON-LD objects`);
+                    
+                    this.findDuplicates();
+                    this.updateStats();
+                    this.populateTypeFilter();
+                    this.renderTree();
+                    this.showResults();
+                    
+                } catch (error) {
+                    console.error("Extract error:", error);
+                    this.showError(`Failed to extract JSON-LD data: ${error.message}`);
+                }
+            }
+
+            findDuplicates() {
+                const groups = {};
+                this.jsonldObjects.forEach((obj, index) => {
+                    const key = JSON.stringify(this.normalizeObject(obj));
+                    if (!groups[key]) {
+                        groups[key] = [];
+                    }
+                    groups[key].push({ object: obj, index });
+                });
+
+                this.duplicateGroups = Object.values(groups).filter(group => group.length > 1);
+            }
+
+            normalizeObject(obj) {
+                if (Array.isArray(obj)) {
+                    return obj.map(item => this.normalizeObject(item));
+                } else if (obj !== null && typeof obj === 'object') {
+                    const normalized = {};
+                    Object.keys(obj).sort().forEach(key => {
+                        // Skip the _sourceUrl property when comparing for duplicates
+                        // since it's metadata we added, not part of the actual JSON-LD
+                        if (key !== '_sourceUrl') {
+                            normalized[key] = this.normalizeObject(obj[key]);
+                        }
+                    });
+                    return normalized;
+                }
+                return obj;
+            }
+
+            updateStats() {
+                const uniqueTypes = new Set();
+                this.jsonldObjects.forEach(obj => {
+                    if (obj['@type']) {
+                        if (Array.isArray(obj['@type'])) {
+                            obj['@type'].forEach(type => uniqueTypes.add(type));
+                        } else {
+                            uniqueTypes.add(obj['@type']);
+                        }
+                    }
+                });
+
+                const totalDuplicates = this.duplicateGroups.reduce((sum, group) => sum + group.length - 1, 0);
+
+                const pagesWithJsonLD = this.crawledUrls.size - this.pagesWithoutJsonLD.size;
+
+                document.getElementById('totalObjects').textContent = this.jsonldObjects.length;
+                document.getElementById('uniqueObjects').textContent = this.jsonldObjects.length - totalDuplicates;
+                document.getElementById('duplicateObjects').textContent = totalDuplicates;
+                document.getElementById('uniqueTypes').textContent = uniqueTypes.size;
+                document.getElementById('pagesWithJsonLD').textContent = pagesWithJsonLD;
+                document.getElementById('pagesWithoutJsonLD').textContent = this.pagesWithoutJsonLD.size;
+            }
+
+            populateTypeFilter() {
+                const typeFilter = document.getElementById('typeFilter');
+                const types = new Set();
+                
+                this.jsonldObjects.forEach(obj => {
+                    if (obj['@type']) {
+                        if (Array.isArray(obj['@type'])) {
+                            obj['@type'].forEach(type => types.add(type));
+                        } else {
+                            types.add(obj['@type']);
+                        }
+                    }
+                });
+
+                // Clear existing options except "All types"
+                typeFilter.innerHTML = '<option value="">All types</option>';
+                
+                Array.from(types).sort().forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    typeFilter.appendChild(option);
+                });
+            }
+
+            renderDetailedStats() {
+                this.renderTypeStats();
+                this.renderDuplicateStats();
+                this.renderSubObjectStats();
+                this.renderDuplicateReferencesStats();
+                this.renderPagesWithoutJsonLD();
+            }
+
+            renderTypeStats() {
+                const typeStatsContainer = document.getElementById('typeStats');
+                const typeCounts = {};
+
+                // Count occurrences of each type
+                this.jsonldObjects.forEach(obj => {
+                    if (obj['@type']) {
+                        if (Array.isArray(obj['@type'])) {
+                            obj['@type'].forEach(type => {
+                                typeCounts[type] = (typeCounts[type] || 0) + 1;
+                            });
+                        } else {
+                            const type = obj['@type'];
+                            typeCounts[type] = (typeCounts[type] || 0) + 1;
+                        }
+                    } else {
+                        typeCounts['[No @type]'] = (typeCounts['[No @type]'] || 0) + 1;
+                    }
+                });
+
+                // Sort by count (descending)
+                const sortedTypes = Object.entries(typeCounts)
+                    .sort(([,a], [,b]) => b - a);
+
+                const maxCount = Math.max(...Object.values(typeCounts));
+
+                let html = '';
+                sortedTypes.forEach(([type, count]) => {
+                    const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                    const isNoType = type === '[No @type]';
+                    
+                    html += `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-medium ${isNoType ? 'text-gray-500 italic' : 'text-gray-900 dark:text-gray-100'}">${type}</span>
+                                    <span class="text-sm font-bold text-primary">${count}</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                    <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                if (sortedTypes.length === 0) {
+                    html = '<div class="text-gray-500 text-center py-4">No objects found</div>';
+                }
+
+                typeStatsContainer.innerHTML = html;
+            }
+
+            renderDuplicateStats() {
+                const duplicateStatsContainer = document.getElementById('duplicateStats');
+
+                if (this.duplicateGroups.length === 0) {
+                    duplicateStatsContainer.innerHTML = `
+                        <div class="text-center py-6">
+                            <div class="text-green-600 dark:text-green-400 text-2xl mb-2">✓</div>
+                            <div class="text-gray-600 dark:text-gray-400">No duplicates found</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-500 mt-1">All objects are unique</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <div class="space-y-4">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Found ${this.duplicateGroups.length} groups of duplicate objects
+                        </div>
+                `;
+
+                this.duplicateGroups.forEach((group, groupIndex) => {
+                    const firstObj = group[0].object;
+                    const objType = firstObj['@type'] || '[No @type]';
+                    const displayType = Array.isArray(objType) ? objType.join(', ') : objType;
+                    const duplicateCount = group.length;
+                    
+                    // Get unique source URLs for this duplicate group
+                    const sourceUrls = [...new Set(group.map(item => item.object._sourceUrl))];
+                    
+                    html += `
+                        <div class="border border-orange-200 dark:border-orange-800 rounded-lg">
+                            <div class="bg-orange-50 dark:bg-orange-900/20 p-4 border-b border-orange-200 dark:border-orange-800">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <span class="font-medium text-orange-800 dark:text-orange-200">${displayType}</span>
+                                        <span class="ml-2 text-sm text-orange-600 dark:text-orange-400">
+                                            ${duplicateCount} instances
+                                        </span>
+                                    </div>
+                                    <button class="duplicate-toggle text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-200" 
+                                            onclick="this.parentElement.parentElement.nextElementSibling.classList.toggle('hidden'); this.textContent = this.textContent === '▼' ? '▶' : '▼'">
+                                        ▶
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="hidden p-4 space-y-3">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Found on pages:</div>
+                                    <div class="space-y-1">
+                `;
+                
+                sourceUrls.forEach(url => {
+                    const instancesOnThisPage = group.filter(item => item.object._sourceUrl === url).length;
+                    html += `
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-blue-600 dark:text-blue-400 font-mono">${this.shortenUrl(url)}</span>
+                            <span class="text-gray-500">${instancesOnThisPage}x</span>
+                        </div>
+                    `;
+                });
+
+                html += `
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Object preview:</div>
+                                    <div class="bg-gray-100 dark:bg-gray-700 rounded p-3 font-mono text-sm overflow-x-auto">
+                                        <div class="text-gray-600 dark:text-gray-400">
+                `;
+
+                // Show a preview of the object (first few properties)
+                const previewObj = { ...firstObj };
+                delete previewObj._sourceUrl; // Don't show in preview
+                const previewKeys = Object.keys(previewObj).slice(0, 4);
+                
+                previewKeys.forEach((key, index) => {
+                    const value = previewObj[key];
+                    const valueStr = typeof value === 'object' ? JSON.stringify(value).substring(0, 50) + '...' : JSON.stringify(value);
+                    html += `<div>"${key}": ${valueStr}</div>`;
+                });
+
+                if (Object.keys(previewObj).length > 4) {
+                    html += `<div class="text-gray-500">... ${Object.keys(previewObj).length - 4} more properties</div>`;
+                }
+
+                html += `
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                duplicateStatsContainer.innerHTML = html;
+            }
+
+            renderPagesWithoutJsonLD() {
+                const pagesWithoutCountElement = document.getElementById('pagesWithoutCount');
+                const pagesWithoutListContainer = document.getElementById('pagesWithoutJsonLDList');
+                
+                const count = this.pagesWithoutJsonLD.size;
+                pagesWithoutCountElement.textContent = `${count} page${count !== 1 ? 's' : ''}`;
+
+                if (count === 0) {
+                    pagesWithoutListContainer.innerHTML = `
+                        <div class="text-center py-6">
+                            <div class="text-green-600 dark:text-green-400 text-2xl mb-2">✓</div>
+                            <div class="text-gray-600 dark:text-gray-400">All crawled pages contain JSON-LD</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-500 mt-1">Great structured data coverage!</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Convert to array and sort for consistent display
+                const sortedPages = Array.from(this.pagesWithoutJsonLD).sort();
+                
+                let html = `
+                    <div class="space-y-3">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            The following ${count} page${count !== 1 ? 's' : ''} ${count !== 1 ? 'were' : 'was'} crawled but ${count !== 1 ? 'contain' : 'contains'} no JSON-LD structured data:
+                        </div>
+                        <div class="space-y-2">
+                `;
+
+                sortedPages.forEach(url => {
+                    html += `
+                        <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                            <div class="flex items-center">
+                                <svg class="w-4 h-4 text-red-600 dark:text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="font-mono text-sm text-red-800 dark:text-red-200">${this.shortenUrl(url)}</span>
+                            </div>
+                            <a href="${url}" target="_blank" rel="noopener noreferrer" 
+                               class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+                                Visit →
+                            </a>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                        <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div>
+                                    <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Recommendation</h4>
+                                    <p class="text-sm text-blue-700 dark:text-blue-300">
+                                        Consider adding JSON-LD structured data to these pages to improve SEO and search result appearance. 
+                                        Popular schema types include Organization, WebSite, BreadcrumbList, and Article.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                pagesWithoutListContainer.innerHTML = html;
+            }
+
+            renderTree() {
+                const container = document.getElementById('treeContainer');
+                const showDuplicates = document.getElementById('showDuplicates').checked;
+                const typeFilter = document.getElementById('typeFilter').value;
+
+                let objectsToRender = this.jsonldObjects;
+
+                // Apply type filter
+                if (typeFilter) {
+                    objectsToRender = objectsToRender.filter(obj => {
+                        if (!obj['@type']) return false;
+                        if (Array.isArray(obj['@type'])) {
+                            return obj['@type'].includes(typeFilter);
+                        }
+                        return obj['@type'] === typeFilter;
+                    });
+                }
+
+                container.innerHTML = '';
+
+                objectsToRender.forEach((obj, index) => {
+                    const isDuplicate = this.isDuplicate(obj);
+                    const treeNode = this.createTreeNode(obj, `object-${index}`, 0, isDuplicate && showDuplicates);
+                    container.appendChild(treeNode);
+                });
+            }
+
+            isDuplicate(obj) {
+                return this.duplicateGroups.some(group => 
+                    group.some(item => item.object === obj) && group.length > 1
+                );
+            }
+
+            createTreeNode(data, id, depth, isDuplicate = false) {
+                const node = document.createElement('div');
+                node.className = `tree-node ${isDuplicate ? 'bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-400 pl-4' : ''}`;
+                
+                if (typeof data === 'object' && data !== null) {
+                    if (Array.isArray(data)) {
+                        node.innerHTML = this.createArrayNode(data, id, depth);
+                    } else {
+                        node.innerHTML = this.createObjectNode(data, id, depth);
+                    }
+                } else {
+                    node.innerHTML = `<span class="text-green-600 dark:text-green-400">${JSON.stringify(data)}</span>`;
+                }
+
+                return node;
+            }
+
+            createObjectNode(obj, id, depth) {
+                const keys = Object.keys(obj);
+                const sourceUrl = obj._sourceUrl;
+                
+                let html = `
+                    <div class="flex items-center">
+                        <button class="tree-toggle mr-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" onclick="this.parentElement.parentElement.querySelector('.tree-children').classList.toggle('hidden'); this.textContent = this.textContent === '▶' ? '▼' : '▶'">▼</button>
+                        <span class="text-blue-600 dark:text-blue-400 font-semibold">{</span>
+                        <span class="ml-2 text-xs text-gray-500">${keys.length} properties</span>
+                        ${sourceUrl && depth === 0 ? `<span class="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">${this.shortenUrl(sourceUrl)}</span>` : ''}
+                    </div>
+                    <div class="tree-children ml-6 mt-1">
+                `;
+
+                keys.forEach((key, index) => {
+                    // Skip rendering the _sourceUrl property in the tree
+                    if (key === '_sourceUrl') return;
+                    
+                    const value = obj[key];
+                    const comma = index < keys.length - 1 ? ',' : '';
+                    
+                    html += `
+                        <div class="mb-1">
+                            <span class="text-purple-600 dark:text-purple-400">"${key}"</span>: 
+                    `;
+
+                    if (typeof value === 'object' && value !== null) {
+                        html += `<div class="inline-block">${this.createTreeNode(value, `${id}-${key}`, depth + 1).outerHTML}</div>`;
+                    } else {
+                        html += `<span class="text-green-600 dark:text-green-400">${JSON.stringify(value)}</span>`;
+                    }
+
+                    html += `<span class="text-gray-500">${comma}</span></div>`;
+                });
+
+                html += `
+                    </div>
+                    <div class="text-blue-600 dark:text-blue-400 font-semibold">}</div>
+                `;
+
+                return html;
+            }
+
+            createArrayNode(arr, id, depth) {
+                let html = `
+                    <div class="flex items-center">
+                        <button class="tree-toggle mr-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" onclick="this.parentElement.parentElement.querySelector('.tree-children').classList.toggle('hidden'); this.textContent = this.textContent === '▶' ? '▼' : '▶'">▼</button>
+                        <span class="text-blue-600 dark:text-blue-400 font-semibold">[</span>
+                        <span class="ml-2 text-xs text-gray-500">${arr.length} items</span>
+                    </div>
+                    <div class="tree-children ml-6 mt-1">
+                `;
+
+                arr.forEach((item, index) => {
+                    const comma = index < arr.length - 1 ? ',' : '';
+                    html += `<div class="mb-1">`;
+                    
+                    if (typeof item === 'object' && item !== null) {
+                        html += `${this.createTreeNode(item, `${id}-${index}`, depth + 1).outerHTML}`;
+                    } else {
+                        html += `<span class="text-green-600 dark:text-green-400">${JSON.stringify(item)}</span>`;
+                    }
+                    
+                    html += `<span class="text-gray-500">${comma}</span></div>`;
+                });
+
+                html += `
+                    </div>
+                    <div class="text-blue-600 dark:text-blue-400 font-semibold">]</div>
+                `;
+
+                return html;
+            }
+
+            toggleAll(expand) {
+                const toggles = document.querySelectorAll('.tree-toggle');
+                const children = document.querySelectorAll('.tree-children');
+                
+                toggles.forEach(toggle => {
+                    toggle.textContent = expand ? '▼' : '▶';
+                });
+                
+                children.forEach(child => {
+                    if (expand) {
+                        child.classList.remove('hidden');
+                    } else {
+                        child.classList.add('hidden');
+                    }
+                });
+            }
+
+            setLoading(loading) {
+                const btn = document.getElementById('crawlBtn');
+                const text = document.getElementById('crawlBtnText');
+                const loader = document.getElementById('crawlBtnLoader');
+
+                btn.disabled = loading;
+                if (loading) {
+                    text.classList.add('hidden');
+                    loader.classList.remove('hidden');
+                } else {
+                    text.classList.remove('hidden');
+                    loader.classList.add('hidden');
+                }
+            }
+
+            showResults() {
+                document.getElementById('resultsSection').classList.remove('hidden');
+            }
+
+            hideResults() {
+                document.getElementById('resultsSection').classList.add('hidden');
+            }
+
+            showError(message) {
+                document.getElementById('errorMessage').textContent = message;
+                document.getElementById('errorSection').classList.remove('hidden');
+            }
+
+            hideError() {
+                document.getElementById('errorSection').classList.add('hidden');
+            }
+
+            isValidUrl(string) {
+                try {
+                    new URL(string);
+                    return string.startsWith('http://') || string.startsWith('https://');
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            downloadReport() {
+                if (!window.XLSX) {
+                    this.showError("Excel library not loaded. Please refresh the page and try again.");
+                    return;
+                }
+
+                try {
+                    const wb = XLSX.utils.book_new();
+                    const currentDate = new Date().toISOString().split('T')[0];
+                    const domain = this.baseUrl ? new URL(this.baseUrl).hostname : 'website';
+                    
+                    // 1. Summary Sheet
+                    this.addSummarySheet(wb);
+                    
+                    // 2. Page Status Sheet
+                    this.addPageStatusSheet(wb);
+                    
+                    // 3. JSON-LD Objects Sheet
+                    this.addJSONLDObjectsSheet(wb);
+                    
+                    // 4. Duplicates Sheet
+                    this.addDuplicatesSheet(wb);
+                    
+                    // 5. Type Statistics Sheet
+                    this.addTypeStatisticsSheet(wb);
+                    
+                    // 6. Sub-Objects Sheet
+                    this.addSubObjectsSheet(wb);
+                    
+                    // 7. Duplicate URL References Sheet
+                    this.addDuplicateReferencesSheet(wb);
+                    
+                    // Generate and download the file
+                    const fileName = `JSON-LD-Report-${domain}-${currentDate}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    
+                } catch (error) {
+                    console.error("Error generating report:", error);
+                    this.showError("Failed to generate Excel report: " + error.message);
+                }
+            }
+
+            addSummarySheet(wb) {
+                const totalDuplicates = this.duplicateGroups.reduce((sum, group) => sum + group.length - 1, 0);
+                const pagesWithJsonLD = this.crawledUrls.size - this.pagesWithoutJsonLD.size;
+                
+                const summaryData = [
+                    ['JSON-LD Crawler Report'],
+                    ['Generated on:', new Date().toLocaleString()],
+                    ['Website:', this.baseUrl || 'N/A'],
+                    [''],
+                    ['Summary Statistics'],
+                    ['Total Pages Crawled', this.crawledUrls.size],
+                    ['Pages with JSON-LD', pagesWithJsonLD],
+                    ['Pages without JSON-LD', this.pagesWithoutJsonLD.size],
+                    [''],
+                    ['JSON-LD Objects'],
+                    ['Total Objects Found', this.jsonldObjects.length],
+                    ['Unique Objects', this.jsonldObjects.length - totalDuplicates],
+                    ['Duplicate Objects', totalDuplicates],
+                    ['Unique @types', new Set(this.jsonldObjects.flatMap(obj => 
+                        obj['@type'] ? (Array.isArray(obj['@type']) ? obj['@type'] : [obj['@type']]) : [])).size],
+                    [''],
+                    ['Coverage Analysis'],
+                    ['JSON-LD Coverage', `${pagesWithJsonLD}/${this.crawledUrls.size} (${((pagesWithJsonLD/this.crawledUrls.size)*100).toFixed(1)}%)`],
+                    ['Duplicate Rate', `${totalDuplicates}/${this.jsonldObjects.length} (${((totalDuplicates/this.jsonldObjects.length)*100).toFixed(1)}%)`],
+                ];
+
+                const ws = XLSX.utils.aoa_to_sheet(summaryData);
+                
+                // Set column widths
+                ws['!cols'] = [
+                    {wch: 25}, // Column A
+                    {wch: 20}  // Column B
+                ];
+                
+                XLSX.utils.book_append_sheet(wb, ws, "Summary");
+            }
+
+            addPageStatusSheet(wb) {
+                const headers = ['URL', 'JSON-LD Status', 'Objects Count'];
+                const data = [headers];
+                
+                // Add all crawled URLs with their status
+                Array.from(this.crawledUrls).sort().forEach(url => {
+                    const hasJsonLD = !this.pagesWithoutJsonLD.has(url);
+                    const objectsOnPage = this.jsonldObjects.filter(obj => obj._sourceUrl === url).length;
+                    
+                    data.push([
+                        url,
+                        hasJsonLD ? 'Has JSON-LD' : 'No JSON-LD',
+                        objectsOnPage
+                    ]);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                
+                // Set column widths
+                ws['!cols'] = [
+                    {wch: 60}, // URL column
+                    {wch: 15}, // Status column
+                    {wch: 15}  // Count column
+                ];
+                
+                XLSX.utils.book_append_sheet(wb, ws, "Page Status");
+            }
+
+            addJSONLDObjectsSheet(wb) {
+                const headers = ['Source URL', '@type', '@context', 'Object Preview (JSON)'];
+                const data = [headers];
+                
+                this.jsonldObjects.forEach((obj, index) => {
+                    const objCopy = { ...obj };
+                    delete objCopy._sourceUrl; // Remove metadata
+                    
+                    const types = obj['@type'] ? 
+                        (Array.isArray(obj['@type']) ? obj['@type'].join(', ') : obj['@type']) : 
+                        '[No @type]';
+                    
+                    const context = obj['@context'] || '[No @context]';
+                    const preview = JSON.stringify(objCopy, null, 2).substring(0, 500) + 
+                                   (JSON.stringify(objCopy).length > 500 ? '...' : '');
+                    
+                    data.push([
+                        obj._sourceUrl || '[Unknown]',
+                        types,
+                        context,
+                        preview
+                    ]);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                
+                // Set column widths
+                ws['!cols'] = [
+                    {wch: 50}, // Source URL
+                    {wch: 20}, // @type
+                    {wch: 30}, // @context
+                    {wch: 60}  // JSON preview
+                ];
+                
+                XLSX.utils.book_append_sheet(wb, ws, "JSON-LD Objects");
+            }
+
+            addDuplicatesSheet(wb) {
+                const headers = ['@type', 'Instances Count', 'Source URLs', 'Object Preview'];
+                const data = [headers];
+                
+                this.duplicateGroups.forEach(group => {
+                    const firstObj = group[0].object;
+                    const objCopy = { ...firstObj };
+                    delete objCopy._sourceUrl;
+                    
+                    const types = firstObj['@type'] ? 
+                        (Array.isArray(firstObj['@type']) ? firstObj['@type'].join(', ') : firstObj['@type']) : 
+                        '[No @type]';
+                    
+                    const sourceUrls = [...new Set(group.map(item => item.object._sourceUrl))].join(', ');
+                    const preview = JSON.stringify(objCopy, null, 2).substring(0, 300) + 
+                                   (JSON.stringify(objCopy).length > 300 ? '...' : '');
+                    
+                    data.push([
+                        types,
+                        group.length,
+                        sourceUrls,
+                        preview
+                    ]);
+                });
+
+                if (data.length === 1) {
+                    data.push(['No duplicates found', '', '', '']);
+                }
+
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                
+                // Set column widths
+                ws['!cols'] = [
+                    {wch: 20}, // @type
+                    {wch: 15}, // Count
+                    {wch: 60}, // Source URLs
+                    {wch: 50}  // Preview
+                ];
+                
+                XLSX.utils.book_append_sheet(wb, ws, "Duplicates");
+            }
+
+            addTypeStatisticsSheet(wb) {
+                const headers = ['@type', 'Count', 'Percentage'];
+                const data = [headers];
+                
+                // Count type occurrences
+                const typeCounts = {};
+                this.jsonldObjects.forEach(obj => {
+                    if (obj['@type']) {
+                        if (Array.isArray(obj['@type'])) {
+                            obj['@type'].forEach(type => {
+                                typeCounts[type] = (typeCounts[type] || 0) + 1;
+                            });
+                        } else {
+                            const type = obj['@type'];
+                            typeCounts[type] = (typeCounts[type] || 0) + 1;
+                        }
+                    } else {
+                        typeCounts['[No @type]'] = (typeCounts['[No @type]'] || 0) + 1;
+                    }
+                });
+
+                // Sort by count and add to data
+                const sortedTypes = Object.entries(typeCounts).sort(([,a], [,b]) => b - a);
+                const total = this.jsonldObjects.length;
+                
+                sortedTypes.forEach(([type, count]) => {
+                    const percentage = total > 0 ? ((count / total) * 100).toFixed(1) + '%' : '0%';
+                    data.push([type, count, percentage]);
+                });
+
+                if (data.length === 1) {
+                    data.push(['No objects found', 0, '0%']);
+                }
+
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                
+                // Set column widths
+                ws['!cols'] = [
+                    {wch: 30}, // @type
+                    {wch: 10}, // Count
+                    {wch: 12}  // Percentage
+                ];
+                
+                XLSX.utils.book_append_sheet(wb, ws, "Type Statistics");
+            }
+
+            extractSubObjects() {
+                this.subObjects = [];
+                
+                this.jsonldObjects.forEach((mainObj, mainIndex) => {
+                    this.extractSubObjectsRecursive(mainObj, [], mainObj._sourceUrl, mainIndex);
+                });
+                
+                console.log(`Extracted ${this.subObjects.length} sub-objects`);
+            }
+
+            extractSubObjectsRecursive(obj, path, sourceUrl, parentIndex) {
+                if (typeof obj !== 'object' || obj === null) return;
+                
+                if (Array.isArray(obj)) {
+                    obj.forEach((item, index) => {
+                        this.extractSubObjectsRecursive(item, [...path, index], sourceUrl, parentIndex);
+                    });
+                } else {
+                    // Check if this object has @type and is not the root object
+                    if (obj['@type'] && path.length > 0) {
+                        this.subObjects.push({
+                            object: obj,
+                            type: Array.isArray(obj['@type']) ? obj['@type'] : [obj['@type']],
+                            path: path.join('.'),
+                            sourceUrl: sourceUrl,
+                            parentIndex: parentIndex
+                        });
+                    }
+                    
+                    // Recursively check all properties
+                    Object.keys(obj).forEach(key => {
+                        if (key !== '_sourceUrl') { // Skip metadata
+                            this.extractSubObjectsRecursive(obj[key], [...path, key], sourceUrl, parentIndex);
+                        }
+                    });
+                }
+            }
+
+            findDuplicateReferences() {
+                this.duplicateReferences.clear();
+                const urlTracker = new Map();
+                
+                // Function to extract URLs from any object
+                const extractUrls = (obj, path = '', sourceUrl = '', objType = '') => {
+                    if (typeof obj === 'string') {
+                        // Check if it looks like a URL
+                        if (obj.match(/^https?:\/\/.+/)) {
+                            const key = obj;
+                            if (!urlTracker.has(key)) {
+                                urlTracker.set(key, []);
+                            }
+                            urlTracker.get(key).push({
+                                url: obj,
+                                path: path || 'root',
+                                sourceUrl: sourceUrl,
+                                objectType: objType
+                            });
+                        }
+                    } else if (Array.isArray(obj)) {
+                        obj.forEach((item, index) => {
+                            extractUrls(item, `${path}[${index}]`, sourceUrl, objType);
+                        });
+                    } else if (obj && typeof obj === 'object') {
+                        Object.keys(obj).forEach(key => {
+                            if (key !== '_sourceUrl') {
+                                extractUrls(obj[key], path ? `${path}.${key}` : key, sourceUrl, objType);
+                            }
+                        });
+                    }
+                };
+                
+                // Extract URLs from main objects
+                this.jsonldObjects.forEach(obj => {
+                    const objType = obj['@type'] ? 
+                        (Array.isArray(obj['@type']) ? obj['@type'].join(', ') : obj['@type']) : 
+                        '[No @type]';
+                    extractUrls(obj, '', obj._sourceUrl, objType);
+                });
+                
+                // Find duplicates
+                urlTracker.forEach((occurrences, url) => {
+                    if (occurrences.length > 1) {
+                        this.duplicateReferences.set(url, occurrences);
+                    }
+                });
+                
+                console.log(`Found ${this.duplicateReferences.size} duplicate URL references`);
+            }
+
+            renderSubObjectStats() {
+                const subObjectStatsContainer = document.getElementById('subObjectStats');
+
+                if (this.subObjects.length === 0) {
+                    subObjectStatsContainer.innerHTML = `
+                        <div class="text-center py-6">
+                            <div class="text-gray-400 text-2xl mb-2">📦</div>
+                            <div class="text-gray-600 dark:text-gray-400">No sub-objects found</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-500 mt-1">All @type properties are at root level</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Count sub-object types
+                const subTypeCounts = {};
+                this.subObjects.forEach(subObj => {
+                    subObj.type.forEach(type => {
+                        subTypeCounts[type] = (subTypeCounts[type] || 0) + 1;
+                    });
+                });
+
+                const sortedSubTypes = Object.entries(subTypeCounts).sort(([,a], [,b]) => b - a);
+                const maxCount = Math.max(...Object.values(subTypeCounts));
+
+                let html = `
+                    <div class="space-y-4">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Found ${this.subObjects.length} nested objects with @type properties
+                        </div>
+                        <div class="space-y-3">
+                `;
+
+                sortedSubTypes.forEach(([type, count]) => {
+                    const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                    
+                    html += `
+                        <div class="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-medium text-purple-800 dark:text-purple-200">${type}</span>
+                                    <span class="text-sm font-bold text-purple-600 dark:text-purple-400">${count}</span>
+                                </div>
+                                <div class="w-full bg-purple-200 dark:bg-purple-700 rounded-full h-2">
+                                    <div class="bg-purple-600 dark:bg-purple-400 h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // Show examples
+                const examples = this.subObjects.slice(0, 3);
+                html += `
+                        </div>
+                        <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                            <div class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Examples:</div>
+                            <div class="space-y-2">
+                `;
+
+                examples.forEach(subObj => {
+                    const type = subObj.type.join(', ');
+                    html += `
+                        <div class="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                            <span class="text-purple-600 dark:text-purple-400">${type}</span> at 
+                            <span class="text-blue-600 dark:text-blue-400">${subObj.path}</span>
+                        </div>
+                    `;
+                });
+
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                subObjectStatsContainer.innerHTML = html;
+            }
+
+            renderDuplicateReferencesStats() {
+                const duplicateReferencesStatsContainer = document.getElementById('duplicateReferencesStats');
+
+                if (this.duplicateReferences.size === 0) {
+                    duplicateReferencesStatsContainer.innerHTML = `
+                        <div class="text-center py-6">
+                            <div class="text-green-600 dark:text-green-400 text-2xl mb-2">🔗</div>
+                            <div class="text-gray-600 dark:text-gray-400">No duplicate URL references</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-500 mt-1">All URLs are unique</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <div class="space-y-4">
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Found ${this.duplicateReferences.size} URLs referenced multiple times
+                        </div>
+                        <div class="space-y-3 max-h-64 overflow-y-auto">
+                `;
+
+                // Sort by number of occurrences (descending)
+                const sortedDuplicates = Array.from(this.duplicateReferences.entries())
+                    .sort(([,a], [,b]) => b.length - a.length);
+
+                sortedDuplicates.forEach(([url, occurrences]) => {
+                    const count = occurrences.length;
+                    const uniquePages = [...new Set(occurrences.map(occ => occ.sourceUrl))].length;
+                    
+                    html += `
+                        <div class="border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                            <div class="bg-yellow-50 dark:bg-yellow-900/20 p-3 border-b border-yellow-200 dark:border-yellow-800">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-mono text-sm text-yellow-800 dark:text-yellow-200 truncate" title="${url}">
+                                            ${this.shortenUrl(url)}
+                                        </div>
+                                        <div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                                            Referenced ${count} times on ${uniquePages} page${uniquePages !== 1 ? 's' : ''}
+                                        </div>
+                                    </div>
+                                    <button class="duplicate-ref-toggle text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200 ml-3" 
+                                            onclick="this.parentElement.parentElement.nextElementSibling.classList.toggle('hidden'); this.textContent = this.textContent === '▼' ? '▶' : '▼'">
+                                        ▶
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="hidden p-3 space-y-2">
+                `;
+
+                    occurrences.forEach((occ, index) => {
+                        html += `
+                            <div class="flex items-center justify-between text-xs">
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-mono text-gray-600 dark:text-gray-400">${occ.path}</div>
+                                    <div class="text-gray-500 dark:text-gray-500">in ${occ.objectType}</div>
+                                </div>
+                                <div class="text-blue-600 dark:text-blue-400 ml-2">
+                                    ${this.shortenUrl(occ.sourceUrl)}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <div class="text-sm text-blue-800 dark:text-blue-200">
+                                <strong>Info:</strong> Duplicate URL references can indicate shared resources like logos, 
+                                images, or common data points across your JSON-LD objects.
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                duplicateReferencesStatsContainer.innerHTML = html;
+            }
+
+            addSubObjectsSheet(wb) {
+                const headers = ['@type', 'Path', 'Source URL', 'Parent Object @type', 'Object Preview'];
+                const data = [headers];
+                
+                this.subObjects.forEach(subObj => {
+                    const objCopy = { ...subObj.object };
+                    const types = subObj.type.join(', ');
+                    
+                    // Get parent object type
+                    const parentObj = this.jsonldObjects[subObj.parentIndex];
+                    const parentType = parentObj && parentObj['@type'] ? 
+                        (Array.isArray(parentObj['@type']) ? parentObj['@type'].join(', ') : parentObj['@type']) : 
+                        '[No @type]';
+                    
+                    const preview = JSON.stringify(objCopy, null, 2).substring(0, 400) + 
+                                   (JSON.stringify(objCopy).length > 400 ? '...' : '');
+                    
+                    data.push([
+                        types,
+                        subObj.path,
+                        subObj.sourceUrl,
+                        parentType,
+                        preview
+                    ]);
+                });
+
+                if (data.length === 1) {
+                    data.push(['No sub-objects found', '', '', '', '']);
+                }
+
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                
+                // Set column widths
+                ws['!cols'] = [
+                    {wch: 20}, // @type
+                    {wch: 25}, // Path
+                    {wch: 50}, // Source URL
+                    {wch: 20}, // Parent @type
+                    {wch: 50}  // Preview
+                ];
+                
+                XLSX.utils.book_append_sheet(wb, ws, "Sub-Objects");
+            }
+
+            addDuplicateReferencesSheet(wb) {
+                const headers = ['URL', 'Reference Count', 'Unique Pages', 'Found In Paths', 'Object Types', 'Source URLs'];
+                const data = [headers];
+                
+                // Sort by number of occurrences (descending)
+                const sortedDuplicates = Array.from(this.duplicateReferences.entries())
+                    .sort(([,a], [,b]) => b.length - a.length);
+                
+                sortedDuplicates.forEach(([url, occurrences]) => {
+                    const count = occurrences.length;
+                    const uniquePages = [...new Set(occurrences.map(occ => occ.sourceUrl))];
+                    const paths = [...new Set(occurrences.map(occ => occ.path))];
+                    const objectTypes = [...new Set(occurrences.map(occ => occ.objectType))];
+                    
+                    data.push([
+                        url,
+                        count,
+                        uniquePages.length,
+                        paths.join(', '),
+                        objectTypes.join(', '),
+                        uniquePages.join(', ')
+                    ]);
+                });
+
+                if (data.length === 1) {
+                    data.push(['No duplicate URL references found', '', '', '', '', '']);
+                }
+
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                
+                // Set column widths
+                ws['!cols'] = [
+                    {wch: 60}, // URL
+                    {wch: 15}, // Reference Count
+                    {wch: 12}, // Unique Pages
+                    {wch: 40}, // Found In Paths
+                    {wch: 30}, // Object Types
+                    {wch: 60}  // Source URLs
+                ];
+                
+                XLSX.utils.book_append_sheet(wb, ws, "Duplicate URL References");
+            }
+        }
+
+        // Initialize the app
+        new JSONLDCrawler();
+    </script>
+</body>
+</html>
