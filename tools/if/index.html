@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +8,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
-    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
     <style>
         .fa-solid, .fa-regular { font-family: 'Font Awesome 6 Free'; }
         .fa-solid { font-weight: 900; }
@@ -53,6 +51,7 @@
         .dark .risk-medium { background-color: #e65100; color: #ffb74d; }
         .dark .risk-high { background-color: #b71c1c; color: #ef5350; }
     </style>
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
     <!-- Navigation -->
@@ -85,7 +84,7 @@
                         📊 Overview
                     </button>
                     <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-1 py-4 text-sm font-medium whitespace-nowrap" data-tab="funnel">
-                        🔍 Customer Funnel
+                        🔍 Customer Journey Funnel
                     </button>
                     <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-1 py-4 text-sm font-medium whitespace-nowrap" data-tab="insights">
                         🤖 AI Insights
@@ -193,55 +192,181 @@
                 </div>
             </div>
 
-            <!-- Customer Funnel Tab -->
+            <!-- Customer Journey Funnel Tab -->
             <div id="funnel" class="tab-content hidden">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold mb-2">Customer Funnel Dashboard</h2>
-                    <p class="text-gray-600 dark:text-gray-400">Track customers through their journey and identify optimization opportunities</p>
-                </div>
-
-                <!-- Funnel Stages -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
-                        <h3 class="font-semibold text-lg mb-2">New</h3>
-                        <p class="text-3xl font-bold text-primary">42</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Last 30 days</p>
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2">Customer Journey Funnel</h2>
+                        <p class="text-gray-600 dark:text-gray-400">Visualize revenue distribution across the entire customer lifecycle</p>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
-                        <h3 class="font-semibold text-lg mb-2">Onboarding</h3>
-                        <p class="text-3xl font-bold text-secondary">18</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">In progress</p>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
-                        <h3 class="font-semibold text-lg mb-2">Active</h3>
-                        <p class="text-3xl font-bold text-success">156</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Healthy customers</p>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
-                        <h3 class="font-semibold text-lg mb-2">At Risk</h3>
-                        <p class="text-3xl font-bold text-red-500">23</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Need attention</p>
+                    <div class="flex space-x-2">
+                        <button onclick="toggleFunnelView('revenue')" id="revenueView" class="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg">
+                            Revenue View
+                        </button>
+                        <button onclick="toggleFunnelView('customer')" id="customerView" class="px-4 py-2 text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg">
+                            Customer Count
+                        </button>
                     </div>
                 </div>
 
-                <!-- Customer List -->
+                <!-- Journey Funnel Visualization -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 mb-8">
+                    <h3 class="text-lg font-semibold mb-6 text-center">Customer Journey Revenue Flow</h3>
+                    
+                    <!-- Funnel Stages with Flow -->
+                    <div class="space-y-6">
+                        <!-- Stage 1: Discovery & Trial -->
+                        <div class="funnel-stage relative">
+                            <div class="flex items-center justify-between p-6 bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-800 rounded-lg border-l-4 border-blue-500">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">1</div>
+                                    <div>
+                                        <h4 class="font-semibold text-lg">Discovery & Trial</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Initial engagement and product evaluation</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="stage1Revenue">$2.8M</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400" id="stage1Count">42 customers</p>
+                                    <p class="text-xs text-gray-500">18% of total ARR</p>
+                                </div>
+                            </div>
+                            <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-3 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Stage 2: Onboarding & Activation -->
+                        <div class="funnel-stage relative">
+                            <div class="flex items-center justify-between p-6 bg-gradient-to-r from-yellow-100 to-yellow-50 dark:from-yellow-900 dark:to-yellow-800 rounded-lg border-l-4 border-yellow-500">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold">2</div>
+                                    <div>
+                                        <h4 class="font-semibold text-lg">Onboarding & Activation</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Feature adoption and initial value realization</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400" id="stage2Revenue">$3.6M</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400" id="stage2Count">18 customers</p>
+                                    <p class="text-xs text-gray-500">24% of total ARR</p>
+                                </div>
+                            </div>
+                            <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-3 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Stage 3: Growth & Expansion -->
+                        <div class="funnel-stage relative">
+                            <div class="flex items-center justify-between p-6 bg-gradient-to-r from-green-100 to-green-50 dark:from-green-900 dark:to-green-800 rounded-lg border-l-4 border-green-500">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">3</div>
+                                    <div>
+                                        <h4 class="font-semibold text-lg">Growth & Expansion</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Feature mastery and account expansion</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-green-600 dark:text-green-400" id="stage3Revenue">$7.8M</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400" id="stage3Count">156 customers</p>
+                                    <p class="text-xs text-gray-500">51% of total ARR</p>
+                                </div>
+                            </div>
+                            <div class="absolute left-1/2 transform -translate-x-1/2 -bottom-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Stage 4: Retention & Advocacy -->
+                        <div class="funnel-stage relative">
+                            <div class="flex items-center justify-between p-6 bg-gradient-to-r from-purple-100 to-purple-50 dark:from-purple-900 dark:to-purple-800 rounded-lg border-l-4 border-purple-500">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">4</div>
+                                    <div>
+                                        <h4 class="font-semibold text-lg">Retention & Advocacy</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Long-term partnership and referrals</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-purple-600 dark:text-purple-400" id="stage4Revenue">$1.0M</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400" id="stage4Count">23 customers</p>
+                                    <p class="text-xs text-gray-500">7% of total ARR</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Journey Metrics -->
+                    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <h4 class="font-medium text-gray-600 dark:text-gray-400">Conversion Rate</h4>
+                            <p class="text-2xl font-bold text-primary">73%</p>
+                            <p class="text-sm text-gray-500">Trial to Paid</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <h4 class="font-medium text-gray-600 dark:text-gray-400">Expansion Rate</h4>
+                            <p class="text-2xl font-bold text-secondary">28%</p>
+                            <p class="text-sm text-gray-500">Upsell Success</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <h4 class="font-medium text-gray-600 dark:text-gray-400">Journey Velocity</h4>
+                            <p class="text-2xl font-bold text-success">45 days</p>
+                            <p class="text-sm text-gray-500">Avg. Time to Growth</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage Detail Analysis -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Stage Performance -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">Stage Performance Analysis</h3>
+                        <div class="h-64">
+                            <canvas id="stagePerformanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Flow -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">Revenue Flow by Stage</h3>
+                        <div class="h-64">
+                            <canvas id="revenueFlowChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Health by Stage -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold">Customer Details</h3>
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold">Customer Health by Journey Stage</h3>
+                        <select id="stageFilter" class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-sm">
+                            <option value="all">All Stages</option>
+                            <option value="Discovery & Trial">Discovery & Trial</option>
+                            <option value="Onboarding & Activation">Onboarding & Activation</option>
+                            <option value="Growth & Expansion">Growth & Expansion</option>
+                            <option value="Retention & Advocacy">Retention & Advocacy</option>
+                        </select>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-900">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stage</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Journey Stage</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Health Score</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ARR</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Risk Level</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Activity</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stage Duration</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Next Action</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="customerTable">
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="journeyCustomerTable">
                                 <!-- Customer rows will be populated by JavaScript -->
                             </tbody>
                         </table>
@@ -639,7 +764,7 @@
             }
         ];
 
-        // Tab switching functionality
+        // Tab switching functionality with lazy loading
         function initTabs() {
             const tabButtons = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -661,8 +786,35 @@
                         content.classList.add('hidden');
                     });
                     document.getElementById(targetTab).classList.remove('hidden');
+                    
+                    // Lazy load tab-specific content
+                    initializeTabContent(targetTab);
                 });
             });
+        }
+
+        // Initialize content for specific tabs when they're accessed
+        function initializeTabContent(tabName) {
+            switch(tabName) {
+                case 'funnel':
+                    if (!window.funnelInitialized) {
+                        safeInitJourneyFunnel();
+                        window.funnelInitialized = true;
+                    }
+                    break;
+                case 'playbooks':
+                    if (!window.playbooksInitialized) {
+                        safeInitPlaybooks();
+                        window.playbooksInitialized = true;
+                    }
+                    break;
+                case 'analytics':
+                    if (!window.analyticsInitialized) {
+                        safeInitAdvancedCharts();
+                        window.analyticsInitialized = true;
+                    }
+                    break;
+            }
         }
 
         // Populate customer table
@@ -1204,16 +1356,435 @@
             return [headers, ...rows].map(row => row.join(',')).join('\n');
         }
 
+        // Extended customer data with journey stages
+        const journeyCustomers = [
+            { name: "TechFlow Inc", journeyStage: "Growth & Expansion", health: 92, arr: 750000, duration: "8 months", nextAction: "Upsell premium features" },
+            { name: "DataSync Corp", journeyStage: "Retention & Advocacy", health: 45, arr: 520000, duration: "14 months", nextAction: "Schedule retention call" },
+            { name: "CloudBase Systems", journeyStage: "Growth & Expansion", health: 88, arr: 340000, duration: "6 months", nextAction: "Feature training" },
+            { name: "ScaleUp Solutions", journeyStage: "Onboarding & Activation", health: 72, arr: 180000, duration: "3 weeks", nextAction: "Complete setup" },
+            { name: "GrowthHack Labs", journeyStage: "Retention & Advocacy", health: 38, arr: 420000, duration: "18 months", nextAction: "Emergency intervention" },
+            { name: "InnovateCo", journeyStage: "Growth & Expansion", health: 85, arr: 290000, duration: "5 months", nextAction: "Quarterly review" },
+            { name: "StartupX", journeyStage: "Discovery & Trial", health: 65, arr: 95000, duration: "2 weeks", nextAction: "Demo advanced features" },
+            { name: "Enterprise Plus", journeyStage: "Growth & Expansion", health: 94, arr: 890000, duration: "11 months", nextAction: "Enterprise expansion" },
+            { name: "DevCorp Solutions", journeyStage: "Onboarding & Activation", health: 78, arr: 145000, duration: "1 month", nextAction: "First value milestone" },
+            { name: "Analytics Pro", journeyStage: "Discovery & Trial", health: 82, arr: 120000, duration: "1 week", nextAction: "Convert to paid" }
+        ];
+
+        // Journey-aligned playbooks
+        const journeyPlaybooks = [
+            {
+                name: "Trial Conversion Accelerator",
+                purpose: "Convert trial users to paying customers",
+                journeyStage: "Discovery & Trial",
+                steps: ["Identify high-engagement trial users", "Demo core value features", "Provide custom use case examples", "Offer limited-time conversion incentive"],
+                status: "Active",
+                icon: "🚀",
+                effectiveness: 85,
+                avgImpact: "+23% conversion rate"
+            },
+            {
+                name: "Onboarding Success Framework",
+                purpose: "Ensure rapid time-to-value for new customers",
+                journeyStage: "Onboarding & Activation",
+                steps: ["Welcome sequence within 24h", "Schedule kickoff call", "Complete feature setup", "First success milestone achieved"],
+                status: "Active",
+                icon: "🎯",
+                effectiveness: 92,
+                avgImpact: "-40% time to value"
+            },
+            {
+                name: "Growth Expansion Engine",
+                purpose: "Drive account expansion and feature adoption",
+                journeyStage: "Growth & Expansion",
+                steps: ["Analyze usage patterns", "Identify expansion opportunities", "Present upgrade value proposition", "Implement expanded features"],
+                status: "Active",
+                icon: "📈",
+                effectiveness: 78,
+                avgImpact: "+35% account growth"
+            },
+            {
+                name: "Retention Recovery Program",
+                purpose: "Re-engage at-risk long-term customers",
+                journeyStage: "Retention & Advocacy",
+                steps: ["Early warning detection", "Executive relationship review", "Custom retention strategy", "Success plan renewal"],
+                status: "Active",
+                icon: "⚠️",
+                effectiveness: 67,
+                avgImpact: "-45% churn risk"
+            },
+            {
+                name: "Advocacy Development Track",
+                purpose: "Convert satisfied customers into advocates",
+                journeyStage: "Retention & Advocacy",
+                steps: ["Identify advocacy candidates", "Case study development", "Reference program enrollment", "Peer networking facilitation"],
+                status: "Draft",
+                icon: "🌟",
+                effectiveness: 0,
+                avgImpact: "TBD"
+            }
+        ];
+
+        // Populate journey customer table
+        function populateJourneyCustomerTable(filterStage = 'all') {
+            const tableBody = document.getElementById('journeyCustomerTable');
+            let filteredCustomers = journeyCustomers;
+            
+            if (filterStage !== 'all') {
+                filteredCustomers = journeyCustomers.filter(customer => customer.journeyStage === filterStage);
+            }
+            
+            tableBody.innerHTML = filteredCustomers.map(customer => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-medium">${customer.name}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full ${getJourneyStageColor(customer.journeyStage)}">${customer.journeyStage}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="font-bold ${getHealthColor(customer.health)}">${customer.health}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap font-medium">
+                        $${(customer.arr / 1000).toFixed(0)}K
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        ${customer.duration}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <button class="text-primary text-xs font-medium hover:underline">${customer.nextAction}</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Populate journey-aligned playbooks
+        function populateJourneyPlaybooks() {
+            const playbooksGrid = document.getElementById('playbooksGrid');
+            
+            playbooksGrid.innerHTML = `
+                <!-- Journey Stage Selector -->
+                <div class="col-span-full mb-6">
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="filterPlaybooksByStage('all')" class="px-3 py-1 text-sm rounded-full border border-gray-300 dark:border-gray-600 hover:bg-primary hover:text-white transition-colors" id="filterAll">All Stages</button>
+                        <button onclick="filterPlaybooksByStage('Discovery & Trial')" class="px-3 py-1 text-sm rounded-full border border-blue-300 text-blue-600 hover:bg-blue-500 hover:text-white transition-colors" id="filterTrial">Discovery & Trial</button>
+                        <button onclick="filterPlaybooksByStage('Onboarding & Activation')" class="px-3 py-1 text-sm rounded-full border border-yellow-300 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-colors" id="filterOnboarding">Onboarding</button>
+                        <button onclick="filterPlaybooksByStage('Growth & Expansion')" class="px-3 py-1 text-sm rounded-full border border-green-300 text-green-600 hover:bg-green-500 hover:text-white transition-colors" id="filterGrowth">Growth & Expansion</button>
+                        <button onclick="filterPlaybooksByStage('Retention & Advocacy')" class="px-3 py-1 text-sm rounded-full border border-purple-300 text-purple-600 hover:bg-purple-500 hover:text-white transition-colors" id="filterRetention">Retention & Advocacy</button>
+                    </div>
+                </div>
+                
+                <!-- Journey Heatmap -->
+                <div class="col-span-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                    <h3 class="text-lg font-semibold mb-4">Playbook Performance Heatmap</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="p-4 rounded-lg border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-blue-25 dark:from-blue-900 dark:to-blue-800">
+                            <h4 class="font-medium text-blue-900 dark:text-blue-200">Discovery & Trial</h4>
+                            <div class="mt-2">
+                                <div class="flex justify-between text-sm">
+                                    <span>Conversion Rate</span>
+                                    <span class="font-bold">85%</span>
+                                </div>
+                                <div class="w-full bg-blue-200 dark:bg-blue-700 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 rounded-lg border-l-4 border-yellow-500 bg-gradient-to-r from-yellow-50 to-yellow-25 dark:from-yellow-900 dark:to-yellow-800">
+                            <h4 class="font-medium text-yellow-900 dark:text-yellow-200">Onboarding & Activation</h4>
+                            <div class="mt-2">
+                                <div class="flex justify-between text-sm">
+                                    <span>Success Rate</span>
+                                    <span class="font-bold">92%</span>
+                                </div>
+                                <div class="w-full bg-yellow-200 dark:bg-yellow-700 rounded-full h-2">
+                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 rounded-lg border-l-4 border-green-500 bg-gradient-to-r from-green-50 to-green-25 dark:from-green-900 dark:to-green-800">
+                            <h4 class="font-medium text-green-900 dark:text-green-200">Growth & Expansion</h4>
+                            <div class="mt-2">
+                                <div class="flex justify-between text-sm">
+                                    <span>Expansion Rate</span>
+                                    <span class="font-bold">78%</span>
+                                </div>
+                                <div class="w-full bg-green-200 dark:bg-green-700 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 78%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 rounded-lg border-l-4 border-purple-500 bg-gradient-to-r from-purple-50 to-purple-25 dark:from-purple-900 dark:to-purple-800">
+                            <h4 class="font-medium text-purple-900 dark:text-purple-200">Retention & Advocacy</h4>
+                            <div class="mt-2">
+                                <div class="flex justify-between text-sm">
+                                    <span>Recovery Rate</span>
+                                    <span class="font-bold text-orange-600">67%</span>
+                                </div>
+                                <div class="w-full bg-purple-200 dark:bg-purple-700 rounded-full h-2">
+                                    <div class="bg-orange-500 h-2 rounded-full" style="width: 67%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Playbook Cards -->
+                <div class="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="playbookCards">
+                    ${journeyPlaybooks.map(playbook => `
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 card-hover playbook-card" data-stage="${playbook.journeyStage}">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="text-2xl">${playbook.icon}</div>
+                                <div class="text-right">
+                                    <span class="px-2 py-1 text-xs font-medium rounded ${playbook.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'}">${playbook.status}</span>
+                                    <div class="text-xs text-gray-500 mt-1">Effectiveness: ${playbook.effectiveness}%</div>
+                                </div>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2">${playbook.name}</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">${playbook.purpose}</p>
+                            <div class="mb-4">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full ${getJourneyStageColor(playbook.journeyStage)}">${playbook.journeyStage}</span>
+                                <p class="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">${playbook.avgImpact}</p>
+                            </div>
+                            <div class="space-y-2 mb-4">
+                                <p class="text-sm font-medium">Key Steps:</p>
+                                <ol class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    ${playbook.steps.slice(0, 3).map((step, index) => `<li>${index + 1}. ${step}</li>`).join('')}
+                                    ${playbook.steps.length > 3 ? `<li class="text-gray-500">+${playbook.steps.length - 3} more steps...</li>` : ''}
+                                </ol>
+                            </div>
+                            <button onclick="usePlaybook('${playbook.name}')" class="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-opacity-90 transition-colors">
+                                Use Playbook
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Journey stage color helper
+        function getJourneyStageColor(stage) {
+            const colors = {
+                'Discovery & Trial': 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-200',
+                'Onboarding & Activation': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200',
+                'Growth & Expansion': 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200',
+                'Retention & Advocacy': 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200'
+            };
+            return colors[stage] || 'bg-gray-100 text-gray-800';
+        }
+
+        // Filter playbooks by journey stage
+        function filterPlaybooksByStage(stage) {
+            const cards = document.querySelectorAll('.playbook-card');
+            const filterButtons = document.querySelectorAll('[id^="filter"]');
+            
+            // Reset button styles
+            filterButtons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('border-gray-300', 'dark:border-gray-600');
+            });
+            
+            // Highlight active filter
+            const activeButton = document.getElementById(`filter${stage.replace(' & ', '').replace(' ', '')}`);
+            if (activeButton) {
+                activeButton.classList.add('bg-primary', 'text-white');
+                activeButton.classList.remove('border-gray-300', 'dark:border-gray-600');
+            }
+            
+            // Show/hide cards
+            cards.forEach(card => {
+                if (stage === 'all' || card.dataset.stage === stage) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Toggle funnel view between revenue and customer count
+        function toggleFunnelView(viewType) {
+            const revenueBtn = document.getElementById('revenueView');
+            const customerBtn = document.getElementById('customerView');
+            
+            if (viewType === 'revenue') {
+                revenueBtn.classList.add('bg-primary', 'text-white');
+                revenueBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                customerBtn.classList.remove('bg-primary', 'text-white');
+                customerBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                
+                // Update display values to revenue
+                document.getElementById('stage1Revenue').textContent = '$2.8M';
+                document.getElementById('stage2Revenue').textContent = '$3.6M';
+                document.getElementById('stage3Revenue').textContent = '$7.8M';
+                document.getElementById('stage4Revenue').textContent = '$1.0M';
+            } else {
+                customerBtn.classList.add('bg-primary', 'text-white');
+                customerBtn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                revenueBtn.classList.remove('bg-primary', 'text-white');
+                revenueBtn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                
+                // Update display values to customer count
+                document.getElementById('stage1Revenue').textContent = '42';
+                document.getElementById('stage2Revenue').textContent = '18';
+                document.getElementById('stage3Revenue').textContent = '156';
+                document.getElementById('stage4Revenue').textContent = '23';
+            }
+        }
+
+        // Initialize journey funnel charts
+        function initJourneyCharts() {
+            // Stage Performance Chart
+            const stageCtx = document.getElementById('stagePerformanceChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            new Chart(stageCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Discovery & Trial', 'Onboarding', 'Growth & Expansion', 'Retention'],
+                    datasets: [{
+                        label: 'Conversion Rate (%)',
+                        data: [73, 85, 92, 87],
+                        backgroundColor: ['#3b82f6', '#eab308', '#22c55e', '#8b5cf6'],
+                        borderColor: ['#1d4ed8', '#ca8a04', '#16a34a', '#7c3aed'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: isDark ? '#ffffff' : '#374151' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: isDark ? '#9ca3af' : '#6b7280' },
+                            grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: isDark ? '#9ca3af' : '#6b7280',
+                                callback: function(value) { return value + '%'; }
+                            },
+                            grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                        }
+                    }
+                }
+            });
+
+            // Revenue Flow Chart
+            const flowCtx = document.getElementById('revenueFlowChart').getContext('2d');
+            
+            new Chart(flowCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Discovery & Trial', 'Onboarding & Activation', 'Growth & Expansion', 'Retention & Advocacy'],
+                    datasets: [{
+                        data: [2.8, 3.6, 7.8, 1.0],
+                        backgroundColor: ['#3b82f6', '#eab308', '#22c55e', '#8b5cf6'],
+                        borderWidth: 2,
+                        borderColor: isDark ? '#374151' : '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: isDark ? '#ffffff' : '#374151' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': $' + context.parsed + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Stage filter functionality
+        function initStageFilter() {
+            const filterSelect = document.getElementById('stageFilter');
+            filterSelect.addEventListener('change', function() {
+                populateJourneyCustomerTable(this.value);
+            });
+        }
+
+        // Use playbook functionality
+        function usePlaybook(playbookName) {
+            showNotification(`Activating ${playbookName}...`, 'info');
+            setTimeout(() => {
+                showNotification(`${playbookName} workflow initiated successfully!`, 'success');
+            }, 1500);
+        }
+
+        // Safe initialization functions for lazy loading
+        function safeInitJourneyFunnel() {
+            try {
+                const tableBody = document.getElementById('journeyCustomerTable');
+                if (tableBody) {
+                    populateJourneyCustomerTable();
+                }
+                
+                const stagePerformanceChart = document.getElementById('stagePerformanceChart');
+                const revenueFlowChart = document.getElementById('revenueFlowChart');
+                if (stagePerformanceChart && revenueFlowChart) {
+                    initJourneyCharts();
+                }
+                
+                const stageFilter = document.getElementById('stageFilter');
+                if (stageFilter) {
+                    initStageFilter();
+                }
+            } catch (error) {
+                console.log('Journey funnel initialization error:', error);
+            }
+        }
+
+        function safeInitPlaybooks() {
+            try {
+                const playbooksGrid = document.getElementById('playbooksGrid');
+                if (playbooksGrid) {
+                    populateJourneyPlaybooks();
+                }
+            } catch (error) {
+                console.log('Playbooks initialization error:', error);
+                // Fallback to regular playbooks
+                try {
+                    populatePlaybooks();
+                } catch (fallbackError) {
+                    console.log('Fallback playbooks error:', fallbackError);
+                }
+            }
+        }
+
+        function safeInitAdvancedCharts() {
+            try {
+                const cohortChart = document.getElementById('cohortChart');
+                const churnRiskChart = document.getElementById('churnRiskChart');
+                if (cohortChart && churnRiskChart) {
+                    initAdvancedCharts();
+                }
+            } catch (error) {
+                console.log('Advanced charts initialization error:', error);
+            }
+        }
+
         // Initialize everything when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             initTabs();
-            populateCustomerTable();
             populateInsights();
-            populatePlaybooks();
+            populatePlaybooks(); // Use original playbooks for the playbooks tab
             populateIntegrations();
             populateExportHistory();
             initChart();
-            initAdvancedCharts();
         });
     </script>
 </body>
