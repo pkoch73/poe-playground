@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
     <script>
         tailwind.config = {
@@ -1127,6 +1128,19 @@
                 }
             }
 
+            // Helper function to truncate text for Excel compatibility (32,767 character limit)
+            truncateForExcel(text, maxLength = 32000) {
+                if (typeof text !== 'string') {
+                    text = String(text);
+                }
+                
+                if (text.length <= maxLength) {
+                    return text;
+                }
+                
+                return text.substring(0, maxLength) + '\n\n[TRUNCATED - Content exceeded Excel cell limit]';
+            }
+
             downloadReport() {
                 if (!window.XLSX) {
                     this.showError("Excel library not loaded. Please refresh the page and try again.");
@@ -1247,13 +1261,12 @@
                         '[No @type]';
                     
                     const context = obj['@context'] || '[No @context]';
-                    const preview = JSON.stringify(objCopy, null, 2).substring(0, 500) + 
-                                   (JSON.stringify(objCopy).length > 500 ? '...' : '');
+                    const preview = this.truncateForExcel(JSON.stringify(objCopy, null, 2));
                     
                     data.push([
-                        obj._sourceUrl || '[Unknown]',
-                        types,
-                        context,
+                        this.truncateForExcel(obj._sourceUrl || '[Unknown]'),
+                        this.truncateForExcel(types),
+                        this.truncateForExcel(context),
                         preview
                     ]);
                 });
@@ -1285,13 +1298,12 @@
                         '[No @type]';
                     
                     const sourceUrls = [...new Set(group.map(item => item.object._sourceUrl))].join(', ');
-                    const preview = JSON.stringify(objCopy, null, 2).substring(0, 300) + 
-                                   (JSON.stringify(objCopy).length > 300 ? '...' : '');
+                    const preview = this.truncateForExcel(JSON.stringify(objCopy, null, 2));
                     
                     data.push([
-                        types,
+                        this.truncateForExcel(types),
                         group.length,
-                        sourceUrls,
+                        this.truncateForExcel(sourceUrls),
                         preview
                     ]);
                 });
@@ -1404,8 +1416,8 @@
                 // Function to extract URLs from any object
                 const extractUrls = (obj, path = '', sourceUrl = '', objType = '') => {
                     if (typeof obj === 'string') {
-                        // Check if it looks like a URL
-                        if (obj.match(/^https?:\/\/.+/)) {
+                        // Check if it looks like a URL and exclude schema.org URLs
+                        if (obj.match(/^https?:\/\/.+/) && !obj.includes('schema.org')) {
                             const key = obj;
                             if (!urlTracker.has(key)) {
                                 urlTracker.set(key, []);
@@ -1521,6 +1533,9 @@
                 html += `
                             </div>
                         </div>
+                        
+                        <!-- Media URLs Section -->
+                        ${this.renderMediaUrlsSection()}
                     </div>
                 `;
 
@@ -1600,16 +1615,30 @@
 
                 html += `
                         </div>
-                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                            <div class="text-sm text-blue-800 dark:text-blue-200">
-                                <strong>Info:</strong> Duplicate URL references can indicate shared resources like logos, 
-                                images, or common data points across your JSON-LD objects.
+                    </div>
+                    
+                    <!-- Interactive Chart Section -->
+                    <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                            <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Visual Analysis</h4>
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm text-gray-600 dark:text-gray-400">Filter:</label>
+                                <select id="chartFilter" class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 min-w-[140px]">
+                                    <option value="all">All URLs</option>
+                                    <option value="high">High Impact (≥5 refs)</option>
+                                </select>
                             </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-6" style="height: 400px;">
+                            <canvas id="duplicateUrlChart"></canvas>
                         </div>
                     </div>
                 `;
 
                 duplicateReferencesStatsContainer.innerHTML = html;
+                
+                // Render the chart after the HTML is added
+                this.renderDuplicateUrlChart();
             }
 
             addSubObjectsSheet(wb) {
@@ -1626,14 +1655,13 @@
                         (Array.isArray(parentObj['@type']) ? parentObj['@type'].join(', ') : parentObj['@type']) : 
                         '[No @type]';
                     
-                    const preview = JSON.stringify(objCopy, null, 2).substring(0, 400) + 
-                                   (JSON.stringify(objCopy).length > 400 ? '...' : '');
+                    const preview = this.truncateForExcel(JSON.stringify(objCopy, null, 2));
                     
                     data.push([
-                        types,
-                        subObj.path,
-                        subObj.sourceUrl,
-                        parentType,
+                        this.truncateForExcel(types),
+                        this.truncateForExcel(subObj.path),
+                        this.truncateForExcel(subObj.sourceUrl),
+                        this.truncateForExcel(parentType),
                         preview
                     ]);
                 });
@@ -1671,12 +1699,12 @@
                     const objectTypes = [...new Set(occurrences.map(occ => occ.objectType))];
                     
                     data.push([
-                        url,
+                        this.truncateForExcel(url),
                         count,
                         uniquePages.length,
-                        paths.join(', '),
-                        objectTypes.join(', '),
-                        uniquePages.join(', ')
+                        this.truncateForExcel(paths.join(', ')),
+                        this.truncateForExcel(objectTypes.join(', ')),
+                        this.truncateForExcel(uniquePages.join(', '))
                     ]);
                 });
 
@@ -1697,6 +1725,1034 @@
                 ];
                 
                 XLSX.utils.book_append_sheet(wb, ws, "Duplicate URL References");
+            }
+
+            renderDuplicateUrlChart() {
+                if (this.duplicateReferences.size === 0) return;
+
+                const canvas = document.getElementById('duplicateUrlChart');
+                if (!canvas) return;
+
+                // Destroy existing chart if it exists
+                if (this.urlChart) {
+                    this.urlChart.destroy();
+                }
+
+                const ctx = canvas.getContext('2d');
+                
+                // Prepare data for chart
+                const sortedDuplicates = Array.from(this.duplicateReferences.entries())
+                    .sort(([,a], [,b]) => b.length - a.length);
+
+                // Apply filter
+                const filter = document.getElementById('chartFilter')?.value || 'all';
+                const filteredData = filter === 'high' ? 
+                    sortedDuplicates.filter(([,occurrences]) => occurrences.length >= 5) : 
+                    sortedDuplicates;
+
+                if (filteredData.length === 0) {
+                    canvas.style.display = 'none';
+                    return;
+                }
+
+                canvas.style.display = 'block';
+
+                // Limit to top 15 for readability
+                const displayData = filteredData.slice(0, 15);
+
+                const labels = displayData.map(([url]) => {
+                    const shortUrl = this.shortenUrl(url);
+                    return shortUrl.length > 35 ? shortUrl.substring(0, 32) + '...' : shortUrl;
+                });
+
+                const referenceData = displayData.map(([,occurrences]) => occurrences.length);
+                const pageData = displayData.map(([,occurrences]) => 
+                    [...new Set(occurrences.map(occ => occ.sourceUrl))].length
+                );
+
+                // Color coding based on distribution pattern
+                const backgroundColors = displayData.map(([,occurrences]) => {
+                    const count = occurrences.length;
+                    const uniquePages = [...new Set(occurrences.map(occ => occ.sourceUrl))].length;
+                    const avgPerPage = count / uniquePages;
+
+                    if (count >= 20 && avgPerPage > 3) return '#dc2626'; // High impact, concentrated (red)
+                    if (count >= 15 && avgPerPage > 2.5) return '#ea580c'; // High impact (orange)
+                    if (avgPerPage > 3) return '#d97706'; // Concentrated (amber)
+                    if (uniquePages >= count * 0.8) return '#059669'; // Well distributed (green)
+                    return '#0891b2'; // Normal (blue)
+                });
+
+                // Detection dark mode for chart colors
+                const isDark = document.documentElement.classList.contains('dark');
+                const textColor = isDark ? '#e5e7eb' : '#374151';
+                const gridColor = isDark ? '#4b5563' : '#e5e7eb';
+
+                this.urlChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total References',
+                            data: referenceData,
+                            backgroundColor: backgroundColors,
+                            borderColor: backgroundColors.map(color => color + '80'),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                        },
+                        indexAxis: 'y', // Horizontal bars
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                                titleColor: isDark ? '#f9fafb' : '#111827',
+                                bodyColor: isDark ? '#e5e7eb' : '#374151',
+                                borderColor: isDark ? '#4b5563' : '#d1d5db',
+                                borderWidth: 1,
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        const [url] = displayData[index];
+                                        return url.length > 60 ? url.substring(0, 57) + '...' : url;
+                                    },
+                                    label: function(context) {
+                                        const index = context.dataIndex;
+                                        const [url, occurrences] = displayData[index];
+                                        const uniquePages = [...new Set(occurrences.map(occ => occ.sourceUrl))].length;
+                                        const avgPerPage = (occurrences.length / uniquePages).toFixed(1);
+                                        
+                                        const impactLevel = occurrences.length >= 15 ? '🔥 High Impact' :
+                                                          occurrences.length >= 8 ? '⚠️ Medium Impact' :
+                                                          '📊 Normal';
+                                        
+                                        return [
+                                            `${occurrences.length} total references`,
+                                            `${uniquePages} unique pages`,
+                                            `${avgPerPage} avg per page`,
+                                            `${impactLevel}`
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: textColor,
+                                    font: {
+                                        size: 11
+                                    }
+                                },
+                                grid: {
+                                    color: gridColor
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Number of References',
+                                    color: textColor,
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    color: textColor,
+                                    font: {
+                                        size: 10
+                                    },
+                                    maxRotation: 0
+                                },
+                                grid: {
+                                    color: gridColor
+                                }
+                            }
+                        },
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const [url, occurrences] = displayData[index];
+                                this.showUrlBreakdown(url, occurrences);
+                            }
+                        }
+                    }
+                });
+
+                // Add filter event listener
+                const chartFilter = document.getElementById('chartFilter');
+                if (chartFilter) {
+                    chartFilter.addEventListener('change', () => {
+                        this.renderDuplicateUrlChart();
+                    });
+                }
+
+                // Add summary stats
+                this.addChartSummary(displayData, sortedDuplicates.length, sortedDuplicates);
+            }
+
+            addChartSummary(displayData, totalUrls, sortedDuplicates) {
+                // Remove existing summary
+                const existingSummary = document.querySelector('.chart-summary');
+                if (existingSummary) {
+                    existingSummary.remove();
+                }
+
+                const chartContainer = document.getElementById('duplicateUrlChart').parentElement;
+                
+                if (displayData.length === 0) return;
+
+                const totalRefs = displayData.reduce((sum, [,occurrences]) => sum + occurrences.length, 0);
+                const avgRefs = (totalRefs / displayData.length).toFixed(1);
+                const topUrl = displayData[0];
+                const topUrlShort = this.shortenUrl(topUrl[0]);
+
+                const summary = document.createElement('div');
+                summary.className = 'chart-summary mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center';
+                summary.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                        <div class="text-lg font-bold text-blue-600 dark:text-blue-400">${displayData.length}</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">Shown URLs</div>
+                        ${totalUrls > displayData.length ? `<div class="text-xs text-gray-500">(${totalUrls} total)</div>` : ''}
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                        <div class="text-lg font-bold text-orange-600 dark:text-orange-400">${totalRefs}</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">Total Refs</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                        <div class="text-lg font-bold text-green-600 dark:text-green-400">${avgRefs}</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">Avg per URL</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                        <div class="text-lg font-bold text-red-600 dark:text-red-400">${topUrl[1].length}</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">Max Refs</div>
+                        <div class="text-xs text-gray-500 truncate" title="${topUrl[0]}">${topUrlShort}</div>
+                    </div>
+                `;
+
+                chartContainer.appendChild(summary);
+                
+                // Add LLM optimization button
+                this.addLLMGuidanceButton(chartContainer, displayData, sortedDuplicates);
+            }
+
+            addLLMGuidance(chartContainer, displayData, allDuplicates) {
+                // Remove existing guidance
+                const existingGuidance = document.querySelector('.llm-guidance');
+                if (existingGuidance) {
+                    existingGuidance.remove();
+                }
+
+                // Analyze data patterns for recommendations
+                const analysis = this.analyzeLLMPatterns(displayData, allDuplicates);
+                
+                const guidance = document.createElement('div');
+                guidance.className = 'llm-guidance mt-6 space-y-4';
+                
+                let html = `
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-700 rounded-lg">
+                        <div class="p-4 border-b border-purple-200 dark:border-purple-700">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-lg font-semibold text-purple-800 dark:text-purple-200 flex items-center">
+                                    🤖 LLM & AI Optimization Insights
+                                </h4>
+                                <button class="llm-guidance-toggle text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-200" 
+                                        onclick="this.parentElement.parentElement.nextElementSibling.classList.toggle('hidden'); this.textContent = this.textContent === '▼' ? '▶' : '▼'">
+                                    ▶
+                                </button>
+                            </div>
+                        </div>
+                        <div class="hidden p-6 space-y-6">
+                            <!-- Data Quality Assessment -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-3 h-3 rounded-full mr-3 ${analysis.overallHealth === 'good' ? 'bg-green-500' : analysis.overallHealth === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}"></div>
+                                        <h5 class="font-semibold text-gray-800 dark:text-gray-200">Data Health: ${analysis.overallHealth.toUpperCase()}</h5>
+                                    </div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">${analysis.healthDescription}</p>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500">
+                                        <div>• Bias Risk: ${analysis.biasRisk}</div>
+                                        <div>• Distribution: ${analysis.distribution}</div>
+                                        <div>• Training Suitability: ${analysis.trainingSuitability}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                                    <h5 class="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center">
+                                        📊 Content Patterns
+                                    </h5>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600 dark:text-gray-400">High-impact URLs:</span>
+                                            <span class="font-medium text-red-600 dark:text-red-400">${analysis.highImpactCount}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600 dark:text-gray-400">Well-distributed:</span>
+                                            <span class="font-medium text-green-600 dark:text-green-400">${analysis.wellDistributedCount}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600 dark:text-gray-400">Avg refs per URL:</span>
+                                            <span class="font-medium">${analysis.avgReferences}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600 dark:text-gray-400">Content diversity:</span>
+                                            <span class="font-medium ${analysis.diversityScore > 0.7 ? 'text-green-600 dark:text-green-400' : analysis.diversityScore > 0.4 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}">${(analysis.diversityScore * 100).toFixed(0)}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Actionable Recommendations -->
+                            <div class="space-y-4">
+                                <h5 class="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                                    ⚡ Actionable Recommendations
+                                </h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                `;
+
+                analysis.recommendations.forEach(rec => {
+                    const iconColor = rec.priority === 'high' ? 'text-red-600 dark:text-red-400' :
+                                     rec.priority === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                                     'text-green-600 dark:text-green-400';
+                    
+                    html += `
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                            <div class="flex items-start mb-2">
+                                <span class="${iconColor} text-lg mr-2">${rec.icon}</span>
+                                <div class="flex-1 min-w-0">
+                                    <h6 class="font-medium text-gray-800 dark:text-gray-200 text-sm leading-tight">${rec.title}</h6>
+                                    <span class="text-xs text-gray-500 dark:text-gray-500 uppercase tracking-wide">${rec.priority} Priority</span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">${rec.description}</p>
+                            <div class="text-xs text-gray-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-700 rounded p-2">
+                                <strong>Action:</strong> ${rec.action}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                                </div>
+                            </div>
+
+                            <!-- Technical Implementation -->
+                            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                                <h5 class="font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center">
+                                    🔧 Technical Implementation Guide
+                                </h5>
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <h6 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Data Preprocessing</h6>
+                                        <ul class="space-y-1 text-gray-600 dark:text-gray-400 text-xs">
+                                            <li>• Remove URLs with >50 references for deduplication</li>
+                                            <li>• Apply inverse frequency weighting to over-represented content</li>
+                                            <li>• Balance training samples across content categories</li>
+                                            <li>• Implement stratified sampling for diverse representation</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h6 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Model Training</h6>
+                                        <ul class="space-y-1 text-gray-600 dark:text-gray-400 text-xs">
+                                            <li>• Use curriculum learning: start with well-distributed content</li>
+                                            <li>• Apply focal loss to reduce bias toward frequent patterns</li>
+                                            <li>• Monitor validation metrics across content types</li>
+                                            <li>• Implement early stopping based on distribution fairness</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Chart Legend with AI Context -->
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                <h5 class="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center">
+                                    🎨 Chart Color Guide for AI Applications
+                                </h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center">
+                                            <div class="w-4 h-3 bg-red-600 rounded mr-3"></div>
+                                            <div>
+                                                <span class="font-medium text-red-800 dark:text-red-200">High Impact (Red)</span>
+                                                <div class="text-xs text-gray-600 dark:text-gray-400">Over-represented content that may bias model behavior</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <div class="w-4 h-3 bg-orange-600 rounded mr-3"></div>
+                                            <div>
+                                                <span class="font-medium text-orange-800 dark:text-orange-200">Medium Impact (Orange)</span>
+                                                <div class="text-xs text-gray-600 dark:text-gray-400">Moderately concentrated - monitor during training</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center">
+                                            <div class="w-4 h-3 bg-green-600 rounded mr-3"></div>
+                                            <div>
+                                                <span class="font-medium text-green-800 dark:text-green-200">Healthy (Green)</span>
+                                                <div class="text-xs text-gray-600 dark:text-gray-400">Well-distributed content suitable for balanced training</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <div class="w-4 h-3 bg-blue-600 rounded mr-3"></div>
+                                            <div>
+                                                <span class="font-medium text-blue-800 dark:text-blue-200">Normal (Blue)</span>
+                                                <div class="text-xs text-gray-600 dark:text-gray-400">Standard content distribution patterns</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                guidance.innerHTML = html;
+                chartContainer.appendChild(guidance);
+            }
+
+            analyzeLLMPatterns(displayData, allDuplicates) {
+                const totalRefs = displayData.reduce((sum, [,occurrences]) => sum + occurrences.length, 0);
+                const avgRefs = totalRefs / displayData.length;
+                
+                // Calculate JSON-LD coverage metrics
+                const totalPages = this.crawledUrls.size;
+                const pagesWithJsonLD = totalPages - this.pagesWithoutJsonLD.size;
+                const coverageRatio = totalPages > 0 ? pagesWithJsonLD / totalPages : 0;
+                
+                // Analyze distribution patterns
+                const highImpactCount = displayData.filter(([,occurrences]) => {
+                    const count = occurrences.length;
+                    const uniquePages = [...new Set(occurrences.map(occ => occ.sourceUrl))].length;
+                    const avgPerPage = count / uniquePages;
+                    return count >= 20 && avgPerPage > 3;
+                }).length;
+
+                const wellDistributedCount = displayData.filter(([,occurrences]) => {
+                    const count = occurrences.length;
+                    const uniquePages = [...new Set(occurrences.map(occ => occ.sourceUrl))].length;
+                    return uniquePages >= count * 0.8;
+                }).length;
+
+                // Calculate content diversity (inverse of concentration)
+                const maxRefs = Math.max(...displayData.map(([,occurrences]) => occurrences.length));
+                const diversityScore = 1 - (highImpactCount / displayData.length);
+
+                // Determine coverage health
+                let coverageHealth, coverageDescription;
+                if (coverageRatio >= 0.9) {
+                    coverageHealth = 'excellent';
+                    coverageDescription = 'Excellent JSON-LD coverage ensures comprehensive structured data for training.';
+                } else if (coverageRatio >= 0.7) {
+                    coverageHealth = 'good';
+                    coverageDescription = 'Good JSON-LD coverage with minor gaps that can be addressed.';
+                } else if (coverageRatio >= 0.5) {
+                    coverageHealth = 'warning';
+                    coverageDescription = 'Moderate JSON-LD coverage creates sampling bias risk for AI training.';
+                } else if (coverageRatio >= 0.3) {
+                    coverageHealth = 'critical';
+                    coverageDescription = 'Low JSON-LD coverage will cause significant training data bias.';
+                } else {
+                    coverageHealth = 'critical';
+                    coverageDescription = 'Very low JSON-LD coverage makes this dataset unsuitable for AI training without major preprocessing.';
+                }
+
+                // Determine overall health considering both distribution and coverage
+                let overallHealth, healthDescription, biasRisk, distribution, trainingSuitability;
+
+                // Coverage-based adjustments to health assessment
+                const coverageAdjustment = coverageRatio < 0.3 ? -2 : coverageRatio < 0.5 ? -1 : coverageRatio < 0.7 ? 0 : 1;
+                
+                if (highImpactCount === 0 && diversityScore > 0.8 && coverageRatio >= 0.7) {
+                    overallHealth = 'good';
+                    healthDescription = `Excellent data distribution with minimal bias risk. ${coverageDescription}`;
+                    biasRisk = 'Low';
+                    distribution = 'Well-balanced';
+                    trainingSuitability = 'Excellent';
+                } else if (highImpactCount <= 2 && diversityScore > 0.6 && coverageRatio >= 0.5) {
+                    overallHealth = 'warning';
+                    healthDescription = `Generally good distribution with some concentration patterns. ${coverageDescription}`;
+                    biasRisk = 'Medium';
+                    distribution = 'Mostly balanced';
+                    trainingSuitability = 'Good with preprocessing';
+                } else if (coverageRatio < 0.3) {
+                    overallHealth = 'critical';
+                    healthDescription = `Critical coverage issue: ${coverageDescription} This severely impacts training data quality regardless of distribution patterns.`;
+                    biasRisk = 'Very High';
+                    distribution = 'Incomplete dataset';
+                    trainingSuitability = 'Requires major data collection and preprocessing';
+                } else {
+                    overallHealth = 'critical';
+                    healthDescription = `High concentration detected combined with coverage concerns. ${coverageDescription}`;
+                    biasRisk = 'High';
+                    distribution = 'Heavily skewed';
+                    trainingSuitability = 'Needs major preprocessing';
+                }
+
+                // Generate specific recommendations
+                const recommendations = [];
+
+                // Coverage-specific recommendations
+                if (coverageRatio < 0.3) {
+                    recommendations.push({
+                        icon: '📊',
+                        title: 'Critical Coverage Gap',
+                        description: `Only ${(coverageRatio * 100).toFixed(0)}% of pages have JSON-LD. This creates severe sampling bias.`,
+                        action: 'Focus training on structured pages only or implement content augmentation to fill gaps.',
+                        priority: 'high'
+                    });
+                } else if (coverageRatio < 0.5) {
+                    recommendations.push({
+                        icon: '⚠️',
+                        title: 'Low Coverage Risk',
+                        description: `${(coverageRatio * 100).toFixed(0)}% coverage leaves significant content gaps in training data.`,
+                        action: 'Apply stratified sampling to balance structured vs unstructured content representation.',
+                        priority: 'high'
+                    });
+                } else if (coverageRatio < 0.7) {
+                    recommendations.push({
+                        icon: '📈',
+                        title: 'Moderate Coverage Bias',
+                        description: `${(coverageRatio * 100).toFixed(0)}% coverage may create moderate sampling bias in training.`,
+                        action: 'Implement content type balancing during preprocessing to ensure fair representation.',
+                        priority: 'medium'
+                    });
+                }
+
+                // Content distribution recommendations
+                if (highImpactCount > 0) {
+                    recommendations.push({
+                        icon: '🚨',
+                        title: 'Reduce Over-representation',
+                        description: `${highImpactCount} URL(s) show high concentration that could bias model training.`,
+                        action: 'Apply deduplication or frequency capping to reduce influence of over-represented content.',
+                        priority: 'high'
+                    });
+                }
+
+                if (avgRefs > 10) {
+                    recommendations.push({
+                        icon: '⚖️',
+                        title: 'Balance Content Weights',
+                        description: 'High average reference count suggests uneven content distribution.',
+                        action: 'Implement inverse frequency weighting during training to balance content importance.',
+                        priority: 'medium'
+                    });
+                }
+
+                if (diversityScore < 0.6) {
+                    recommendations.push({
+                        icon: '🎯',
+                        title: 'Improve Content Diversity',
+                        description: 'Limited content diversity may reduce model generalization capability.',
+                        action: 'Expand dataset with more diverse sources or apply augmentation techniques.',
+                        priority: 'high'
+                    });
+                }
+
+                if (wellDistributedCount > displayData.length * 0.5) {
+                    recommendations.push({
+                        icon: '✅',
+                        title: 'Leverage Healthy Patterns',
+                        description: 'Good portion of content shows healthy distribution patterns.',
+                        action: 'Use well-distributed content as foundation for curriculum learning approach.',
+                        priority: 'low'
+                    });
+                }
+
+                recommendations.push({
+                    icon: '📊',
+                    title: 'Monitor Training Metrics',
+                    description: 'Track model performance across different content categories.',
+                    action: 'Implement validation splits stratified by content source and reference frequency.',
+                    priority: 'medium'
+                });
+
+                recommendations.push({
+                    icon: '🔄',
+                    title: 'Iterative Optimization',
+                    description: 'Data patterns may change as your content grows.',
+                    action: 'Re-run this analysis periodically and adjust preprocessing accordingly.',
+                    priority: 'low'
+                });
+
+                return {
+                    overallHealth,
+                    healthDescription,
+                    biasRisk,
+                    distribution,
+                    trainingSuitability,
+                    highImpactCount,
+                    wellDistributedCount,
+                    avgReferences: avgRefs.toFixed(1),
+                    diversityScore,
+                    recommendations,
+                    // Coverage-specific metrics for display
+                    coverageRatio: (coverageRatio * 100).toFixed(1),
+                    pagesWithJsonLD,
+                    totalPages,
+                    coverageHealth
+                };
+            }
+
+            addLLMGuidanceButton(chartContainer, displayData, sortedDuplicates) {
+                // Add button to open LLM guidance modal
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'mt-4 text-center';
+                
+                const button = document.createElement('button');
+                button.className = 'px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg';
+                button.innerHTML = '🤖 LLM & AI Optimization Insights';
+                
+                button.addEventListener('click', () => {
+                    this.showLLMGuidanceModal(displayData, sortedDuplicates);
+                });
+                
+                buttonContainer.appendChild(button);
+                chartContainer.appendChild(buttonContainer);
+            }
+
+            showLLMGuidanceModal(displayData, allDuplicates) {
+                // Remove existing modal if present
+                const existingModal = document.getElementById('llmGuidanceModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+
+                // Analyze data patterns for recommendations
+                const analysis = this.analyzeLLMPatterns(displayData, allDuplicates);
+                
+                // Create modal backdrop
+                const modal = document.createElement('div');
+                modal.id = 'llmGuidanceModal';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                
+                // Create modal content
+                const modalContent = document.createElement('div');
+                modalContent.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto';
+                
+                let html = `
+                    <!-- Modal Header -->
+                    <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-t-lg">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="text-2xl mr-3">🤖</div>
+                                <div>
+                                    <h3 class="text-xl font-bold">LLM & AI Optimization Insights</h3>
+                                    <p class="text-purple-100 text-sm mt-1">Analyze your data for machine learning readiness</p>
+                                </div>
+                            </div>
+                            <button class="llm-modal-close text-white hover:text-gray-300 text-2xl font-bold leading-none" onclick="document.getElementById('llmGuidanceModal').remove()">
+                                ×
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6 space-y-6">
+                        <!-- Data Quality Assessment -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                <div class="flex items-center mb-3">
+                                    <div class="w-4 h-4 rounded-full mr-3 ${analysis.overallHealth === 'good' ? 'bg-green-500' : analysis.overallHealth === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}"></div>
+                                    <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Data Health: ${analysis.overallHealth.toUpperCase()}</h4>
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-400 mb-3">${analysis.healthDescription}</p>
+                                <div class="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+                                    <div>• <strong>Bias Risk:</strong> ${analysis.biasRisk}</div>
+                                    <div>• <strong>Distribution:</strong> ${analysis.distribution}</div>
+                                    <div>• <strong>Training Suitability:</strong> ${analysis.trainingSuitability}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                                <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center">
+                                    📊 Content Patterns
+                                </h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-400">High-impact URLs:</span>
+                                        <span class="font-bold text-lg text-red-600 dark:text-red-400">${analysis.highImpactCount}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-400">Well-distributed:</span>
+                                        <span class="font-bold text-lg text-green-600 dark:text-green-400">${analysis.wellDistributedCount}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-400">Avg refs per URL:</span>
+                                        <span class="font-bold text-lg">${analysis.avgReferences}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600 dark:text-gray-400">Content diversity:</span>
+                                        <span class="font-bold text-lg ${analysis.diversityScore > 0.7 ? 'text-green-600 dark:text-green-400' : analysis.diversityScore > 0.4 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}">${(analysis.diversityScore * 100).toFixed(0)}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coverage Analysis Section -->
+                        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-6">
+                            <h4 class="text-xl font-semibold text-indigo-800 dark:text-indigo-200 mb-4 flex items-center">
+                                📋 JSON-LD Coverage Analysis
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="text-center">
+                                    <div class="text-3xl font-bold ${analysis.coverageHealth === 'excellent' ? 'text-green-600' : analysis.coverageHealth === 'good' ? 'text-blue-600' : analysis.coverageHealth === 'warning' ? 'text-yellow-600' : 'text-red-600'} dark:text-opacity-90">
+                                        ${analysis.coverageRatio}%
+                                    </div>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Coverage Ratio</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500">${analysis.pagesWithJsonLD} of ${analysis.totalPages} pages</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                                        ${analysis.pagesWithJsonLD}
+                                    </div>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Pages with JSON-LD</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500">Structured content</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-3xl font-bold text-gray-600 dark:text-gray-400">
+                                        ${analysis.totalPages - analysis.pagesWithJsonLD}
+                                    </div>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Pages without JSON-LD</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500">Unstructured content</div>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-indigo-100 dark:border-indigo-700">
+                                <div class="flex items-center mb-2">
+                                    <div class="w-3 h-3 rounded-full mr-3 ${analysis.coverageHealth === 'excellent' ? 'bg-green-500' : analysis.coverageHealth === 'good' ? 'bg-blue-500' : analysis.coverageHealth === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}"></div>
+                                    <span class="font-semibold text-gray-800 dark:text-gray-200">Coverage Assessment: ${analysis.coverageHealth.toUpperCase()}</span>
+                                </div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    This coverage ratio significantly impacts AI training data quality. ${analysis.coverageRatio < 50 ? 'Low coverage creates sampling bias and limits model understanding of your full content ecosystem.' : analysis.coverageRatio < 70 ? 'Moderate coverage provides good foundation but may miss some content patterns.' : 'Excellent coverage ensures comprehensive structured data representation.'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Actionable Recommendations -->
+                        <div>
+                            <h4 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                                ⚡ Actionable Recommendations
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                `;
+
+                analysis.recommendations.forEach(rec => {
+                    const iconColor = rec.priority === 'high' ? 'text-red-600 dark:text-red-400' :
+                                     rec.priority === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                                     'text-green-600 dark:text-green-400';
+                    
+                    const borderColor = rec.priority === 'high' ? 'border-red-200 dark:border-red-800' :
+                                       rec.priority === 'medium' ? 'border-yellow-200 dark:border-yellow-800' :
+                                       'border-green-200 dark:border-green-800';
+                    
+                    html += `
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 ${borderColor} shadow-sm">
+                            <div class="flex items-start mb-3">
+                                <span class="${iconColor} text-2xl mr-3">${rec.icon}</span>
+                                <div class="flex-1 min-w-0">
+                                    <h5 class="font-semibold text-gray-800 dark:text-gray-200 leading-tight">${rec.title}</h5>
+                                    <span class="text-xs ${iconColor} uppercase tracking-wide font-medium">${rec.priority} Priority</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">${rec.description}</p>
+                            <div class="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                                <strong>Action:</strong> ${rec.action}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                            </div>
+                        </div>
+
+                        <!-- Technical Implementation -->
+                        <div class="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-700 dark:to-blue-900/20 rounded-lg p-6">
+                            <h4 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                                🔧 Technical Implementation Guide
+                            </h4>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div>
+                                    <h5 class="font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                                        <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                        Data Preprocessing
+                                    </h5>
+                                    <ul class="space-y-2 text-gray-600 dark:text-gray-400">
+                                        <li class="flex items-start">
+                                            <span class="text-blue-500 mr-2">•</span>
+                                            Remove URLs with >50 references for deduplication
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="text-blue-500 mr-2">•</span>
+                                            Apply inverse frequency weighting to over-represented content
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="text-blue-500 mr-2">•</span>
+                                            Balance training samples across content categories
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="text-blue-500 mr-2">•</span>
+                                            Implement stratified sampling for diverse representation
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h5 class="font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                                        <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                                        Model Training
+                                    </h5>
+                                    <ul class="space-y-2 text-gray-600 dark:text-gray-400">
+                                        <li class="flex items-start">
+                                            <span class="text-purple-500 mr-2">•</span>
+                                            Use curriculum learning: start with well-distributed content
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="text-purple-500 mr-2">•</span>
+                                            Apply focal loss to reduce bias toward frequent patterns
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="text-purple-500 mr-2">•</span>
+                                            Monitor validation metrics across content types
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="text-purple-500 mr-2">•</span>
+                                            Implement early stopping based on distribution fairness
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart Legend with AI Context -->
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                            <h4 class="text-xl font-semibold text-blue-800 dark:text-blue-200 mb-4 flex items-center">
+                                🎨 Chart Color Guide for AI Applications
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-4">
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-4 bg-red-600 rounded mr-4"></div>
+                                        <div>
+                                            <span class="font-semibold text-red-800 dark:text-red-200 block">High Impact (Red)</span>
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">Over-represented content that may bias model behavior</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-4 bg-orange-600 rounded mr-4"></div>
+                                        <div>
+                                            <span class="font-semibold text-orange-800 dark:text-orange-200 block">Medium Impact (Orange)</span>
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">Moderately concentrated - monitor during training</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-4 bg-green-600 rounded mr-4"></div>
+                                        <div>
+                                            <span class="font-semibold text-green-800 dark:text-green-200 block">Healthy (Green)</span>
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">Well-distributed content suitable for balanced training</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-4 bg-blue-600 rounded mr-4"></div>
+                                        <div>
+                                            <span class="font-semibold text-blue-800 dark:text-blue-200 block">Normal (Blue)</span>
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">Standard content distribution patterns</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 rounded-b-lg">
+                        <div class="flex justify-end">
+                            <button class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors" onclick="document.getElementById('llmGuidanceModal').remove()">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                modalContent.innerHTML = html;
+                modal.appendChild(modalContent);
+                
+                // Add to document
+                document.body.appendChild(modal);
+                
+                // Close modal on backdrop click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+                
+                // Close modal on escape key
+                document.addEventListener('keydown', function escapeHandler(e) {
+                    if (e.key === 'Escape') {
+                        modal.remove();
+                        document.removeEventListener('keydown', escapeHandler);
+                    }
+                });
+            }
+
+            renderMediaUrlsSection() {
+                // Find media-related sub-objects
+                const mediaObjects = this.subObjects.filter(subObj => {
+                    const mediaTypes = ['ImageObject', 'VideoObject', 'MediaObject', 'AudioObject'];
+                    return subObj.type.some(type => mediaTypes.includes(type));
+                });
+
+                if (mediaObjects.length === 0) {
+                    return '';
+                }
+
+                // Extract URLs from media objects
+                const mediaUrls = [];
+                mediaObjects.forEach(mediaObj => {
+                    this.extractMediaUrls(mediaObj.object, mediaObj.type.join(', '), mediaObj.sourceUrl, mediaUrls);
+                });
+
+                if (mediaUrls.length === 0) {
+                    return '';
+                }
+
+                return `
+                    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300">Media URLs Found</h5>
+                            <button 
+                                onclick="this.nextElementSibling.classList.toggle('hidden'); this.textContent = this.textContent === 'Show URLs' ? 'Hide URLs' : 'Show URLs'"
+                                class="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                            >
+                                Show URLs
+                            </button>
+                        </div>
+                        <div class="hidden space-y-3 max-h-64 overflow-y-auto">
+                            ${mediaUrls.map(media => `
+                                <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center">
+                                            <span class="text-lg mr-2">${this.getMediaIcon(media.type)}</span>
+                                            <span class="font-medium text-gray-800 dark:text-gray-200">${media.type}</span>
+                                        </div>
+                                        <span class="text-xs text-gray-500">${this.shortenUrl(media.sourceUrl)}</span>
+                                    </div>
+                                    <div class="space-y-2">
+                                        ${media.urls.map(url => `
+                                            <div class="flex items-center justify-between text-sm">
+                                                <span class="font-mono text-blue-600 dark:text-blue-400 break-all">${url}</span>
+                                                <a href="${url}" target="_blank" rel="noopener noreferrer" 
+                                                   class="ml-2 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                                                    Open →
+                                                </a>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            extractMediaUrls(obj, type, sourceUrl, mediaUrls) {
+                const urls = [];
+                
+                // Function to recursively find URLs in an object
+                const findUrls = (value) => {
+                    if (typeof value === 'string' && value.match(/^https?:\/\/.+/)) {
+                        // Check if it looks like a media URL
+                        const mediaExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.bmp', '.tiff',
+                                               '.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv',
+                                               '.mp3', '.wav', '.flac', '.aac', '.ogg'];
+                        
+                        const hasMediaExtension = mediaExtensions.some(ext => 
+                            value.toLowerCase().includes(ext.toLowerCase())
+                        );
+                        
+                        // Include if it has media extension OR is in common media URL properties
+                        if (hasMediaExtension || urls.length === 0) { // Always include first URL found
+                            urls.push(value);
+                        }
+                    } else if (Array.isArray(value)) {
+                        value.forEach(findUrls);
+                    } else if (value && typeof value === 'object') {
+                        Object.keys(value).forEach(key => {
+                            // Focus on common media properties
+                            const mediaProperties = ['url', 'contentUrl', 'embedUrl', 'thumbnailUrl', 'image', 'video', 'audio'];
+                            if (mediaProperties.includes(key) || key.toLowerCase().includes('url') || key.toLowerCase().includes('src')) {
+                                findUrls(value[key]);
+                            }
+                        });
+                    }
+                };
+
+                findUrls(obj);
+
+                if (urls.length > 0) {
+                    // Check if we already have this combination
+                    let existingMedia = mediaUrls.find(m => m.type === type && m.sourceUrl === sourceUrl);
+                    if (existingMedia) {
+                        // Add unique URLs
+                        urls.forEach(url => {
+                            if (!existingMedia.urls.includes(url)) {
+                                existingMedia.urls.push(url);
+                            }
+                        });
+                    } else {
+                        mediaUrls.push({
+                            type: type,
+                            sourceUrl: sourceUrl,
+                            urls: [...new Set(urls)] // Remove duplicates
+                        });
+                    }
+                }
+            }
+
+            getMediaIcon(type) {
+                if (type.includes('Image')) return '🖼️';
+                if (type.includes('Video')) return '🎥';
+                if (type.includes('Audio')) return '🎵';
+                return '📄';
+            }
+
+            showUrlBreakdown(url, occurrences) {
+                // Group by page
+                const pageBreakdown = {};
+                occurrences.forEach(occ => {
+                    if (!pageBreakdown[occ.sourceUrl]) {
+                        pageBreakdown[occ.sourceUrl] = [];
+                    }
+                    pageBreakdown[occ.sourceUrl].push(occ);
+                });
+
+                const pages = Object.keys(pageBreakdown).sort();
+                let details = `📋 Breakdown for: ${url}\n\n`;
+                
+                pages.forEach(page => {
+                    const pageOccs = pageBreakdown[page];
+                    details += `📄 ${this.shortenUrl(page)} (${pageOccs.length} refs)\n`;
+                    pageOccs.forEach(occ => {
+                        details += `   • ${occ.path} (in ${occ.objectType})\n`;
+                    });
+                    details += '\n';
+                });
+
+                // Use a simple alert since we're in iframe
+                alert(details);
             }
         }
 
