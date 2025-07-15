@@ -414,52 +414,115 @@
 
             if (DEBUG) {
                 console.log('Parsing Google results...');
+                console.log('Full HTML length:', html.length);
             }
 
-            // Look for various link patterns
-            const linkSelectors = [
-                'a[href*="linkedin.com/company"]',
-                'a[href*="linkedin.com/in/company"]',
-                '[href*="linkedin.com/company"]'
-            ];
-
-            linkSelectors.forEach(selector => {
-                const links = doc.querySelectorAll(selector);
+            // Check if Google is blocking us
+            if (html.includes('noscript') && html.includes('Please click here if you are not redirected')) {
                 if (DEBUG) {
-                    console.log(`Found ${links.length} links with selector: ${selector}`);
+                    console.log('Google is showing a redirect/block page');
                 }
+                return [];
+            }
 
-                links.forEach((link, index) => {
-                    if (index >= 10) return;
+            // Look for all links in the HTML and extract any LinkedIn company URLs
+            const allLinks = doc.querySelectorAll('a');
+            if (DEBUG) {
+                console.log(`Total links found: ${allLinks.length}`);
+            }
 
-                    const href = link.href || link.getAttribute('href');
-                    if (!href) return;
+            allLinks.forEach((link, index) => {
+                if (companies.length >= 10) return; // Limit results
 
-                    const companyMatch = href.match(/linkedin\.com\/company\/([^\/\?&#]+)/);
+                const href = link.href || link.getAttribute('href');
+                if (!href) return;
 
-                    if (companyMatch) {
-                        const companySlug = companyMatch[1];
-                        const companyName = formatCompanyName(companySlug);
+                // More flexible regex to catch LinkedIn company URLs
+                const companyMatch = href.match(/linkedin\.com\/company\/([^\/\?&#\s]+)/i);
 
-                        // Avoid duplicates
-                        if (!companies.find(c => c.slug === companySlug)) {
-                            companies.push({
-                                name: companyName,
-                                slug: companySlug,
-                                url: `https://linkedin.com/company/${companySlug}`,
-                                description: extractDescription(link.closest('.g') || link.parentElement),
-                                source: 'Google Search'
-                            });
+                if (companyMatch) {
+                    const companySlug = companyMatch[1];
+
+                    // Skip if it's a generic or invalid slug
+                    if (companySlug.length < 2 || companySlug === 'company') return;
+
+                    const companyName = extractCompanyNameFromLink(link) || formatCompanyName(companySlug);
+
+                    // Avoid duplicates
+                    if (!companies.find(c => c.slug === companySlug)) {
+                        if (DEBUG) {
+                            console.log(`Found company: ${companyName} (${companySlug})`);
                         }
+
+                        companies.push({
+                            name: companyName,
+                            slug: companySlug,
+                            url: `https://linkedin.com/company/${companySlug}`,
+                            description: extractDescription(link.closest('.g') || link.parentElement) || 'LinkedIn company profile',
+                            source: 'Google Search'
+                        });
                     }
-                });
+                }
             });
+
+            // If no results, try a different approach - look for text containing linkedin.com/company
+            if (companies.length === 0) {
+                const textContent = doc.body?.textContent || '';
+                const urlMatches = textContent.match(/linkedin\.com\/company\/([^\/\s\?&#]+)/gi);
+
+                if (urlMatches) {
+                    if (DEBUG) {
+                        console.log('Found LinkedIn URLs in text:', urlMatches);
+                    }
+
+                    urlMatches.forEach(match => {
+                        const companyMatch = match.match(/linkedin\.com\/company\/([^\/\s\?&#]+)/i);
+                        if (companyMatch) {
+                            const companySlug = companyMatch[1];
+                            if (companySlug.length > 2 && !companies.find(c => c.slug === companySlug)) {
+                                companies.push({
+                                    name: formatCompanyName(companySlug),
+                                    slug: companySlug,
+                                    url: `https://linkedin.com/company/${companySlug}`,
+                                    description: 'Found in search results',
+                                    source: 'Google Search (Text)'
+                                });
+                            }
+                        }
+                    });
+                }
+            }
 
             if (DEBUG) {
                 console.log('Google parsed companies:', companies);
             }
 
             return companies;
+        }
+
+        function extractCompanyNameFromLink(link) {
+            // Try to get company name from link text or nearby elements
+            let name = link.textContent?.trim();
+
+            if (!name || name.length < 3) {
+                // Look in parent elements
+                const parent = link.closest('.g') || link.closest('[data-ved]') || link.parentElement;
+                if (parent) {
+                    const titleElement = parent.querySelector('h3') || parent.querySelector('.LC20lb');
+                    if (titleElement) {
+                        name = titleElement.textContent?.trim();
+                    }
+                }
+            }
+
+            // Clean up the name
+            if (name) {
+                name = name.replace(/\s*-\s*LinkedIn.*$/i, '').trim();
+                name = name.replace(/\s*\|\s*LinkedIn.*$/i, '').trim();
+                name = name.replace(/LinkedIn$/i, '').trim();
+            }
+
+            return name && name.length > 2 ? name : null;
         }
 
         function parseDuckDuckGoResults(html, query) {
