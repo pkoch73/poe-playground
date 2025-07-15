@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Company Search</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0077b5;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .search-section {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #0077b5;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            white-space: nowrap;
+        }
+        button:hover {
+            background-color: #005885;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .company-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+            transition: box-shadow 0.2s;
+        }
+        .company-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .company-name {
+            font-weight: bold;
+            color: #0077b5;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .company-info {
+            color: #666;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .company-description {
+            color: #333;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+        .company-link {
+            color: #0077b5;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .company-link:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #d32f2f;
+        }
+        .success {
+            color: #2e7d32;
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #2e7d32;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+        .info-note {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #1565c0;
+        }
+        .stats {
+            text-align: center;
+            margin: 20px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        @media (max-width: 600px) {
+            .search-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            input[type="text"] {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LinkedIn Company Search</h1>
+        
+        <div class="info-note">
+            <strong>Browser-based LinkedIn Company Search</strong><br>
+            This tool searches LinkedIn company pages directly through a CORS proxy. No authentication required!
+        </div>
+
+        <div class="search-section">
+            <input type="text" id="searchQuery" placeholder="Enter company name (e.g., Microsoft, Apple, Google)..." />
+            <button onclick="searchCompanies()" id="searchBtn">Search Companies</button>
+        </div>
+
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        const CORS_PROXY = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=';
+        
+        async function searchCompanies() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) {
+                showMessage('Please enter a company name to search', 'error');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            // Show loading state
+            resultsDiv.innerHTML = '<div class="loading">🔍 Searching LinkedIn for companies...</div>';
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+
+            try {
+                // Search LinkedIn companies using Google search with site:linkedin.com/company
+                const searchUrl = `https://www.google.com/search?q=site:linkedin.com/company+${encodeURIComponent(query)}&num=10`;
+                const proxyUrl = CORS_PROXY + encodeURIComponent(searchUrl);
+                
+                const response = await fetch(proxyUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const html = await response.text();
+                const companies = parseGoogleResults(html, query);
+                
+                if (companies.length === 0) {
+                    // Fallback: try direct LinkedIn search
+                    await searchLinkedInDirect(query);
+                } else {
+                    displayResults(companies, query);
+                }
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                showMessage(`Search failed: ${error.message}. This might be due to rate limiting or blocked requests.`, 'error');
+                resultsDiv.innerHTML = '';
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search Companies';
+            }
+        }
+
+        async function searchLinkedInDirect(query) {
+            try {
+                const linkedinSearchUrl = `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
+                const proxyUrl = CORS_PROXY + encodeURIComponent(linkedinSearchUrl);
+                
+                const response = await fetch(proxyUrl);
+                const html = await response.text();
+                
+                const companies = parseLinkedInResults(html, query);
+                displayResults(companies, query);
+                
+            } catch (error) {
+                console.error('LinkedIn direct search error:', error);
+                showMessage('Unable to fetch company data. LinkedIn may be blocking automated requests.', 'error');
+                document.getElementById('results').innerHTML = '';
+            }
+        }
+
+        function parseGoogleResults(html, query) {
+            const companies = [];
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Look for Google search result links to LinkedIn company pages
+            const links = doc.querySelectorAll('a[href*="linkedin.com/company"]');
+            
+            links.forEach((link, index) => {
+                if (index >= 10) return; // Limit results
+                
+                const href = link.href;
+                const companyMatch = href.match(/linkedin\.com\/company\/([^\/\?]+)/);
+                
+                if (companyMatch) {
+                    const companySlug = companyMatch[1];
+                    const companyName = formatCompanyName(companySlug);
+                    
+                    // Try to get description from search snippet
+                    const parent = link.closest('[data-ved]') || link.closest('.g');
+                    const description = parent ? extractDescription(parent) : '';
+                    
+                    companies.push({
+                        name: companyName,
+                        slug: companySlug,
+                        url: `https://linkedin.com/company/${companySlug}`,
+                        description: description,
+                        source: 'Google Search'
+                    });
+                }
+            });
+            
+            return companies;
+        }
+
+        function parseLinkedInResults(html, query) {
+            const companies = [];
+            // This is a simplified parser - LinkedIn's actual structure is complex and changes frequently
+            // In a real implementation, you'd need more sophisticated parsing
+            
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Look for company cards or links (this is a basic approach)
+                const companyElements = doc.querySelectorAll('[data-test-id*="company"], .company-name, [href*="/company/"]');
+                
+                companyElements.forEach((element, index) => {
+                    if (index >= 10) return;
+                    
+                    const name = element.textContent?.trim() || 'Unknown Company';
+                    const href = element.href || element.querySelector('a')?.href || '';
+                    
+                    if (name && name.length > 2) {
+                        companies.push({
+                            name: name,
+                            url: href,
+                            description: 'Found on LinkedIn',
+                            source: 'LinkedIn Direct'
+                        });
+                    }
+                });
+            } catch (error) {
+                console.error('Error parsing LinkedIn results:', error);
+            }
+            
+            return companies;
+        }
+
+        function formatCompanyName(slug) {
+            return slug
+                .split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        function extractDescription(element) {
+            const descElements = element.querySelectorAll('.VwiC3b, .s3v9rd, .hgKElc');
+            for (let desc of descElements) {
+                const text = desc.textContent?.trim();
+                if (text && text.length > 20) {
+                    return text.substring(0, 200) + (text.length > 200 ? '...' : '');
+                }
+            }
+            return '';
+        }
+
+        function displayResults(companies, query) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (!companies || companies.length === 0) {
+                resultsDiv.innerHTML = `
+                    <div class="stats">No companies found for "${query}"</div>
+                    <p style="text-align: center; color: #666; margin-top: 20px;">
+                        Try searching for well-known company names like "Microsoft", "Apple", or "Google"
+                    </p>
+                `;
+                return;
+            }
+
+            let html = `<div class="stats">Found ${companies.length} companies for "${query}"</div>`;
+            
+            companies.forEach((company, index) => {
+                html += `
+                    <div class="company-card">
+                        <div class="company-name">${escapeHtml(company.name)}</div>
+                        ${company.url ? `
+                            <div class="company-info">
+                                🔗 <a href="${escapeHtml(company.url)}" target="_blank" class="company-link">View on LinkedIn</a>
+                            </div>
+                        ` : ''}
+                        ${company.slug ? `
+                            <div class="company-info">
+                                🏷️ Company ID: ${escapeHtml(company.slug)}
+                            </div>
+                        ` : ''}
+                        ${company.description ? `
+                            <div class="company-description">${escapeHtml(company.description)}</div>
+                        ` : ''}
+                        <div class="company-info" style="margin-top: 10px; font-size: 12px; color: #999;">
+                            📊 Source: ${company.source || 'Search Results'}
+                        </div>
+                    </div>
+                `;
+            });
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showMessage(message, type) {
+            const existingMessage = document.querySelector('.error, .success');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.innerHTML = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(messageDiv, container.children[2]);
+
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 8000);
+        }
+
+        // Allow Enter key to trigger search
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchCompanies();
+                }
+            });
+        });
+
+        // Auto-focus search input
+        window.onload = function() {
+            document.getElementById('searchQuery').focus();
+        };
+    </script>
+</body>
+</html>
