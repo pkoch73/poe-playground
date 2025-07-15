@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scraper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .spinner {
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #5D5CDE;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .dark .spinner {
+            border-color: #374151;
+            border-top-color: #5D5CDE;
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Web Scraper</h1>
+            <p class="text-gray-600 dark:text-gray-400">Extract structured content from websites or sitemaps</p>
+        </header>
+
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-6">
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <label for="url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Website URL or Sitemap URL
+                        </label>
+                        <input 
+                            type="url" 
+                            id="url" 
+                            placeholder="https://example.com or https://example.com/sitemap.xml"
+                            class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        >
+                    </div>
+                    <div class="sm:w-32">
+                        <label for="depth" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Max Depth
+                        </label>
+                        <input 
+                            type="number" 
+                            id="depth" 
+                            min="1" 
+                            max="5" 
+                            value="2"
+                            class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        >
+                    </div>
+                </div>
+
+                <div class="flex items-center">
+                    <input 
+                        type="checkbox" 
+                        id="isSitemap" 
+                        class="h-4 w-4 text-primary focus:ring-primary border-gray-300 dark:border-gray-600 rounded"
+                    >
+                    <label for="isSitemap" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                        This is a sitemap.xml URL (ignore depth setting)
+                    </label>
+                </div>
+
+                <button 
+                    id="scrapeBtn" 
+                    class="w-full bg-primary text-white px-6 py-3 rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors duration-200 font-medium"
+                >
+                    Start Scraping
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingSection" class="hidden bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <div class="spinner mr-3"></div>
+                <div>
+                    <p class="text-blue-800 dark:text-blue-200 font-medium">Scraping in progress...</p>
+                    <p id="progressText" class="text-blue-600 dark:text-blue-300 text-sm">Initializing...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="errorSection" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <div>
+                    <p class="text-red-800 dark:text-red-200 font-medium">Error</p>
+                    <p id="errorText" class="text-red-600 dark:text-red-300 text-sm"></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Scraping Results</h2>
+                <div class="flex gap-2">
+                    <button id="exportJson" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
+                        Export JSON
+                    </button>
+                    <button id="exportTxt" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                        Export Text
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                    <p id="summaryText" class="text-sm text-gray-600 dark:text-gray-400"></p>
+                </div>
+                <div id="resultsContainer" class="max-h-96 overflow-y-auto">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode setup
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        const CORS_PROXY = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=';
+        
+        let scrapedData = [];
+        let visitedUrls = new Set();
+
+        // DOM elements
+        const urlInput = document.getElementById('url');
+        const depthInput = document.getElementById('depth');
+        const isSitemapCheckbox = document.getElementById('isSitemap');
+        const scrapeBtn = document.getElementById('scrapeBtn');
+        const loadingSection = document.getElementById('loadingSection');
+        const errorSection = document.getElementById('errorSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const progressText = document.getElementById('progressText');
+        const errorText = document.getElementById('errorText');
+        const summaryText = document.getElementById('summaryText');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const exportJsonBtn = document.getElementById('exportJson');
+        const exportTxtBtn = document.getElementById('exportTxt');
+
+        // Utility functions
+        function showError(message) {
+            errorText.textContent = message;
+            errorSection.classList.remove('hidden');
+            loadingSection.classList.add('hidden');
+        }
+
+        function showLoading(message) {
+            progressText.textContent = message;
+            loadingSection.classList.remove('hidden');
+            errorSection.classList.add('hidden');
+        }
+
+        function hideLoading() {
+            loadingSection.classList.add('hidden');
+        }
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function extractDomain(url) {
+            try {
+                return new URL(url).origin;
+            } catch (_) {
+                return '';
+            }
+        }
+
+        function extractTextContent(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Remove script and style elements
+            const scripts = doc.querySelectorAll('script, style');
+            scripts.forEach(el => el.remove());
+            
+            // Get title
+            const title = doc.querySelector('title')?.textContent?.trim() || '';
+            
+            // Get meta information
+            const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() || '';
+            const metaKeywords = doc.querySelector('meta[name="keywords"]')?.getAttribute('content')?.trim() || '';
+            const metaAuthor = doc.querySelector('meta[name="author"]')?.getAttribute('content')?.trim() || '';
+            const metaLang = doc.documentElement.getAttribute('lang') || doc.querySelector('meta[http-equiv="content-language"]')?.getAttribute('content') || '';
+            
+            // Get Open Graph data
+            const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || '';
+            const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute('content')?.trim() || '';
+            const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content')?.trim() || '';
+            const ogType = doc.querySelector('meta[property="og:type"]')?.getAttribute('content')?.trim() || '';
+            
+            // Extract headings structure
+            const headings = {
+                h1: Array.from(doc.querySelectorAll('h1')).map(h => h.textContent?.trim()).filter(Boolean),
+                h2: Array.from(doc.querySelectorAll('h2')).map(h => h.textContent?.trim()).filter(Boolean),
+                h3: Array.from(doc.querySelectorAll('h3')).map(h => h.textContent?.trim()).filter(Boolean)
+            };
+            
+            // Count elements
+            const images = doc.querySelectorAll('img').length;
+            const internalLinks = doc.querySelectorAll('a[href^="/"], a[href*="' + window.location.hostname + '"]').length;
+            const externalLinks = doc.querySelectorAll('a[href^="http"]').length - internalLinks;
+            
+            // Get main content
+            const contentSelectors = ['main', 'article', '.content', '#content', '.post', '.entry-content', '[role="main"]'];
+            let content = '';
+            let contentElement = null;
+            
+            for (const selector of contentSelectors) {
+                const element = doc.querySelector(selector);
+                if (element) {
+                    content = element.textContent?.trim() || '';
+                    contentElement = element;
+                    break;
+                }
+            }
+            
+            // If no main content found, get body text
+            if (!content) {
+                content = doc.body?.textContent?.trim() || '';
+                contentElement = doc.body;
+            }
+            
+            // Clean up content and get word count
+            content = content.replace(/\s+/g, ' ').trim();
+            const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
+            
+            // Extract structured data (JSON-LD)
+            const jsonLdScripts = doc.querySelectorAll('script[type="application/ld+json"]');
+            const structuredData = [];
+            jsonLdScripts.forEach(script => {
+                try {
+                    const data = JSON.parse(script.textContent);
+                    structuredData.push(data);
+                } catch (e) {
+                    // Skip invalid JSON-LD
+                }
+            });
+            
+            // Get page size estimation
+            const pageSize = new Blob([html]).size;
+            
+            return {
+                title,
+                description: metaDesc,
+                keywords: metaKeywords,
+                author: metaAuthor,
+                language: metaLang,
+                content,
+                fullContent: content, // Store full content for detailed view
+                contentPreview: content.substring(0, 300),
+                wordCount,
+                pageSize,
+                headings,
+                images,
+                internalLinks,
+                externalLinks,
+                openGraph: {
+                    title: ogTitle,
+                    description: ogDesc,
+                    image: ogImage,
+                    type: ogType
+                },
+                structuredData
+            };
+        }
+
+        function extractLinks(html, baseUrl) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const links = doc.querySelectorAll('a[href]');
+            const domain = extractDomain(baseUrl);
+            const extractedLinks = [];
+
+            links.forEach(link => {
+                try {
+                    const href = link.getAttribute('href');
+                    let fullUrl;
+                    
+                    if (href.startsWith('http')) {
+                        fullUrl = href;
+                    } else if (href.startsWith('/')) {
+                        fullUrl = domain + href;
+                    } else if (href.startsWith('./') || !href.startsWith('#')) {
+                        fullUrl = new URL(href, baseUrl).href;
+                    } else {
+                        return; // Skip anchors and invalid links
+                    }
+                    
+                    // Only include links from the same domain
+                    if (extractDomain(fullUrl) === domain) {
+                        extractedLinks.push(fullUrl);
+                    }
+                } catch (e) {
+                    // Skip invalid URLs
+                }
+            });
+
+            return [...new Set(extractedLinks)]; // Remove duplicates
+        }
+
+        async function fetchWithProxy(url) {
+            const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.text();
+        }
+
+        async function scrapePage(url, currentDepth, maxDepth) {
+            if (visitedUrls.has(url) || currentDepth > maxDepth) {
+                return;
+            }
+
+            visitedUrls.add(url);
+            showLoading(`Scraping: ${url} (depth ${currentDepth}/${maxDepth})`);
+
+            const startTime = Date.now();
+            try {
+                const html = await fetchWithProxy(url);
+                const textContent = extractTextContent(html);
+                
+                scrapedData.push({
+                    url,
+                    depth: currentDepth,
+                    ...textContent,
+                    timestamp: new Date().toISOString(),
+                    loadTime: Date.now() - startTime
+                });
+
+                // If we haven't reached max depth, extract and follow links
+                if (currentDepth < maxDepth) {
+                    const links = extractLinks(html, url);
+                    
+                    for (const link of links.slice(0, 10)) { // Limit to 10 links per page
+                        if (!visitedUrls.has(link)) {
+                            await scrapePage(link, currentDepth + 1, maxDepth);
+                            // Add small delay to be respectful
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`Error scraping ${url}:`, error);
+                scrapedData.push({
+                    url,
+                    depth: currentDepth,
+                    title: 'Error',
+                    description: '',
+                    content: `Error: ${error.message}`,
+                    timestamp: new Date().toISOString(),
+                    error: true
+                });
+            }
+        }
+
+        async function parseSitemap(sitemapUrl) {
+            showLoading('Parsing sitemap...');
+            
+            try {
+                const xml = await fetchWithProxy(sitemapUrl);
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(xml, 'text/xml');
+                
+                // Check for XML parsing errors
+                const parserError = doc.querySelector('parsererror');
+                if (parserError) {
+                    throw new Error('Invalid XML format');
+                }
+                
+                const urls = doc.querySelectorAll('url loc, sitemap loc');
+                const extractedUrls = [];
+                
+                urls.forEach(loc => {
+                    const url = loc.textContent.trim();
+                    if (url) {
+                        extractedUrls.push(url);
+                    }
+                });
+
+                if (extractedUrls.length === 0) {
+                    throw new Error('No URLs found in sitemap');
+                }
+
+                // If sitemap contains other sitemaps, we'll just take the first level
+                const urlsToScrape = extractedUrls.slice(0, 50); // Limit to 50 URLs
+                
+                for (let i = 0; i < urlsToScrape.length; i++) {
+                    const url = urlsToScrape[i];
+                    showLoading(`Scraping ${i + 1}/${urlsToScrape.length}: ${url}`);
+                    
+                    const startTime = Date.now();
+                    try {
+                        const html = await fetchWithProxy(url);
+                        const textContent = extractTextContent(html);
+                        
+                        scrapedData.push({
+                            url,
+                            depth: 0,
+                            ...textContent,
+                            timestamp: new Date().toISOString(),
+                            loadTime: Date.now() - startTime
+                        });
+                    } catch (error) {
+                        console.error(`Error scraping ${url}:`, error);
+                        scrapedData.push({
+                            url,
+                            depth: 0,
+                            title: 'Error',
+                            description: '',
+                            content: `Error: ${error.message}`,
+                            timestamp: new Date().toISOString(),
+                            error: true
+                        });
+                    }
+                    
+                    // Add delay between requests
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            } catch (error) {
+                throw new Error(`Sitemap parsing failed: ${error.message}`);
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatLoadTime(ms) {
+            if (ms < 1000) return `${ms}ms`;
+            return `${(ms / 1000).toFixed(2)}s`;
+        }
+
+        function toggleDetails(index) {
+            const detailsElement = document.getElementById(`details-${index}`);
+            const toggleButton = document.getElementById(`toggle-${index}`);
+            
+            if (detailsElement.classList.contains('hidden')) {
+                detailsElement.classList.remove('hidden');
+                toggleButton.textContent = 'Hide Details';
+                toggleButton.className = toggleButton.className.replace('bg-blue-600 hover:bg-blue-700', 'bg-gray-600 hover:bg-gray-700');
+            } else {
+                detailsElement.classList.add('hidden');
+                toggleButton.textContent = 'Show Details';
+                toggleButton.className = toggleButton.className.replace('bg-gray-600 hover:bg-gray-700', 'bg-blue-600 hover:bg-blue-700');
+            }
+        }
+
+        function displayResults() {
+            if (scrapedData.length === 0) {
+                showError('No data was scraped successfully');
+                return;
+            }
+
+            const successCount = scrapedData.filter(item => !item.error).length;
+            const errorCount = scrapedData.length - successCount;
+            const totalWords = scrapedData.reduce((sum, item) => sum + (item.wordCount || 0), 0);
+            const totalSize = scrapedData.reduce((sum, item) => sum + (item.pageSize || 0), 0);
+            const avgLoadTime = scrapedData.reduce((sum, item) => sum + (item.loadTime || 0), 0) / scrapedData.length;
+            
+            summaryText.innerHTML = `
+                Found <strong>${scrapedData.length}</strong> pages 
+                (<strong>${successCount}</strong> successful, <strong>${errorCount}</strong> errors) • 
+                <strong>${totalWords.toLocaleString()}</strong> total words • 
+                <strong>${formatBytes(totalSize)}</strong> total size • 
+                <strong>${formatLoadTime(avgLoadTime)}</strong> avg load time
+            `;
+            
+            resultsContainer.innerHTML = scrapedData.map((item, index) => {
+                const errorClass = item.error ? 'bg-red-50 dark:bg-red-900/10 border-l-4 border-red-500' : '';
+                
+                return `
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-600 last:border-b-0 ${errorClass}">
+                        <!-- Header Section -->
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-lg text-gray-800 dark:text-white mb-1">
+                                    ${item.title || 'No Title'}
+                                </h3>
+                                <p class="text-sm text-blue-600 dark:text-blue-400 break-all mb-2">${item.url}</p>
+                            </div>
+                            <div class="flex flex-col items-end space-y-1 ml-4">
+                                <span class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                    Depth: ${item.depth}
+                                </span>
+                                ${item.loadTime ? `<span class="text-xs text-gray-500 dark:text-gray-400">${formatLoadTime(item.loadTime)}</span>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="flex flex-wrap gap-3 mb-3 text-xs">
+                            ${item.wordCount ? `<span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">${item.wordCount} words</span>` : ''}
+                            ${item.pageSize ? `<span class="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded">${formatBytes(item.pageSize)}</span>` : ''}
+                            ${item.images ? `<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">${item.images} images</span>` : ''}
+                            ${item.internalLinks ? `<span class="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 px-2 py-1 rounded">${item.internalLinks} internal links</span>` : ''}
+                            ${item.externalLinks ? `<span class="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 px-2 py-1 rounded">${item.externalLinks} external links</span>` : ''}
+                            ${item.language ? `<span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded">${item.language}</span>` : ''}
+                        </div>
+
+                        <!-- Description -->
+                        ${item.description ? `<p class="text-sm text-gray-600 dark:text-gray-300 mb-3 italic">"${item.description}"</p>` : ''}
+
+                        <!-- Content Preview -->
+                        <div class="mb-4">
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content Preview:</h4>
+                            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                ${item.contentPreview || item.content?.substring(0, 300) || 'No content available'}${(item.content?.length || 0) > 300 ? '...' : ''}
+                            </p>
+                        </div>
+
+                        <!-- Toggle Details Button -->
+                        <button 
+                            id="toggle-${index}"
+                            onclick="toggleDetails(${index})"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors duration-200"
+                        >
+                            Show Details
+                        </button>
+
+                        <!-- Detailed Information (Hidden by default) -->
+                        <div id="details-${index}" class="hidden mt-4 space-y-4">
+                            
+                            <!-- Full Content -->
+                            ${item.fullContent && item.fullContent.length > 300 ? `
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Content:</h4>
+                                    <div class="max-h-64 overflow-y-auto bg-gray-50 dark:bg-gray-700 p-3 rounded text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                        ${item.fullContent}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <!-- Headings Structure -->
+                            ${item.headings && (item.headings.h1?.length || item.headings.h2?.length || item.headings.h3?.length) ? `
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Page Structure:</h4>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                        ${item.headings.h1?.map(h => `<div class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">H1: ${h}</div>`).join('') || ''}
+                                        ${item.headings.h2?.map(h => `<div class="text-sm text-gray-700 dark:text-gray-300 ml-4 mb-1">H2: ${h}</div>`).join('') || ''}
+                                        ${item.headings.h3?.map(h => `<div class="text-sm text-gray-600 dark:text-gray-400 ml-8 mb-1">H3: ${h}</div>`).join('') || ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <!-- Open Graph Data -->
+                            ${item.openGraph && (item.openGraph.title || item.openGraph.description || item.openGraph.image || item.openGraph.type) ? `
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Open Graph Meta:</h4>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded space-y-1">
+                                        ${item.openGraph.title ? `<div class="text-sm"><span class="font-medium">Title:</span> ${item.openGraph.title}</div>` : ''}
+                                        ${item.openGraph.description ? `<div class="text-sm"><span class="font-medium">Description:</span> ${item.openGraph.description}</div>` : ''}
+                                        ${item.openGraph.type ? `<div class="text-sm"><span class="font-medium">Type:</span> ${item.openGraph.type}</div>` : ''}
+                                        ${item.openGraph.image ? `<div class="text-sm"><span class="font-medium">Image:</span> <a href="${item.openGraph.image}" class="text-blue-600 dark:text-blue-400 hover:underline" target="_blank">${item.openGraph.image}</a></div>` : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <!-- Additional Meta Information -->
+                            ${(item.keywords || item.author) ? `
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Meta:</h4>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded space-y-1">
+                                        ${item.keywords ? `<div class="text-sm"><span class="font-medium">Keywords:</span> ${item.keywords}</div>` : ''}
+                                        ${item.author ? `<div class="text-sm"><span class="font-medium">Author:</span> ${item.author}</div>` : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <!-- Structured Data -->
+                            ${item.structuredData && item.structuredData.length > 0 ? `
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Structured Data (JSON-LD):</h4>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                        <pre class="text-xs text-gray-700 dark:text-gray-300 overflow-x-auto">${JSON.stringify(item.structuredData, null, 2)}</pre>
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <!-- Technical Details -->
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Technical Details:</h4>
+                                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded space-y-1 text-sm">
+                                    <div><span class="font-medium">Scraped:</span> ${new Date(item.timestamp).toLocaleString()}</div>
+                                    ${item.loadTime ? `<div><span class="font-medium">Load Time:</span> ${formatLoadTime(item.loadTime)}</div>` : ''}
+                                    ${item.pageSize ? `<div><span class="font-medium">Page Size:</span> ${formatBytes(item.pageSize)}</div>` : ''}
+                                    ${item.wordCount ? `<div><span class="font-medium">Word Count:</span> ${item.wordCount.toLocaleString()}</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            resultsSection.classList.remove('hidden');
+        }
+
+        // Make toggleDetails function global
+        window.toggleDetails = toggleDetails;
+
+        function exportData(format) {
+            if (scrapedData.length === 0) return;
+            
+            let content, filename, mimeType;
+            
+            if (format === 'json') {
+                content = JSON.stringify(scrapedData, null, 2);
+                filename = 'scraped_data.json';
+                mimeType = 'application/json';
+            } else {
+                content = scrapedData.map(item => 
+                    `URL: ${item.url}\n` +
+                    `Title: ${item.title}\n` +
+                    `Description: ${item.description}\n` +
+                    `Content: ${item.content}\n` +
+                    `Depth: ${item.depth}\n` +
+                    `Timestamp: ${item.timestamp}\n` +
+                    `${'-'.repeat(50)}\n\n`
+                ).join('');
+                filename = 'scraped_data.txt';
+                mimeType = 'text/plain';
+            }
+            
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        scrapeBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            const depth = parseInt(depthInput.value) || 2;
+            const isSitemap = isSitemapCheckbox.checked;
+
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            if (!isValidUrl(url)) {
+                showError('Please enter a valid URL');
+                return;
+            }
+
+            // Reset state
+            scrapedData = [];
+            visitedUrls.clear();
+            errorSection.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+
+            scrapeBtn.disabled = true;
+            scrapeBtn.textContent = 'Scraping...';
+
+            try {
+                if (isSitemap) {
+                    await parseSitemap(url);
+                } else {
+                    await scrapePage(url, 1, depth);
+                }
+                
+                hideLoading();
+                displayResults();
+            } catch (error) {
+                hideLoading();
+                showError(error.message);
+            }
+
+            scrapeBtn.disabled = false;
+            scrapeBtn.textContent = 'Start Scraping';
+        });
+
+        exportJsonBtn.addEventListener('click', () => exportData('json'));
+        exportTxtBtn.addEventListener('click', () => exportData('txt'));
+
+        // Handle Enter key in URL input
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                scrapeBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
