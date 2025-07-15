@@ -203,20 +203,19 @@
             searchBtn.textContent = 'Searching...';
 
             try {
-                // Try multiple search strategies
                 let companies = [];
 
-                // Strategy 1: Use a simpler approach with known LinkedIn company URLs
-                companies = await searchWithKnownCompanies(query);
+                // Strategy 1: Try Google search
+                companies = await searchWithGoogle(query);
 
                 if (companies.length === 0) {
-                    // Strategy 2: Try Google search
-                    companies = await searchWithGoogle(query);
+                    // Strategy 2: Try DuckDuckGo search
+                    companies = await searchWithDuckDuckGo(query);
                 }
 
                 if (companies.length === 0) {
-                    // Strategy 3: Try DuckDuckGo search
-                    companies = await searchWithDuckDuckGo(query);
+                    // Strategy 3: Try direct LinkedIn search
+                    companies = await searchLinkedInDirect(query);
                 }
 
                 displayResults(companies, query);
@@ -231,76 +230,125 @@
             }
         }
 
-        async function searchWithKnownCompanies(query) {
-            // Database of well-known companies and their LinkedIn slugs
-            const knownCompanies = {
-                'apple': { name: 'Apple', slug: 'apple', description: 'Technology company known for iPhone, Mac, and other consumer electronics' },
-                'google': { name: 'Google', slug: 'google', description: 'Multinational technology company specializing in Internet-related services' },
-                'microsoft': { name: 'Microsoft', slug: 'microsoft', description: 'Multinational technology corporation producing computer software and services' },
-                'amazon': { name: 'Amazon', slug: 'amazon', description: 'Multinational technology company focusing on e-commerce and cloud computing' },
-                'meta': { name: 'Meta', slug: 'meta', description: 'Technology company that owns Facebook, Instagram, and WhatsApp' },
-                'facebook': { name: 'Meta', slug: 'meta', description: 'Technology company that owns Facebook, Instagram, and WhatsApp' },
-                'tesla': { name: 'Tesla', slug: 'tesla-motors', description: 'Electric vehicle and clean energy company' },
-                'netflix': { name: 'Netflix', slug: 'netflix', description: 'Streaming entertainment service with TV series and films' },
-                'uber': { name: 'Uber', slug: 'uber-com', description: 'Technology platform for mobility and delivery' },
-                'airbnb': { name: 'Airbnb', slug: 'airbnb', description: 'Online marketplace for lodging and tourism experiences' },
-                'spotify': { name: 'Spotify', slug: 'spotify', description: 'Audio streaming and media services provider' },
-                'twitter': { name: 'X (Twitter)', slug: 'twitter', description: 'Social networking service' },
-                'linkedin': { name: 'LinkedIn', slug: 'linkedin', description: 'Professional networking platform' },
-                'salesforce': { name: 'Salesforce', slug: 'salesforce', description: 'Cloud-based software company' },
-                'oracle': { name: 'Oracle', slug: 'oracle', description: 'Multinational computer technology corporation' },
-                'ibm': { name: 'IBM', slug: 'ibm', description: 'Multinational technology and consulting corporation' },
-                'intel': { name: 'Intel', slug: 'intel-corporation', description: 'Multinational corporation and technology company' },
-                'nvidia': { name: 'NVIDIA', slug: 'nvidia', description: 'Multinational technology company known for graphics processing units' },
-                'adobe': { name: 'Adobe', slug: 'adobe', description: 'Multinational computer software company' },
-                'zoom': { name: 'Zoom', slug: 'zoom-video-communications', description: 'Video communications company' },
-                'slack': { name: 'Slack', slug: 'tiny-speck', description: 'Business communication platform' },
-                'shopify': { name: 'Shopify', slug: 'shopify', description: 'Multinational e-commerce company' },
-                'paypal': { name: 'PayPal', slug: 'paypal', description: 'American multinational financial technology company' },
-                'stripe': { name: 'Stripe', slug: 'stripe', description: 'Financial services and software as a service company' },
-                'square': { name: 'Block (Square)', slug: 'square', description: 'Financial services and digital payments company' },
-                'coinbase': { name: 'Coinbase', slug: 'coinbase', description: 'Cryptocurrency exchange platform' },
-                'dropbox': { name: 'Dropbox', slug: 'dropbox', description: 'File hosting service' },
-                'github': { name: 'GitHub', slug: 'github', description: 'Internet hosting service for software development' },
-                'atlassian': { name: 'Atlassian', slug: 'atlassian', description: 'Software company that develops products for software developers' }
-            };
+        async function searchLinkedInDirect(query) {
+            try {
+                const linkedinSearchUrl = `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
+                const proxyUrl = CORS_PROXY + encodeURIComponent(linkedinSearchUrl);
 
+                if (DEBUG) {
+                    console.log('LinkedIn direct search URL:', linkedinSearchUrl);
+                }
+
+                const response = await fetch(proxyUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const html = await response.text();
+                if (DEBUG) {
+                    console.log('LinkedIn response length:', html.length);
+                    console.log('LinkedIn response preview:', html.substring(0, 500));
+                }
+
+                return parseLinkedInResults(html, query);
+
+            } catch (error) {
+                console.error('LinkedIn direct search error:', error);
+                return [];
+            }
+        }
+
+        function parseLinkedInResults(html, query) {
             const companies = [];
-            const queryLower = query.toLowerCase();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
 
-            // Direct match
-            if (knownCompanies[queryLower]) {
-                const company = knownCompanies[queryLower];
-                companies.push({
-                    name: company.name,
-                    slug: company.slug,
-                    url: `https://linkedin.com/company/${company.slug}`,
-                    description: company.description,
-                    source: 'Known Companies Database'
-                });
+            if (DEBUG) {
+                console.log('Parsing LinkedIn results...');
             }
 
-            // Partial matches
-            Object.keys(knownCompanies).forEach(key => {
-                if (key.includes(queryLower) || queryLower.includes(key)) {
-                    const company = knownCompanies[key];
-                    if (!companies.find(c => c.slug === company.slug)) {
-                        companies.push({
-                            name: company.name,
-                            slug: company.slug,
-                            url: `https://linkedin.com/company/${company.slug}`,
-                            description: company.description,
-                            source: 'Known Companies Database'
-                        });
-                    }
+            // Look for various LinkedIn company page patterns
+            const linkSelectors = [
+                'a[href*="/company/"]',
+                '[data-test-id*="company"]',
+                '.company-name',
+                '.entity-result__title-text a',
+                '.search-result__title a'
+            ];
+
+            linkSelectors.forEach(selector => {
+                const elements = doc.querySelectorAll(selector);
+                if (DEBUG) {
+                    console.log(`Found ${elements.length} elements with selector: ${selector}`);
                 }
+
+                elements.forEach((element, index) => {
+                    if (index >= 15) return; // Limit results
+
+                    let href = element.href || element.getAttribute('href');
+                    let name = element.textContent?.trim() || element.getAttribute('aria-label') || '';
+
+                    // If it's not a link, look for a link within it
+                    if (!href) {
+                        const linkChild = element.querySelector('a[href*="/company/"]');
+                        if (linkChild) {
+                            href = linkChild.href || linkChild.getAttribute('href');
+                            name = name || linkChild.textContent?.trim();
+                        }
+                    }
+
+                    if (href && href.includes('/company/')) {
+                        const companyMatch = href.match(/\/company\/([^\/\?&#]+)/);
+                        if (companyMatch) {
+                            const companySlug = companyMatch[1];
+                            const companyName = name || formatCompanyName(companySlug);
+
+                            // Avoid duplicates and filter out generic names
+                            if (companyName.length > 2 && !companies.find(c => c.slug === companySlug)) {
+                                companies.push({
+                                    name: companyName,
+                                    slug: companySlug,
+                                    url: href.startsWith('http') ? href : `https://linkedin.com${href}`,
+                                    description: extractLinkedInDescription(element),
+                                    source: 'LinkedIn Direct'
+                                });
+                            }
+                        }
+                    }
+                });
             });
 
-            if (DEBUG && companies.length > 0) {
-                console.log('Found companies in known database:', companies);
+            if (DEBUG) {
+                console.log('LinkedIn parsed companies:', companies);
             }
 
             return companies;
+        }
+
+        function extractLinkedInDescription(element) {
+            // Look for description in various LinkedIn elements
+            const descSelectors = [
+                '.entity-result__summary',
+                '.search-result__summary',
+                '.company-description',
+                '.subline-level-1',
+                '.subline-level-2'
+            ];
+
+            for (let selector of descSelectors) {
+                const descElement = element.closest('.entity-result')?.querySelector(selector) ||
+                    element.closest('.search-result')?.querySelector(selector) ||
+                    element.querySelector(selector);
+
+                if (descElement) {
+                    const text = descElement.textContent?.trim();
+                    if (text && text.length > 10) {
+                        return text.substring(0, 200) + (text.length > 200 ? '...' : '');
+                    }
+                }
+            }
+
+            return 'LinkedIn company profile';
         }
 
         async function searchWithGoogle(query) {
