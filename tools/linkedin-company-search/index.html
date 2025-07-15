@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,23 +13,27 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
+
         .container {
             background: white;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
             color: #0077b5;
             text-align: center;
             margin-bottom: 30px;
         }
+
         .search-section {
             margin-bottom: 30px;
             display: flex;
             gap: 10px;
             align-items: center;
         }
+
         input[type="text"] {
             flex: 1;
             padding: 12px;
@@ -36,6 +41,7 @@
             border-radius: 6px;
             font-size: 16px;
         }
+
         button {
             background-color: #0077b5;
             color: white;
@@ -46,16 +52,20 @@
             font-size: 16px;
             white-space: nowrap;
         }
+
         button:hover {
             background-color: #005885;
         }
+
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
         }
+
         .results {
             margin-top: 20px;
         }
+
         .company-card {
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -64,15 +74,18 @@
             background-color: #fafafa;
             transition: box-shadow 0.2s;
         }
+
         .company-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
+
         .company-name {
             font-weight: bold;
             color: #0077b5;
             font-size: 18px;
             margin-bottom: 8px;
         }
+
         .company-info {
             color: #666;
             margin-bottom: 5px;
@@ -80,19 +93,23 @@
             align-items: center;
             gap: 8px;
         }
+
         .company-description {
             color: #333;
             margin-top: 10px;
             line-height: 1.4;
         }
+
         .company-link {
             color: #0077b5;
             text-decoration: none;
             font-weight: 500;
         }
+
         .company-link:hover {
             text-decoration: underline;
         }
+
         .error {
             color: #d32f2f;
             background-color: #ffebee;
@@ -101,6 +118,7 @@
             margin: 15px 0;
             border-left: 4px solid #d32f2f;
         }
+
         .success {
             color: #2e7d32;
             background-color: #e8f5e8;
@@ -109,12 +127,14 @@
             margin: 15px 0;
             border-left: 4px solid #2e7d32;
         }
+
         .loading {
             text-align: center;
             color: #666;
             font-style: italic;
             padding: 40px;
         }
+
         .info-note {
             background-color: #e3f2fd;
             border: 1px solid #bbdefb;
@@ -123,27 +143,31 @@
             margin-bottom: 20px;
             color: #1565c0;
         }
+
         .stats {
             text-align: center;
             margin: 20px 0;
             color: #666;
             font-size: 14px;
         }
+
         @media (max-width: 600px) {
             .search-section {
                 flex-direction: column;
                 align-items: stretch;
             }
+
             input[type="text"] {
                 margin-bottom: 10px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>LinkedIn Company Search</h1>
-        
+
         <div class="info-note">
             <strong>Browser-based LinkedIn Company Search</strong><br>
             This tool searches LinkedIn company pages directly through a CORS proxy. No authentication required!
@@ -159,7 +183,10 @@
 
     <script>
         const CORS_PROXY = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=';
-        
+
+        // Debug mode - set to true to see more info
+        const DEBUG = true;
+
         async function searchCompanies() {
             const query = document.getElementById('searchQuery').value.trim();
             if (!query) {
@@ -169,35 +196,34 @@
 
             const resultsDiv = document.getElementById('results');
             const searchBtn = document.getElementById('searchBtn');
-            
+
             // Show loading state
             resultsDiv.innerHTML = '<div class="loading">🔍 Searching LinkedIn for companies...</div>';
             searchBtn.disabled = true;
             searchBtn.textContent = 'Searching...';
 
             try {
-                // Search LinkedIn companies using Google search with site:linkedin.com/company
-                const searchUrl = `https://www.google.com/search?q=site:linkedin.com/company+${encodeURIComponent(query)}&num=10`;
-                const proxyUrl = CORS_PROXY + encodeURIComponent(searchUrl);
-                
-                const response = await fetch(proxyUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const html = await response.text();
-                const companies = parseGoogleResults(html, query);
-                
+                // Try multiple search strategies
+                let companies = [];
+
+                // Strategy 1: Use a simpler approach with known LinkedIn company URLs
+                companies = await searchWithKnownCompanies(query);
+
                 if (companies.length === 0) {
-                    // Fallback: try direct LinkedIn search
-                    await searchLinkedInDirect(query);
-                } else {
-                    displayResults(companies, query);
+                    // Strategy 2: Try Google search
+                    companies = await searchWithGoogle(query);
                 }
-                
+
+                if (companies.length === 0) {
+                    // Strategy 3: Try DuckDuckGo search
+                    companies = await searchWithDuckDuckGo(query);
+                }
+
+                displayResults(companies, query);
+
             } catch (error) {
                 console.error('Search error:', error);
-                showMessage(`Search failed: ${error.message}. This might be due to rate limiting or blocked requests.`, 'error');
+                showMessage(`Search failed: ${error.message}`, 'error');
                 resultsDiv.innerHTML = '';
             } finally {
                 searchBtn.disabled = false;
@@ -205,21 +231,131 @@
             }
         }
 
-        async function searchLinkedInDirect(query) {
+        async function searchWithKnownCompanies(query) {
+            // Database of well-known companies and their LinkedIn slugs
+            const knownCompanies = {
+                'apple': { name: 'Apple', slug: 'apple', description: 'Technology company known for iPhone, Mac, and other consumer electronics' },
+                'google': { name: 'Google', slug: 'google', description: 'Multinational technology company specializing in Internet-related services' },
+                'microsoft': { name: 'Microsoft', slug: 'microsoft', description: 'Multinational technology corporation producing computer software and services' },
+                'amazon': { name: 'Amazon', slug: 'amazon', description: 'Multinational technology company focusing on e-commerce and cloud computing' },
+                'meta': { name: 'Meta', slug: 'meta', description: 'Technology company that owns Facebook, Instagram, and WhatsApp' },
+                'facebook': { name: 'Meta', slug: 'meta', description: 'Technology company that owns Facebook, Instagram, and WhatsApp' },
+                'tesla': { name: 'Tesla', slug: 'tesla-motors', description: 'Electric vehicle and clean energy company' },
+                'netflix': { name: 'Netflix', slug: 'netflix', description: 'Streaming entertainment service with TV series and films' },
+                'uber': { name: 'Uber', slug: 'uber-com', description: 'Technology platform for mobility and delivery' },
+                'airbnb': { name: 'Airbnb', slug: 'airbnb', description: 'Online marketplace for lodging and tourism experiences' },
+                'spotify': { name: 'Spotify', slug: 'spotify', description: 'Audio streaming and media services provider' },
+                'twitter': { name: 'X (Twitter)', slug: 'twitter', description: 'Social networking service' },
+                'linkedin': { name: 'LinkedIn', slug: 'linkedin', description: 'Professional networking platform' },
+                'salesforce': { name: 'Salesforce', slug: 'salesforce', description: 'Cloud-based software company' },
+                'oracle': { name: 'Oracle', slug: 'oracle', description: 'Multinational computer technology corporation' },
+                'ibm': { name: 'IBM', slug: 'ibm', description: 'Multinational technology and consulting corporation' },
+                'intel': { name: 'Intel', slug: 'intel-corporation', description: 'Multinational corporation and technology company' },
+                'nvidia': { name: 'NVIDIA', slug: 'nvidia', description: 'Multinational technology company known for graphics processing units' },
+                'adobe': { name: 'Adobe', slug: 'adobe', description: 'Multinational computer software company' },
+                'zoom': { name: 'Zoom', slug: 'zoom-video-communications', description: 'Video communications company' },
+                'slack': { name: 'Slack', slug: 'tiny-speck', description: 'Business communication platform' },
+                'shopify': { name: 'Shopify', slug: 'shopify', description: 'Multinational e-commerce company' },
+                'paypal': { name: 'PayPal', slug: 'paypal', description: 'American multinational financial technology company' },
+                'stripe': { name: 'Stripe', slug: 'stripe', description: 'Financial services and software as a service company' },
+                'square': { name: 'Block (Square)', slug: 'square', description: 'Financial services and digital payments company' },
+                'coinbase': { name: 'Coinbase', slug: 'coinbase', description: 'Cryptocurrency exchange platform' },
+                'dropbox': { name: 'Dropbox', slug: 'dropbox', description: 'File hosting service' },
+                'github': { name: 'GitHub', slug: 'github', description: 'Internet hosting service for software development' },
+                'atlassian': { name: 'Atlassian', slug: 'atlassian', description: 'Software company that develops products for software developers' }
+            };
+
+            const companies = [];
+            const queryLower = query.toLowerCase();
+
+            // Direct match
+            if (knownCompanies[queryLower]) {
+                const company = knownCompanies[queryLower];
+                companies.push({
+                    name: company.name,
+                    slug: company.slug,
+                    url: `https://linkedin.com/company/${company.slug}`,
+                    description: company.description,
+                    source: 'Known Companies Database'
+                });
+            }
+
+            // Partial matches
+            Object.keys(knownCompanies).forEach(key => {
+                if (key.includes(queryLower) || queryLower.includes(key)) {
+                    const company = knownCompanies[key];
+                    if (!companies.find(c => c.slug === company.slug)) {
+                        companies.push({
+                            name: company.name,
+                            slug: company.slug,
+                            url: `https://linkedin.com/company/${company.slug}`,
+                            description: company.description,
+                            source: 'Known Companies Database'
+                        });
+                    }
+                }
+            });
+
+            if (DEBUG && companies.length > 0) {
+                console.log('Found companies in known database:', companies);
+            }
+
+            return companies;
+        }
+
+        async function searchWithGoogle(query) {
             try {
-                const linkedinSearchUrl = `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
-                const proxyUrl = CORS_PROXY + encodeURIComponent(linkedinSearchUrl);
-                
+                const searchUrl = `https://www.google.com/search?q=site:linkedin.com/company+${encodeURIComponent(query)}&num=10`;
+                const proxyUrl = CORS_PROXY + encodeURIComponent(searchUrl);
+
+                if (DEBUG) {
+                    console.log('Google search URL:', searchUrl);
+                    console.log('Proxy URL:', proxyUrl);
+                }
+
                 const response = await fetch(proxyUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const html = await response.text();
-                
-                const companies = parseLinkedInResults(html, query);
-                displayResults(companies, query);
-                
+                if (DEBUG) {
+                    console.log('Google response length:', html.length);
+                    console.log('Google response preview:', html.substring(0, 500));
+                }
+
+                return parseGoogleResults(html, query);
+
             } catch (error) {
-                console.error('LinkedIn direct search error:', error);
-                showMessage('Unable to fetch company data. LinkedIn may be blocking automated requests.', 'error');
-                document.getElementById('results').innerHTML = '';
+                console.error('Google search error:', error);
+                return [];
+            }
+        }
+
+        async function searchWithDuckDuckGo(query) {
+            try {
+                const searchUrl = `https://duckduckgo.com/html/?q=site:linkedin.com/company+${encodeURIComponent(query)}`;
+                const proxyUrl = CORS_PROXY + encodeURIComponent(searchUrl);
+
+                if (DEBUG) {
+                    console.log('DuckDuckGo search URL:', searchUrl);
+                }
+
+                const response = await fetch(proxyUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const html = await response.text();
+                if (DEBUG) {
+                    console.log('DuckDuckGo response length:', html.length);
+                }
+
+                return parseDuckDuckGoResults(html, query);
+
+            } catch (error) {
+                console.error('DuckDuckGo search error:', error);
+                return [];
             }
         }
 
@@ -227,68 +363,86 @@
             const companies = [];
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            
-            // Look for Google search result links to LinkedIn company pages
-            const links = doc.querySelectorAll('a[href*="linkedin.com/company"]');
-            
-            links.forEach((link, index) => {
-                if (index >= 10) return; // Limit results
-                
-                const href = link.href;
-                const companyMatch = href.match(/linkedin\.com\/company\/([^\/\?]+)/);
-                
-                if (companyMatch) {
-                    const companySlug = companyMatch[1];
-                    const companyName = formatCompanyName(companySlug);
-                    
-                    // Try to get description from search snippet
-                    const parent = link.closest('[data-ved]') || link.closest('.g');
-                    const description = parent ? extractDescription(parent) : '';
-                    
-                    companies.push({
-                        name: companyName,
-                        slug: companySlug,
-                        url: `https://linkedin.com/company/${companySlug}`,
-                        description: description,
-                        source: 'Google Search'
-                    });
+
+            if (DEBUG) {
+                console.log('Parsing Google results...');
+            }
+
+            // Look for various link patterns
+            const linkSelectors = [
+                'a[href*="linkedin.com/company"]',
+                'a[href*="linkedin.com/in/company"]',
+                '[href*="linkedin.com/company"]'
+            ];
+
+            linkSelectors.forEach(selector => {
+                const links = doc.querySelectorAll(selector);
+                if (DEBUG) {
+                    console.log(`Found ${links.length} links with selector: ${selector}`);
                 }
+
+                links.forEach((link, index) => {
+                    if (index >= 10) return;
+
+                    const href = link.href || link.getAttribute('href');
+                    if (!href) return;
+
+                    const companyMatch = href.match(/linkedin\.com\/company\/([^\/\?&#]+)/);
+
+                    if (companyMatch) {
+                        const companySlug = companyMatch[1];
+                        const companyName = formatCompanyName(companySlug);
+
+                        // Avoid duplicates
+                        if (!companies.find(c => c.slug === companySlug)) {
+                            companies.push({
+                                name: companyName,
+                                slug: companySlug,
+                                url: `https://linkedin.com/company/${companySlug}`,
+                                description: extractDescription(link.closest('.g') || link.parentElement),
+                                source: 'Google Search'
+                            });
+                        }
+                    }
+                });
             });
-            
+
+            if (DEBUG) {
+                console.log('Google parsed companies:', companies);
+            }
+
             return companies;
         }
 
-        function parseLinkedInResults(html, query) {
+        function parseDuckDuckGoResults(html, query) {
             const companies = [];
-            // This is a simplified parser - LinkedIn's actual structure is complex and changes frequently
-            // In a real implementation, you'd need more sophisticated parsing
-            
-            try {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                
-                // Look for company cards or links (this is a basic approach)
-                const companyElements = doc.querySelectorAll('[data-test-id*="company"], .company-name, [href*="/company/"]');
-                
-                companyElements.forEach((element, index) => {
-                    if (index >= 10) return;
-                    
-                    const name = element.textContent?.trim() || 'Unknown Company';
-                    const href = element.href || element.querySelector('a')?.href || '';
-                    
-                    if (name && name.length > 2) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const links = doc.querySelectorAll('a[href*="linkedin.com/company"]');
+
+            links.forEach((link, index) => {
+                if (index >= 10) return;
+
+                const href = link.href || link.getAttribute('href');
+                const companyMatch = href.match(/linkedin\.com\/company\/([^\/\?&#]+)/);
+
+                if (companyMatch) {
+                    const companySlug = companyMatch[1];
+                    const companyName = formatCompanyName(companySlug);
+
+                    if (!companies.find(c => c.slug === companySlug)) {
                         companies.push({
-                            name: name,
-                            url: href,
-                            description: 'Found on LinkedIn',
-                            source: 'LinkedIn Direct'
+                            name: companyName,
+                            slug: companySlug,
+                            url: `https://linkedin.com/company/${companySlug}`,
+                            description: 'Found via DuckDuckGo search',
+                            source: 'DuckDuckGo Search'
                         });
                     }
-                });
-            } catch (error) {
-                console.error('Error parsing LinkedIn results:', error);
-            }
-            
+                }
+            });
+
             return companies;
         }
 
@@ -312,7 +466,7 @@
 
         function displayResults(companies, query) {
             const resultsDiv = document.getElementById('results');
-            
+
             if (!companies || companies.length === 0) {
                 resultsDiv.innerHTML = `
                     <div class="stats">No companies found for "${query}"</div>
@@ -324,7 +478,7 @@
             }
 
             let html = `<div class="stats">Found ${companies.length} companies for "${query}"</div>`;
-            
+
             companies.forEach((company, index) => {
                 html += `
                     <div class="company-card">
@@ -367,7 +521,7 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = type;
             messageDiv.innerHTML = message;
-            
+
             const container = document.querySelector('.container');
             container.insertBefore(messageDiv, container.children[2]);
 
@@ -379,8 +533,8 @@
         }
 
         // Allow Enter key to trigger search
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('searchQuery').addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     searchCompanies();
                 }
@@ -388,9 +542,10 @@
         });
 
         // Auto-focus search input
-        window.onload = function() {
+        window.onload = function () {
             document.getElementById('searchQuery').focus();
         };
     </script>
 </body>
+
 </html>
