@@ -377,7 +377,7 @@
 
         async function searchWithDuckDuckGo(query) {
             try {
-                const searchUrl = `https://duckduckgo.com/?q=site:linkedin.com/company+${encodeURIComponent(query)}&ia=web`;
+                const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}&ia=web`;
 
                 if (DEBUG) {
                     console.log('DuckDuckGo search URL:', searchUrl);
