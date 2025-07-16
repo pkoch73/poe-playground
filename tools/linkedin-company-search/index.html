@@ -187,6 +187,14 @@
         // Debug mode - set to true to see more info
         const DEBUG = true;
 
+        async function fetchWithProxy(url) {
+            const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.text();
+        }
+
         async function searchCompanies() {
             const query = document.getElementById('searchQuery').value.trim();
             if (!query) {
@@ -233,18 +241,12 @@
         async function searchLinkedInDirect(query) {
             try {
                 const linkedinSearchUrl = `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(query)}`;
-                const proxyUrl = CORS_PROXY + encodeURIComponent(linkedinSearchUrl);
 
                 if (DEBUG) {
                     console.log('LinkedIn direct search URL:', linkedinSearchUrl);
                 }
 
-                const response = await fetch(proxyUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const html = await response.text();
+                const html = await fetchWithProxy(linkedinSearchUrl);
                 if (DEBUG) {
                     console.log('LinkedIn response length:', html.length);
                     console.log('LinkedIn response preview:', html.substring(0, 500));
@@ -354,19 +356,12 @@
         async function searchWithGoogle(query) {
             try {
                 const searchUrl = `https://www.google.com/search?q=site:linkedin.com/company+${encodeURIComponent(query)}&num=10`;
-                const proxyUrl = CORS_PROXY + encodeURIComponent(searchUrl);
 
                 if (DEBUG) {
                     console.log('Google search URL:', searchUrl);
-                    console.log('Proxy URL:', proxyUrl);
                 }
 
-                const response = await fetch(proxyUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const html = await response.text();
+                const html = await fetchWithProxy(searchUrl);
                 if (DEBUG) {
                     console.log('Google response length:', html.length);
                     console.log('Google response preview:', html.substring(0, 500));
@@ -383,18 +378,12 @@
         async function searchWithDuckDuckGo(query) {
             try {
                 const searchUrl = `https://duckduckgo.com/html/?q=site:linkedin.com/company+${encodeURIComponent(query)}`;
-                const proxyUrl = CORS_PROXY + encodeURIComponent(searchUrl);
 
                 if (DEBUG) {
                     console.log('DuckDuckGo search URL:', searchUrl);
                 }
 
-                const response = await fetch(proxyUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const html = await response.text();
+                const html = await fetchWithProxy(searchUrl);
                 if (DEBUG) {
                     console.log('DuckDuckGo response length:', html.length);
                 }
