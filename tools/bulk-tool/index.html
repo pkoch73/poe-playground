@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assets Bulk Tool</title>
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -148,9 +148,10 @@
             <h2 class="text-base font-medium text-gray-600 dark:text-gray-400 mb-2">Current Mode: <span id="currentTabLabel" class="font-bold text-primary">Asset Renamer</span></h2>
         </div>
         <div class="mb-6 flex space-x-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 overflow-hidden">
-            <button class="tab-button flex-1 py-2 px-4 rounded-md tab-active" data-tab="rename" data-label="Asset Renamer">Asset Renamer</button>
-            <button class="tab-button flex-1 py-2 px-4 rounded-md tab-inactive" data-tab="metadata" data-label="Metadata Updater">Metadata Updater</button>
-            <button class="tab-button flex-1 py-2 px-4 rounded-md tab-inactive" data-tab="delete" data-label="Bulk Delete">Bulk Delete</button>
+            <button class="tab-button py-2 px-4 rounded-md tab-active" data-tab="rename" data-label="Asset Renamer">Asset Renamer</button>
+            <button class="tab-button py-2 px-4 rounded-md tab-inactive" data-tab="metadata" data-label="Metadata Updater">Metadata Updater</button>
+            <button class="tab-button py-2 px-4 rounded-md tab-inactive" data-tab="delete" data-label="Bulk Delete">Bulk Delete</button>
+            <button class="tab-button py-2 px-4 rounded-md tab-inactive" data-tab="search" data-label="Bulk Search">Bulk Search</button>
         </div>
         
         <!-- File Input Section -->
@@ -418,6 +419,191 @@
                 <button id="cancelMetadataBtn" 
                     class="px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
                     Cancel
+                </button>
+            </div>
+        </div>
+        
+        <!-- Search Configuration Section -->
+        <div id="searchConfigSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <h2 class="text-xl font-semibold mb-4">Bulk Search Configuration</h2>
+            
+            <div class="mb-4">
+                <label for="searchBasePath" class="block text-sm font-medium mb-1">Search Base Path (Optional)</label>
+                <input type="text" id="searchBasePath" placeholder="/content/dam/your-project" 
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                    focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                    dark:bg-gray-700 dark:text-white" />
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Limit search to a specific path in the DAM. Leave empty to search everywhere.
+                </p>
+            </div>
+            
+            <div class="mb-4">
+                <label for="searchResultsLimit" class="block text-sm font-medium mb-1">Results Limit</label>
+                <input type="number" id="searchResultsLimit" min="1" max="1000" value="100"
+                    class="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                    focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                    dark:bg-gray-700 dark:text-white" />
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Maximum number of results to return per SKU. (1-1000)
+                </p>
+            </div>
+            
+            <div class="mb-6">
+                <label for="searchMetadataProperty" class="block text-sm font-medium mb-1">Metadata Property to Search</label>
+                <div class="flex gap-2">
+                    <select id="searchMetadataProperty" 
+                        class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                        dark:bg-gray-700 dark:text-white">
+                        <option value="jcr:content/metadata/dc:description">dc:description (Description)</option>
+                        <option value="jcr:content/metadata/dc:title">dc:title (Title)</option>
+                        <option value="jcr:content/metadata/dc:subject">dc:subject (Keywords)</option>
+                        <option value="jcr:content/metadata/sku">sku (SKU Field)</option>
+                        <option value="jcr:content/metadata/productId">productId (Product ID)</option>
+                        <option value="jcr:content/metadata/partNumber">partNumber (Part Number)</option>
+                        <option value="custom">Custom Property...</option>
+                    </select>
+                    <button type="button" id="addSearchPropertyBtn" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-opacity-90 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <input type="text" id="customSearchProperty" placeholder="e.g. jcr:content/metadata/customField" 
+                    class="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                    focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                    dark:bg-gray-700 dark:text-white hidden" />
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Specify which metadata property to search for your SKU/search terms.
+                </p>
+            </div>
+            
+            <div id="searchPropertiesList" class="mb-4 space-y-2 hidden">
+                <label class="block text-sm font-medium mb-2">Search Properties</label>
+                <div id="searchPropertiesContainer" class="space-y-2">
+                    <!-- Search properties will be added here -->
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Additional Search Options</label>
+                <div class="flex flex-wrap gap-3">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" id="searchInFilename" class="form-checkbox h-5 w-5 text-primary">
+                        <span class="ml-2">Also search in filename</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" id="searchInTags" class="form-checkbox h-5 w-5 text-primary">
+                        <span class="ml-2">Also search in tags (cq:tags)</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <button id="searchPreviewBtn" 
+                    class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Search for Assets
+                </button>
+            </div>
+        </div>
+        
+        <!-- Search Results Section -->
+        <div id="searchResultsSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Search Results</h2>
+                <div class="flex gap-2">
+                    <div class="relative">
+                        <input type="text" id="searchResultsFilter" placeholder="Filter results..." 
+                            class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                            dark:bg-gray-700 dark:text-white pl-9" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <button id="downloadSelectedBtn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        Download Selected
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Additional Filters -->
+            <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="assetTypeFilter" class="block text-sm font-medium mb-1">Asset Type</label>
+                    <select id="assetTypeFilter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                        dark:bg-gray-700 dark:text-white">
+                        <option value="">All Asset Types</option>
+                        <option value="Product Imagery">Product Imagery</option>
+                        <option value="Application Imagery">Application Imagery</option>
+                        <option value="Line Art">Line Art</option>
+                        <option value="Logos">Logos</option>
+                        <option value="Video">Video</option>
+                        <option value="CAD">CAD</option>
+                        <option value="Social Media">Social Media</option>
+                        <option value="PDF/Literature">PDF/Literature</option>
+                        <option value="Documents">Documents</option>
+                        <option value="Web Imagery">Web Imagery</option>
+                        <option value="Event Imagery">Event Imagery</option>
+                        <option value="Partnership Imagery">Partnership Imagery</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="productShotFilter" class="block text-sm font-medium mb-1">Product Shot</label>
+                    <select id="productShotFilter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                        dark:bg-gray-700 dark:text-white">
+                        <option value="">All Product Shots</option>
+                        <option value="Product Silo">Product Silo</option>
+                        <option value="Application Detail">Application Detail</option>
+                        <option value="Product Silo Detail">Product Silo Detail</option>
+                        <option value="Application">Application</option>
+                        <option value="Web Banner">Web Banner</option>
+                        <option value="Web Silo Backgrounds">Web Silo Backgrounds</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-end">
+                    <button id="clearFiltersBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-opacity-90 transition-colors">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mb-4 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 p-4 rounded flex items-start">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <p><span id="selectedCount">0</span> of <span id="totalResultsCount">0</span> assets selected</p>
+                    <p class="text-sm mt-1">Tip: Use the checkbox in the header to select all visible results</p>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <div class="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-t border-b border-gray-300 dark:border-gray-600">
+                    <div class="w-7">
+                        <input type="checkbox" id="selectAllCheckbox" class="form-checkbox h-5 w-5 text-primary rounded">
+                    </div>
+                    <div class="w-28">SKU</div>
+                    <div class="flex-1">Asset</div>
+                </div>
+                
+                <div id="searchResultsContainer" class="border border-gray-300 dark:border-gray-600 rounded-b max-h-[600px] overflow-y-auto">
+                    <!-- Results will be populated here -->
+                    <div class="py-20 text-center text-gray-500 dark:text-gray-400">
+                        Search results will appear here
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-4">
+                <button id="cancelSearchBtn" 
+                    class="px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Back to Search
                 </button>
             </div>
         </div>
@@ -768,12 +954,17 @@
             document.getElementById('renamePreviewBtn').addEventListener('click', previewRenames);
             document.getElementById('metadataPreviewBtn').addEventListener('click', previewMetadataUpdates);
             document.getElementById('deletePreviewBtn').addEventListener('click', previewDeletes);
+            document.getElementById('searchPreviewBtn').addEventListener('click', performSearch);
             document.getElementById('executeRenameBtn').addEventListener('click', executeRenames);
             document.getElementById('executeMetadataBtn').addEventListener('click', executeMetadataUpdates);
             document.getElementById('executeDeleteBtn').addEventListener('click', executeDeletes);
             document.getElementById('cancelRenameBtn').addEventListener('click', cancelOperation);
             document.getElementById('cancelMetadataBtn').addEventListener('click', cancelOperation);
             document.getElementById('cancelDeleteBtn').addEventListener('click', cancelOperation);
+            document.getElementById('cancelSearchBtn').addEventListener('click', cancelOperation);
+            document.getElementById('downloadSelectedBtn').addEventListener('click', downloadSelectedAssets);
+            document.getElementById('searchResultsFilter').addEventListener('input', filterSearchResults);
+            document.getElementById('selectAllCheckbox').addEventListener('change', toggleSelectAllAssets);
             document.getElementById('resetBtn').addEventListener('click', resetApp);
             addMappingBtn.addEventListener('click', addMetadataMapping);
             
@@ -810,6 +1001,17 @@
             document.getElementById('imsToken').addEventListener('input', function() {
                 if (this.value.trim()) {
                     updateAuthStatusUI(true, 'IMS');
+                }
+            });
+            
+            // Add event listeners for search property configuration
+            document.getElementById('searchMetadataProperty').addEventListener('change', function() {
+                const customPropertyField = document.getElementById('customSearchProperty');
+                if (this.value === 'custom') {
+                    customPropertyField.classList.remove('hidden');
+                    customPropertyField.focus();
+                } else {
+                    customPropertyField.classList.add('hidden');
                 }
             });
             
@@ -884,6 +1086,8 @@
                                 populateMetadataColumnOptions();
                             } else if (currentTab === 'delete') {
                                 document.getElementById('deleteConfigSection').classList.remove('hidden');
+                            } else if (currentTab === 'search') {
+                                document.getElementById('searchConfigSection').classList.remove('hidden');
                             }
                         }
                     });
@@ -1261,6 +1465,13 @@
                     if (assetPathColumnSelect.options.length > 0) {
                         assetPathColumnSelect.selectedIndex = 0;
                         
+                        // Adjust label for the column selection based on the current tab
+                        if (currentTab === 'search') {
+                            document.querySelector('label[for="assetPathColumnSelect"]').textContent = 'Select SKU Column';
+                        } else {
+                            document.querySelector('label[for="assetPathColumnSelect"]').textContent = 'Select Asset Path Column';
+                        }
+                        
                         // Show appropriate config section based on active tab
                         if (currentTab === 'rename') {
                             renameConfigSection.classList.remove('hidden');
@@ -1269,6 +1480,8 @@
                             populateMetadataColumnOptions();
                         } else if (currentTab === 'delete') {
                             document.getElementById('deleteConfigSection').classList.remove('hidden');
+                        } else if (currentTab === 'search') {
+                            document.getElementById('searchConfigSection').classList.remove('hidden');
                         }
                     }
                 } catch (error) {
@@ -1527,9 +1740,12 @@
                 }
             }
             
-            // Populate metadata preview table
+            // Populate metadata preview table with HTTP command details
             function populateMetadataPreviewTable(updates) {
                 metadataPreviewTableBody.innerHTML = '';
+                
+                // Get AEM host (if available)
+                const aemHost = document.getElementById('aemHost').value.trim() || 'http://your-aem-instance.com';
                 
                 updates.forEach(update => {
                     const row = document.createElement('tr');
@@ -1537,16 +1753,49 @@
                     
                     // Asset path cell
                     const pathCell = document.createElement('td');
-                    pathCell.className = 'py-3 px-4 text-sm';
+                    pathCell.className = 'py-3 px-4 text-sm align-top';
                     pathCell.textContent = update.assetPath;
                     row.appendChild(pathCell);
                     
-                    // Metadata updates cell
+                    // Metadata updates cell with HTTP command details
                     const metadataCell = document.createElement('td');
                     metadataCell.className = 'py-3 px-4 text-sm';
                     
+                    // Create the details section
+                    const detailsSection = document.createElement('div');
+                    detailsSection.className = 'mb-3';
+                    
+                    // Prepare the API path
+                    const apiPath = buildApiPath(update.assetPath);
+                    const fullUrl = new URL(apiPath, aemHost).toString();
+                    
+                    // Prepare request body
+                    const requestBody = {
+                        class: "asset",
+                        properties: update.properties
+                    };
+                    
+                    // Create the HTTP command display
+                    detailsSection.innerHTML = `
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden mb-3">
+                            <div class="bg-gray-100 dark:bg-gray-800 px-3 py-1 font-semibold text-xs">HTTP Request</div>
+                            <div class="p-3 font-mono text-xs overflow-x-auto">
+                                <div class="text-blue-600 dark:text-blue-400">PUT ${fullUrl}</div>
+                                <div class="text-green-600 dark:text-green-400">Content-Type: application/json</div>
+                                <div class="text-green-600 dark:text-green-400">Authorization: Bearer &lt;token&gt; or Basic &lt;credentials&gt;</div>
+                                <div class="mt-2 text-gray-600 dark:text-gray-400">${JSON.stringify(requestBody, null, 2)}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add the metadata updates list
                     const metadataList = document.createElement('ul');
                     metadataList.className = 'list-disc pl-5 space-y-1';
+                    
+                    // Add header for the metadata list
+                    const metadataHeader = document.createElement('div');
+                    metadataHeader.className = 'font-medium mb-2';
+                    metadataHeader.textContent = 'Properties to update:';
                     
                     Object.entries(update.properties).forEach(([key, value]) => {
                         const item = document.createElement('li');
@@ -1554,6 +1803,9 @@
                         metadataList.appendChild(item);
                     });
                     
+                    // Add everything to the metadata cell
+                    metadataCell.appendChild(detailsSection);
+                    metadataCell.appendChild(metadataHeader);
                     metadataCell.appendChild(metadataList);
                     row.appendChild(metadataCell);
                     
@@ -1682,6 +1934,11 @@
                 
                 // Get AEM host
                 const aemHost = document.getElementById('aemHost').value.trim();
+                if (!aemHost) {
+                    showNotification('Please provide an AEM host URL', 'error');
+                    addToLog('Error: AEM host URL is required', 'error');
+                    return;
+                }
                 
                 // Initialize counters
                 let successCount = 0;
@@ -1690,13 +1947,16 @@
                 // Log header
                 addToLog('Starting metadata update operation...', 'header');
                 
+                // Get authentication headers
+                const headers = getAuthHeaders();
+                
                 // Process each asset
                 for (const update of metadataUpdates) {
                     try {
                         // Log start of operation
                         addToLog(`Updating metadata for: ${update.assetPath}`, 'info');
                         
-                        // Prepare API path
+                        // Prepare API path - direct path to the asset
                         const apiPath = buildApiPath(update.assetPath);
                         
                         // Prepare request body
@@ -1705,17 +1965,66 @@
                             properties: update.properties
                         };
                         
-                        // In a real app, you would make the actual API call to update metadata
-                        // API endpoint: PUT apiPath
-                        // Headers: 
-                        // - Content-Type: application/json
-                        // - Authorization: Basic/Bearer based on auth method
-                        // Body: JSON.stringify(requestBody)
+                        // Create the full URL with CORS proxy
+                        const targetUrl = new URL(apiPath, aemHost).toString();
                         
-                        // Here we'll simulate success/failure based on a basic rule
-                        const success = Math.random() > 0.2; // 80% success rate
+                        // Try different request methods in order of preference - all through CORS proxy
+                        const requestMethods = [
+                            { name: 'Original CORS Proxy (Fixed)', url: 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=' + encodeURIComponent(targetUrl) },
+                            { name: 'CORS-Anywhere', url: 'https://cors-anywhere.herokuapp.com/' + targetUrl },
+                            { name: 'AllOrigins CORS Proxy', url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl) }
+                        ];
                         
-                        if (success) {
+                        const currentMethod = requestMethods[0];
+                        const corsProxyUrl = currentMethod.url;
+                        addToLog(`Using method: ${currentMethod.name}`, 'info');
+                        
+                        // Clone the headers to avoid mutation issues
+                        const requestHeaders = new Headers(headers);
+                        
+                        // Add content-type header for JSON payload
+                        requestHeaders.set('Content-Type', 'application/json');
+                        
+                        // Log the actual request details
+                        addToLog(`Sending PUT request via CORS proxy`, 'info');
+                        addToLog(`URL: ${targetUrl}`, 'info');
+                        addToLog(`CORS Proxy URL: ${corsProxyUrl}`, 'info');
+                        addToLog(`Headers: ${JSON.stringify(Object.fromEntries(requestHeaders.entries()))}`, 'info');
+                        addToLog(`Body: ${JSON.stringify(requestBody)}`, 'info');
+                        
+                        // First, test if the CORS proxy is reachable with a simple GET
+                        try {
+                            addToLog(`Testing CORS proxy connectivity...`, 'info');
+                            const testUrl = new URL('/api/assets.json?limit=1', aemHost).toString();
+                            const testCorsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=' + encodeURIComponent(testUrl);
+                            const testResponse = await fetch(testCorsProxyUrl, {
+                                method: 'GET',
+                                headers: getAuthHeaders()
+                            });
+                            addToLog(`CORS proxy test status: ${testResponse.status} (${testUrl})`, testResponse.ok ? 'info' : 'error');
+                        } catch (testError) {
+                            addToLog(`CORS proxy test failed: ${testError.message}`, 'error');
+                        }
+                        
+                        // Make the actual API call through the CORS proxy
+                        addToLog(`About to send PUT request...`, 'info');
+                        let response;
+                        try {
+                            response = await fetch(corsProxyUrl, {
+                                method: 'PUT',
+                                headers: requestHeaders,
+                                body: JSON.stringify(requestBody)
+                            });
+                            addToLog(`PUT request completed with status: ${response.status}`, response.ok ? 'info' : 'error');
+                        } catch (fetchError) {
+                            addToLog(`PUT request failed with error: ${fetchError.message}`, 'error');
+                            addToLog(`Error type: ${fetchError.name}`, 'error');
+                            addToLog(`Error stack: ${fetchError.stack}`, 'error');
+                            throw fetchError; // Re-throw to trigger the outer catch block
+                        }
+                        
+                        // Process the response
+                        if (response.ok) {
                             const propertiesList = Object.entries(update.properties)
                                 .map(([key, value]) => `${key}: ${value}`)
                                 .join(', ');
@@ -1723,16 +2032,17 @@
                             addToLog(`Successfully updated metadata for: ${update.assetPath} (${propertiesList})`, 'success');
                             successCount++;
                         } else {
-                            addToLog(`Failed to update metadata for: ${update.assetPath}. API error: Asset not found.`, 'error');
+                            const errorText = await response.text().catch(() => 'Unknown error');
+                            addToLog(`Failed to update metadata for: ${update.assetPath}. Status: ${response.status}. Error: ${errorText}`, 'error');
                             failureCount++;
                         }
-                        
-                        // Simulating API call delay
-                        await new Promise(resolve => setTimeout(resolve, 300));
                     } catch (error) {
                         addToLog(`Error processing ${update.assetPath}: ${error.message}`, 'error');
                         failureCount++;
                     }
+                    
+                    // Small delay between operations to avoid overwhelming the server
+                    await new Promise(resolve => setTimeout(resolve, 100));
                 }
                 
                 // Update counters in UI
@@ -1829,10 +2139,834 @@
                 resultsLog.scrollTop = resultsLog.scrollHeight;
             }
             
+            // Create demo assets for testing without authentication
+            function createDemoSearchData() {
+                // Sample SKUs to demonstrate with
+                const demoSkus = [
+                    'SKU12345', 'SKU98765', 'PROD-123', 'ITEM-456', 'ASSET-789'
+                ];
+                
+                // Predefined asset types with corresponding thumbnail URLs and metadata
+                const assetTypes = [
+                    { 
+                        ext: 'jpg', 
+                        type: 'Image', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/photo.svg',
+                        assetType: 'Product Imagery',
+                        productShot: 'Product Silo'
+                    },
+                    { 
+                        ext: 'png', 
+                        type: 'Image', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/photo.svg',
+                        assetType: 'Application Imagery',
+                        productShot: 'Application Detail'
+                    },
+                    { 
+                        ext: 'pdf', 
+                        type: 'Document', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/document-text.svg',
+                        assetType: 'PDF/Literature',
+                        productShot: null
+                    },
+                    { 
+                        ext: 'mp4', 
+                        type: 'Video', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/film.svg',
+                        assetType: 'Video',
+                        productShot: 'Web Banner'
+                    },
+                    { 
+                        ext: 'psd', 
+                        type: 'Design', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/adjustments-horizontal.svg',
+                        assetType: 'Web Imagery',
+                        productShot: 'Web Silo Backgrounds'
+                    },
+                    { 
+                        ext: 'jpg', 
+                        type: 'Image', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/photo.svg',
+                        assetType: 'Line Art',
+                        productShot: null
+                    },
+                    { 
+                        ext: 'jpg', 
+                        type: 'Image', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/photo.svg',
+                        assetType: 'Logos',
+                        productShot: null
+                    },
+                    { 
+                        ext: 'jpg', 
+                        type: 'Image', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/photo.svg',
+                        assetType: 'Social Media',
+                        productShot: null
+                    },
+                    { 
+                        ext: 'dwg', 
+                        type: 'CAD', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/cube.svg',
+                        assetType: 'CAD',
+                        productShot: 'Product Silo Detail'
+                    },
+                    { 
+                        ext: 'jpg', 
+                        type: 'Image', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/photo.svg',
+                        assetType: 'Event Imagery',
+                        productShot: null
+                    },
+                    { 
+                        ext: 'jpg', 
+                        type: 'Image', 
+                        icon: 'https://cdn.jsdelivr.net/npm/heroicons/24/outline/esm/photo.svg',
+                        assetType: 'Partnership Imagery',
+                        productShot: null
+                    }
+                ];
+                
+                // Sample folders to make paths more realistic
+                const folders = [
+                    '/content/dam/marketing/products', 
+                    '/content/dam/social/campaigns', 
+                    '/content/dam/catalog/items',
+                    '/content/dam/projects/2023'
+                ];
+                
+                // Generate demo results
+                const results = [];
+                
+                // For each SKU, create a group of related assets
+                demoSkus.forEach(sku => {
+                    // Determine how many assets to generate for this SKU (2-7)
+                    const assetCount = Math.floor(Math.random() * 6) + 2;
+                    const assets = [];
+                    
+                    // Generate assets for this SKU
+                    for (let i = 0; i < assetCount; i++) {
+                        // Pick a random asset type
+                        const assetType = assetTypes[Math.floor(Math.random() * assetTypes.length)];
+                        // Pick a random folder
+                        const folder = folders[Math.floor(Math.random() * folders.length)];
+                        
+                        // Create variations of filenames with the SKU
+                        let filename;
+                        if (i === 0) {
+                            filename = `${sku}.${assetType.ext}`; // Simple naming
+                        } else if (i === 1) {
+                            filename = `${sku}_variant${i}.${assetType.ext}`; // With variant
+                        } else if (i === 2) {
+                            filename = `product_${sku}_detail.${assetType.ext}`; // Product detail
+                        } else {
+                            const descriptions = ['front', 'back', 'side', 'packaging', 'lifestyle', 'detail'];
+                            const desc = descriptions[i % descriptions.length];
+                            filename = `${sku}_${desc}.${assetType.ext}`; // With description
+                        }
+                        
+                        // Full asset path
+                        const path = `${folder}/${sku}/${filename}`;
+                        
+                        // Demo thumbnail URL - using placeholder images for demo purposes
+                        let thumbnailUrl = '';
+                        if (assetType.ext === 'jpg' || assetType.ext === 'png') {
+                            // Use placeholder images for image assets
+                            const width = 200;
+                            const height = 200;
+                            const imageId = Math.floor(Math.random() * 1000);
+                            thumbnailUrl = `https://picsum.photos/id/${imageId}/${width}/${height}`;
+                        } else {
+                            // Use icon for non-image assets
+                            thumbnailUrl = assetType.icon;
+                        }
+                        
+                        // Generate a random ID
+                        const id = Math.random().toString(36).substring(2, 15);
+                        
+                        // Create the asset object
+                        assets.push({
+                            id: id,
+                            path: path,
+                            name: filename,
+                            thumbnailUrl: thumbnailUrl,
+                            originalUrl: path, // In a real scenario, this would be a different URL
+                            lastModified: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
+                            metadata: {
+                                'dc:title': `${sku} ${assetType.type}`,
+                                'dc:description': `Demo asset for ${sku} showing ${assetType.type.toLowerCase()} content`,
+                                'xmp:CreatorTool': 'Adobe Photoshop',
+                                'sku': sku
+                            }
+                        });
+                    }
+                    
+                    // Add this SKU's assets to the results
+                    results.push({
+                        sku: sku,
+                        assets: assets
+                    });
+                });
+                
+                return results;
+            }
+            
+            // Perform bulk search
+            async function performSearch() {
+                if (!sheetData || sheetData.length <= 1) {
+                    showNotification('No data to process', 'error');
+                    return;
+                }
+                
+                // Check if authenticated or if we should use demo mode
+                const aemHost = document.getElementById('aemHost').value.trim();
+                const isDemoMode = !isAuthenticated || !aemHost;
+                
+                if (isDemoMode) {
+                    // Show notification about demo mode
+                    showNotification('Showing demo content - authenticate with an AEM host for real search results', 'info', 7000);
+                } else {
+                    // In real mode, require authentication
+                    if (!isAuthenticated) {
+                        showNotification('Please authenticate before performing search', 'error');
+                        return;
+                    }
+                }
+                
+                try {
+                    // Get selected column index for SKUs
+                    const skuColumnIndex = parseInt(assetPathColumnSelect.value);
+                    
+                    // Skip header row
+                    const dataRows = sheetData.slice(1);
+                    
+                    // Get SKUs from selected column
+                    const skus = dataRows.map(row => {
+                        return row[skuColumnIndex] || '';
+                    }).filter(sku => sku.trim() !== '');
+                    
+                    if (skus.length === 0) {
+                        showNotification('No SKUs found in the selected column', 'warning');
+                        return;
+                    }
+                    
+                    // Get search configuration
+                    const basePath = document.getElementById('searchBasePath').value.trim();
+                    const resultsLimit = parseInt(document.getElementById('searchResultsLimit').value) || 100;
+                    
+                    // Get search property configuration
+                    const searchMetadataProperty = document.getElementById('searchMetadataProperty').value;
+                    const customProperty = document.getElementById('customSearchProperty').value.trim();
+                    const searchInFilename = document.getElementById('searchInFilename').checked;
+                    const searchInTags = document.getElementById('searchInTags').checked;
+                    
+                    // Determine the actual property to search
+                    let primaryProperty = searchMetadataProperty;
+                    if (searchMetadataProperty === 'custom' && customProperty) {
+                        primaryProperty = customProperty;
+                    }
+                    
+                    // Show loading state
+                    const searchResultsContainer = document.getElementById('searchResultsContainer');
+                    searchResultsContainer.innerHTML = `
+                        <div class="py-20 flex flex-col items-center justify-center">
+                            <div class="loader w-12 h-12 border-4 border-gray-300 dark:border-gray-600 rounded-full"></div>
+                            <p class="mt-4 text-gray-600 dark:text-gray-400">Searching for ${skus.length} SKUs...</p>
+                        </div>
+                    `;
+                    
+                    // Show search results section
+                    document.getElementById('searchResultsSection').classList.remove('hidden');
+                    document.getElementById('searchConfigSection').classList.add('hidden');
+                    
+                    // Check if we're in demo mode
+                    if (isDemoMode) {
+                        // Simulate search delay for more realism
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        
+                        // Generate and use demo data instead of making API calls
+                        let demoResults = createDemoSearchData();
+                        
+                        // Filter demo results to match SKUs from input if possible
+                        if (skus.length > 0) {
+                            // For each SKU in the data, try to find a matching demo SKU or create a new one
+                            let combinedResults = [];
+                            
+                            skus.forEach(sku => {
+                                // Look for exact match first
+                                let match = demoResults.find(result => result.sku.toLowerCase() === sku.toLowerCase());
+                                
+                                // If no exact match, look for partial match
+                                if (!match) {
+                                    match = demoResults.find(result => 
+                                        result.sku.toLowerCase().includes(sku.toLowerCase()) || 
+                                        sku.toLowerCase().includes(result.sku.toLowerCase())
+                                    );
+                                }
+                                
+                                if (match) {
+                                    // Use this match but update SKU to match input
+                                    const copy = JSON.parse(JSON.stringify(match));
+                                    copy.sku = sku;
+                                    
+                                    // Update assets to reference this SKU
+                                    copy.assets.forEach(asset => {
+                                        // Update paths and other properties to match the SKU
+                                        const oldSku = match.sku;
+                                        asset.path = asset.path.replace(oldSku, sku);
+                                        asset.name = asset.name.replace(oldSku, sku);
+                                        if (asset.metadata && asset.metadata.sku) {
+                                            asset.metadata.sku = sku;
+                                        }
+                                    });
+                                    
+                                    combinedResults.push(copy);
+                                } else {
+                                    // Create a new demo result for this SKU
+                                    // Use first demo result as template
+                                    if (demoResults.length > 0) {
+                                        const template = demoResults[0];
+                                        const copy = JSON.parse(JSON.stringify(template));
+                                        copy.sku = sku;
+                                        
+                                        // Update assets to reference this SKU
+                                        copy.assets.forEach(asset => {
+                                            const oldSku = template.sku;
+                                            asset.path = asset.path.replace(oldSku, sku);
+                                            asset.name = asset.name.replace(oldSku, sku);
+                                            if (asset.metadata && asset.metadata.sku) {
+                                                asset.metadata.sku = sku;
+                                            }
+                                        });
+                                        
+                                        combinedResults.push(copy);
+                                    }
+                                }
+                            });
+                            
+                            // If we created custom results, use those
+                            if (combinedResults.length > 0) {
+                                demoResults = combinedResults;
+                            }
+                        }
+                        
+                        // Display demo results
+                        displaySearchResults(demoResults);
+                        return;
+                    }
+                    
+                    // Continue with real API calls (non-demo mode)
+                    
+                    // Get AEM host
+                    const aemHost = document.getElementById('aemHost').value.trim();
+                    if (!aemHost) {
+                        showNotification('Please provide an AEM host URL', 'error');
+                        return;
+                    }
+                    
+                    // Get authentication headers
+                    const headers = getAuthHeaders();
+                    
+                    // Initialize search results
+                    const searchResults = [];
+                    let totalFound = 0;
+                    
+                    // Process SKUs in batches to avoid overwhelming the server
+                    const batchSize = 5;
+                    const batches = [];
+                    
+                    for (let i = 0; i < skus.length; i += batchSize) {
+                        batches.push(skus.slice(i, i + batchSize));
+                    }
+                    
+                    for (let i = 0; i < batches.length; i++) {
+                        const batchSkus = batches[i];
+                        const batchPromises = batchSkus.map(sku => searchAssetsForSku(aemHost, sku, basePath, resultsLimit, { primaryProperty, searchInFilename, searchInTags }, headers));
+                        
+                        // Update progress message
+                        searchResultsContainer.innerHTML = `
+                            <div class="py-20 flex flex-col items-center justify-center">
+                                <div class="loader w-12 h-12 border-4 border-gray-300 dark:border-gray-600 rounded-full"></div>
+                                <p class="mt-4 text-gray-600 dark:text-gray-400">
+                                    Searching batch ${i + 1} of ${batches.length}... (${totalFound} assets found so far)
+                                </p>
+                            </div>
+                        `;
+                        
+                        // Process batch
+                        const batchResults = await Promise.all(batchPromises);
+                        
+                        // Add results to total
+                        batchResults.forEach(result => {
+                            if (result.assets && result.assets.length > 0) {
+                                searchResults.push({
+                                    sku: result.sku,
+                                    assets: result.assets
+                                });
+                                totalFound += result.assets.length;
+                            }
+                        });
+                        
+                        // Small delay between batches
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                    
+                    // Display results
+                    displaySearchResults(searchResults);
+                    
+                } catch (error) {
+                    showNotification('Error performing search: ' + error.message, 'error');
+                    console.error(error);
+                }
+            }
+            
+            // Search AEM for assets matching a SKU using Query Builder API
+            async function searchAssetsForSku(aemHost, sku, basePath, limit, searchOptions, headers) {
+                try {
+                    // Build the Query Builder API URL
+                    let apiPath = '/bin/querybuilder.json';
+                    
+                    // Add query parameters for Query Builder - simplified format
+                    const params = new URLSearchParams();
+                    
+                    // Set the search path
+                    params.append('path', basePath || '/content/dam');
+                    
+                    // Set asset type
+                    params.append('type', 'dam:Asset');
+                    
+                    // Add limit with proper Query Builder syntax
+                    params.append('p.limit', limit.toString());
+                    params.append('p.guessTotal', 'true');
+                    
+                    // Search in the primary metadata property (simplified format)
+                    if (searchOptions.primaryProperty) {
+                        params.append('property', searchOptions.primaryProperty);
+                        params.append('property.value', sku); // No wildcards, simple exact search
+                    }
+                    
+                    // Create the full URL with CORS proxy
+                    const targetUrl = new URL(apiPath + '?' + params.toString(), aemHost).toString();
+                    const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=' + encodeURIComponent(targetUrl);
+                    
+                    // Make the API call
+                    const response = await fetch(corsProxyUrl, {
+                        method: 'GET',
+                        headers: headers
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Search failed: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    // Process response
+                    const data = await response.json();
+                    
+                    // Extract assets from Query Builder response
+                    const assets = [];
+                    
+                    if (data && data.success && data.hits) {
+                        for (const hit of data.hits) {
+                            const assetPath = hit.path || '';
+                            const filename = hit.name || assetPath.split('/').pop() || '';
+                            const title = hit.title || '';
+                            const excerpt = hit.excerpt || '';
+                            
+                            // Since Query Builder already filtered by the property, trust all returned hits
+                            // No additional client-side filtering needed
+                            
+                            // Generate thumbnail URL (standard AEM pattern)
+                            const thumbnailUrl = `${aemHost}${assetPath}/_jcr_content/renditions/cq5dam.thumbnail.319.319.png`;
+                            
+                            // Get original asset URL  
+                            const originalUrl = `${aemHost}${assetPath}`;
+                            
+                            // Add to results
+                            assets.push({
+                                id: Math.random().toString(36).substring(2, 15),
+                                path: assetPath,
+                                name: filename,
+                                title: title,
+                                thumbnailUrl: thumbnailUrl,
+                                originalUrl: originalUrl,
+                                lastModified: hit.lastModified || '',
+                                excerpt: excerpt,
+                                metadata: {
+                                    'dc:title': title,
+                                    'sku': sku // Add the searched SKU for reference
+                                }
+                            });
+                        }
+                    }
+                    
+                    return {
+                        sku: sku,
+                        assets: assets,
+                        total: data?.total || 0,
+                        queryUrl: targetUrl // For debugging
+                    };
+                } catch (error) {
+                    console.error(`Error searching for SKU ${sku}:`, error);
+                    return {
+                        sku: sku,
+                        assets: [],
+                        error: error.message
+                    };
+                }
+            }
+            
+            // Display search results in the UI
+            function displaySearchResults(results) {
+                const container = document.getElementById('searchResultsContainer');
+                const selectedCountElement = document.getElementById('selectedCount');
+                const totalResultsCountElement = document.getElementById('totalResultsCount');
+                const downloadButton = document.getElementById('downloadSelectedBtn');
+                
+                // Clear container
+                container.innerHTML = '';
+                
+                // Count total assets
+                let totalAssets = 0;
+                results.forEach(result => totalAssets += result.assets.length);
+                
+                // Update total count
+                totalResultsCountElement.textContent = totalAssets.toString();
+                selectedCountElement.textContent = '0';
+                
+                // Disable download button initially
+                downloadButton.disabled = true;
+                
+                // Check if we have results
+                if (results.length === 0 || totalAssets === 0) {
+                    container.innerHTML = `
+                        <div class="py-20 text-center text-gray-500 dark:text-gray-400">
+                            No assets found matching your search criteria
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Create results for each SKU
+                results.forEach(result => {
+                    if (result.assets.length === 0) return;
+                    
+                    // Create SKU group
+                    const skuGroup = document.createElement('div');
+                    skuGroup.className = 'sku-group';
+                    skuGroup.setAttribute('data-sku', result.sku);
+                    
+                    // Add SKU header
+                    const skuHeader = document.createElement('div');
+                    skuHeader.className = 'bg-gray-50 dark:bg-gray-700 px-4 py-2 font-medium sticky top-0 z-10';
+                    skuHeader.textContent = `SKU: ${result.sku} (${result.assets.length} assets)`;
+                    skuGroup.appendChild(skuHeader);
+                    
+                    // Add assets
+                    result.assets.forEach(asset => {
+                        const assetRow = document.createElement('div');
+                        assetRow.className = 'asset-row flex items-center p-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800';
+                        assetRow.setAttribute('data-path', asset.path);
+                        assetRow.setAttribute('data-name', asset.name);
+                        assetRow.setAttribute('data-sku', result.sku);
+                        
+                        // Checkbox
+                        const checkbox = document.createElement('div');
+                        checkbox.className = 'w-7 mr-2';
+                        checkbox.innerHTML = `
+                            <input type="checkbox" class="asset-checkbox form-checkbox h-5 w-5 text-primary rounded" data-id="${asset.id}" data-url="${asset.originalUrl}">
+                        `;
+                        assetRow.appendChild(checkbox);
+                        
+                        // SKU cell
+                        const skuCell = document.createElement('div');
+                        skuCell.className = 'w-28 text-sm';
+                        skuCell.textContent = result.sku;
+                        assetRow.appendChild(skuCell);
+                        
+                        // Asset preview cell
+                        const assetCell = document.createElement('div');
+                        assetCell.className = 'flex-1 flex items-center';
+                        
+                        // Thumbnail container
+                        const thumbnailContainer = document.createElement('div');
+                        thumbnailContainer.className = 'w-16 h-16 flex items-center justify-center bg-gray-100 dark:bg-gray-800 mr-3';
+                        
+                        if (asset.thumbnailUrl) {
+                            // Show loading spinner initially
+                            thumbnailContainer.innerHTML = `
+                                <div class="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-2 border-t-primary"></div>
+                            `;
+                        } else {
+                            // Placeholder for no thumbnail
+                            thumbnailContainer.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        `;
+                        }
+                        
+                        // Asset info container
+                        const assetInfo = document.createElement('div');
+                        assetInfo.innerHTML = `
+                            <div class="font-medium text-sm">${asset.name}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${asset.path}</div>
+                        `;
+                        
+                        // Append elements to asset cell
+                        assetCell.appendChild(thumbnailContainer);
+                        assetCell.appendChild(assetInfo);
+                        
+                        // Load image with authentication after DOM elements are connected
+                        if (asset.thumbnailUrl) {
+                            loadAuthenticatedImage(asset.thumbnailUrl, thumbnailContainer, asset.name);
+                        }
+                        
+                        assetRow.appendChild(assetCell);
+                        
+                        // Add the asset row to the SKU group
+                        skuGroup.appendChild(assetRow);
+                        
+                        // Add checkbox change handler
+                        const checkboxInput = assetRow.querySelector('.asset-checkbox');
+                        checkboxInput.addEventListener('change', updateSelectedCount);
+                    });
+                    
+                    // Add the SKU group to the container
+                    container.appendChild(skuGroup);
+                });
+                
+                // Add event listener to container for delegation
+                container.addEventListener('click', function(e) {
+                    const assetRow = e.target.closest('.asset-row');
+                    const checkbox = e.target.closest('.asset-checkbox');
+                    
+                    // If the user clicks on the row but not directly on the checkbox, toggle the checkbox
+                    if (assetRow && !checkbox) {
+                        const checkboxInput = assetRow.querySelector('.asset-checkbox');
+                        checkboxInput.checked = !checkboxInput.checked;
+                        updateSelectedCount();
+                    }
+                });
+            }
+            
+            // Update the selected count
+            function updateSelectedCount() {
+                const selectedCount = document.querySelectorAll('.asset-checkbox:checked').length;
+                document.getElementById('selectedCount').textContent = selectedCount.toString();
+                document.getElementById('downloadSelectedBtn').disabled = selectedCount === 0;
+            }
+            
+            // Filter search results based on user input and selected filters
+            function filterSearchResults() {
+                const filterValue = document.getElementById('searchResultsFilter').value.toLowerCase();
+                const assetTypeFilter = document.getElementById('assetTypeFilter').value;
+                const productShotFilter = document.getElementById('productShotFilter').value;
+                
+                const assetRows = document.querySelectorAll('.asset-row');
+                const skuGroups = document.querySelectorAll('.sku-group');
+                
+                // Clear "select all" checkbox when filtering
+                document.getElementById('selectAllCheckbox').checked = false;
+                
+                // Reset visibility of all groups first
+                skuGroups.forEach(group => {
+                    group.classList.remove('hidden');
+                });
+                
+                // Filter asset rows
+                assetRows.forEach(row => {
+                    const path = row.getAttribute('data-path').toLowerCase();
+                    const name = row.getAttribute('data-name').toLowerCase();
+                    const sku = row.getAttribute('data-sku').toLowerCase();
+                    
+                    // Get the row's asset data for filtering by asset type and product shot
+                    // In a real implementation, this data would come from the asset's metadata
+                    // For demo purposes, we'll determine it based on the file extension and path
+                    
+                    // Calculate asset type
+                    let assetType = '';
+                    if (path.includes('/marketing/')) {
+                        assetType = 'Product Imagery';
+                    } else if (path.includes('/social/')) {
+                        assetType = 'Social Media';
+                    } else if (name.endsWith('.pdf')) {
+                        assetType = 'PDF/Literature';
+                    } else if (name.endsWith('.mp4')) {
+                        assetType = 'Video';
+                    } else if (name.endsWith('.dwg')) {
+                        assetType = 'CAD';
+                    } else if (name.includes('logo')) {
+                        assetType = 'Logos';
+                    } else if (name.includes('web')) {
+                        assetType = 'Web Imagery';
+                    } else if (name.includes('event')) {
+                        assetType = 'Event Imagery';
+                    } else if (name.includes('line') || name.includes('art')) {
+                        assetType = 'Line Art';
+                    } else if (name.includes('application') || name.includes('app')) {
+                        assetType = 'Application Imagery';
+                    } else if (name.includes('partner')) {
+                        assetType = 'Partnership Imagery';
+                    }
+                    
+                    // Calculate product shot type
+                    let productShot = '';
+                    if (name.includes('silo') && name.includes('detail')) {
+                        productShot = 'Product Silo Detail';
+                    } else if (name.includes('silo') && name.includes('background')) {
+                        productShot = 'Web Silo Backgrounds';
+                    } else if (name.includes('silo')) {
+                        productShot = 'Product Silo';
+                    } else if (name.includes('detail') && (name.includes('app') || name.includes('application'))) {
+                        productShot = 'Application Detail';
+                    } else if (name.includes('app') || name.includes('application')) {
+                        productShot = 'Application';
+                    } else if (name.includes('banner') || name.includes('web')) {
+                        productShot = 'Web Banner';
+                    }
+                    
+                    // Store these attributes as data attributes so we can reference them later
+                    row.setAttribute('data-asset-type', assetType);
+                    row.setAttribute('data-product-shot', productShot);
+                    
+                    // Apply all filters
+                    const matchesTextFilter = filterValue === '' || 
+                        path.includes(filterValue) || 
+                        name.includes(filterValue) || 
+                        sku.includes(filterValue);
+                    
+                    const matchesAssetType = assetTypeFilter === '' || assetType === assetTypeFilter;
+                    const matchesProductShot = productShotFilter === '' || productShot === productShotFilter;
+                    
+                    // Show/hide based on all filter criteria
+                    if (matchesTextFilter && matchesAssetType && matchesProductShot) {
+                        row.classList.remove('hidden');
+                    } else {
+                        row.classList.add('hidden');
+                    }
+                });
+                
+                // Hide empty SKU groups
+                skuGroups.forEach(group => {
+                    const visibleAssets = group.querySelectorAll('.asset-row:not(.hidden)');
+                    if (visibleAssets.length === 0) {
+                        group.classList.add('hidden');
+                    }
+                });
+                
+                // Update results count
+                const visibleRows = document.querySelectorAll('.asset-row:not(.hidden)');
+                document.getElementById('totalResultsCount').textContent = visibleRows.length.toString();
+            }
+            
+            // Clear all active filters
+            document.getElementById('clearFiltersBtn').addEventListener('click', function() {
+                document.getElementById('searchResultsFilter').value = '';
+                document.getElementById('assetTypeFilter').value = '';
+                document.getElementById('productShotFilter').value = '';
+                filterSearchResults();
+            });
+            
+            // Add event listeners for dropdown filters
+            document.getElementById('assetTypeFilter').addEventListener('change', filterSearchResults);
+            document.getElementById('productShotFilter').addEventListener('change', filterSearchResults);
+            
+            // Toggle select all visible assets
+            function toggleSelectAllAssets() {
+                const selectAll = document.getElementById('selectAllCheckbox').checked;
+                const visibleCheckboxes = document.querySelectorAll('.asset-row:not(.hidden) .asset-checkbox');
+                
+                visibleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = selectAll;
+                });
+                
+                updateSelectedCount();
+            }
+            
+            // Download selected assets
+            function downloadSelectedAssets() {
+                const selectedAssets = document.querySelectorAll('.asset-checkbox:checked');
+                if (selectedAssets.length === 0) {
+                    showNotification('No assets selected for download', 'warning');
+                    return;
+                }
+                
+                // Create a manifest of selected assets
+                const assets = Array.from(selectedAssets).map(checkbox => {
+                    const row = checkbox.closest('.asset-row');
+                    return {
+                        name: row.getAttribute('data-name'),
+                        path: row.getAttribute('data-path'),
+                        sku: row.getAttribute('data-sku'),
+                        url: checkbox.getAttribute('data-url')
+                    };
+                });
+                
+                // Group assets by SKU for the manifest
+                const assetsByGroup = {};
+                assets.forEach(asset => {
+                    if (!assetsByGroup[asset.sku]) {
+                        assetsByGroup[asset.sku] = [];
+                    }
+                    assetsByGroup[asset.sku].push(asset);
+                });
+                
+                // Create manifest JSON
+                const manifest = {
+                    totalCount: assets.length,
+                    timestamp: new Date().toISOString(),
+                    assets: assetsByGroup
+                };
+                
+                // Create a blob with the manifest
+                const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+                
+                // Create a download link for the manifest
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(manifestBlob);
+                downloadLink.download = `asset-download-manifest-${new Date().toISOString().split('T')[0]}.json`;
+                downloadLink.click();
+                
+                // Show instructions for downloading the actual assets
+                const instructions = `
+                    <p class="mb-3">A manifest with ${assets.length} selected assets has been downloaded.</p>
+                    <p class="mb-3">To download the actual assets:</p>
+                    <ol class="list-decimal pl-5 mb-3 space-y-1">
+                        <li>Go to the AEM Assets admin interface</li>
+                        <li>Import the manifest JSON file to facilitate batch downloading</li>
+                        <li>Alternatively, click each of the following links to download assets directly:</li>
+                    </ol>
+                    <div class="text-xs mt-3 overflow-y-auto max-h-[200px] bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                        ${assets.slice(0, 20).map(a => `<a href="${a.url}" target="_blank" class="block mb-1 hover:underline">${a.name}</a>`).join('')}
+                        ${assets.length > 20 ? `<div class="mt-2 font-medium">... and ${assets.length - 20} more assets</div>` : ''}
+                    </div>
+                `;
+                
+                // Show custom notification with download links
+                const notification = showNotification(instructions, 'success', 0);
+                notification.classList.add('w-[500px]', 'max-w-full');
+                
+                // Show success notification
+                showNotification(`Download manifest created with ${assets.length} assets`, 'success');
+            }
+            
             // Cancel operation
             function cancelOperation() {
                 renamePreviewSection.classList.add('hidden');
                 metadataPreviewSection.classList.add('hidden');
+                document.getElementById('deletePreviewSection').classList.add('hidden');
+                document.getElementById('searchResultsSection').classList.add('hidden');
+                
+                // Show appropriate config section based on active tab
+                if (currentTab === 'rename') {
+                    renameConfigSection.classList.remove('hidden');
+                } else if (currentTab === 'metadata') {
+                    metadataConfigSection.classList.remove('hidden');
+                } else if (currentTab === 'delete') {
+                    document.getElementById('deleteConfigSection').classList.remove('hidden');
+                } else if (currentTab === 'search') {
+                    document.getElementById('searchConfigSection').classList.remove('hidden');
+                }
             }
             
             // Reset app
@@ -1896,6 +3030,55 @@
                 // Initialize panel state (closed by default)
                 authHeader.setAttribute('aria-expanded', 'false');
                 toggleIcon.style.transform = 'rotate(-90deg)';
+            }
+            
+            // Load image with authentication headers
+            async function loadAuthenticatedImage(imageUrl, container, altText) {
+                try {
+                    // Add CORS proxy for authenticated image loading
+                    const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=' + encodeURIComponent(imageUrl);
+                    
+                    // Get authentication headers
+                    const headers = getAuthHeaders();
+                    
+                    // Fetch the image with authentication
+                    const response = await fetch(corsProxyUrl, {
+                        method: 'GET',
+                        headers: headers
+                    });
+                    
+                    if (response.ok) {
+                        // Convert response to blob and create object URL
+                        const blob = await response.blob();
+                        const imageObjectUrl = URL.createObjectURL(blob);
+                        
+                        // Create and configure image element
+                        const img = document.createElement('img');
+                        img.src = imageObjectUrl;
+                        img.alt = altText;
+                        img.className = 'w-16 h-16 object-contain';
+                        
+                        // Replace loading spinner with image
+                        container.innerHTML = '';
+                        container.appendChild(img);
+                        
+                        // Clean up object URL after image loads
+                        img.onload = () => {
+                            setTimeout(() => URL.revokeObjectURL(imageObjectUrl), 1000);
+                        };
+                    } else {
+                        throw new Error(`Failed to load image: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.warn('Failed to load authenticated image:', error);
+                    
+                    // Fall back to placeholder on error
+                    container.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    `;
+                }
             }
             
             // Notification system
