@@ -35,23 +35,7 @@
         .dark .notification {
             @apply bg-gray-800 text-white;
         }
-        .tab-active {
-            @apply bg-primary text-white font-bold shadow-md relative;
-        }
-        .tab-active::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 8px;
-            height: 8px;
-            background-color: white;
-            border-radius: 50%;
-        }
-        .tab-inactive {
-            @apply bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors;
-        }
+
     </style>
 </head>
 <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
@@ -69,89 +53,82 @@
         });
     </script>
 
-    <div class="container mx-auto px-4 py-8 max-w-5xl">
-        <h1 class="text-3xl font-bold text-center mb-8">Assets Bulk Tool</h1>
-        
-        <!-- Authentication Section -->
-        <div class="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-            <div class="p-4 flex justify-between items-center cursor-pointer" id="authHeader" aria-expanded="true" aria-controls="authPanel">
-                <h2 class="text-xl font-semibold">Authentication</h2>
-                <div class="auth-toggle-icon transition-transform duration-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 mb-8">
+        <div class="container mx-auto px-4 py-4 max-w-5xl">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold">Assets Bulk Tool</h1>
+                <button id="authModalBtn" class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <div id="authStatusIndicator" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                    <span id="authButtonText">Authentication</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 max-w-5xl">
+        <!-- Mode Selection Cards -->
+        <div class="mb-8">
+            <h2 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Choose Your Operation</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <!-- Asset Renamer Card -->
+                <div class="mode-card bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 cursor-pointer transition-all duration-200 hover:border-primary hover:shadow-lg group" data-tab="rename" data-label="Asset Renamer">
+                    <div class="text-center">
+                        <div class="mb-4 text-4xl">📝</div>
+                        <h3 class="font-semibold text-lg mb-2 group-hover:text-primary">Asset Renamer</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Bulk rename asset files by replacing or removing specific characters</p>
+                    </div>
+                </div>
+
+                <!-- Metadata Updater Card -->
+                <div class="mode-card bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 cursor-pointer transition-all duration-200 hover:border-primary hover:shadow-lg group" data-tab="metadata" data-label="Metadata Updater">
+                    <div class="text-center">
+                        <div class="mb-4 text-4xl">📋</div>
+                        <h3 class="font-semibold text-lg mb-2 group-hover:text-primary">Metadata Updater</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Update asset metadata properties from spreadsheet data</p>
+                    </div>
+                </div>
+
+                <!-- Bulk Delete Card -->
+                <div class="mode-card bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 cursor-pointer transition-all duration-200 hover:border-primary hover:shadow-lg group" data-tab="delete" data-label="Bulk Delete">
+                    <div class="text-center">
+                        <div class="mb-4 text-4xl">🗑️</div>
+                        <h3 class="font-semibold text-lg mb-2 group-hover:text-primary">Bulk Delete</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Permanently delete multiple assets from your DAM</p>
+                    </div>
+                </div>
+
+                <!-- Bulk Search Card -->
+                <div class="mode-card bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 cursor-pointer transition-all duration-200 hover:border-primary hover:shadow-lg group" data-tab="search" data-label="Bulk Search">
+                    <div class="text-center">
+                        <div class="mb-4 text-4xl">🔍</div>
+                        <h3 class="font-semibold text-lg mb-2 group-hover:text-primary">Bulk Search</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Find and download assets by SKU or metadata criteria</p>
+                    </div>
+                </div>
+
+                <!-- Help/README Card -->
+                <div class="mode-card bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 cursor-pointer transition-all duration-200 hover:border-primary hover:shadow-lg group" data-tab="help" data-label="Help & Documentation">
+                    <div class="text-center">
+                        <div class="mb-4 text-4xl">📚</div>
+                        <h3 class="font-semibold text-lg mb-2 group-hover:text-primary">Help & Docs</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Documentation, examples, and troubleshooting guide</p>
+                    </div>
                 </div>
             </div>
             
-            <div id="authPanel" class="px-6 pb-6 overflow-hidden transition-all duration-300 max-h-0 opacity-0">
-                <div class="mb-4">
-                    <div class="flex flex-col md:flex-row gap-4 mb-4">
-                        <div class="flex-1">
-                            <label for="aemHost" class="block text-sm font-medium mb-1">AEM Host</label>
-                            <input type="text" id="aemHost" placeholder="http://localhost:4502" 
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                                dark:bg-gray-700 dark:text-white" />
-                        </div>
-                        <div class="flex-1">
-                            <label for="username" class="block text-sm font-medium mb-1">Username</label>
-                            <input type="text" id="username" placeholder="admin" 
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                                dark:bg-gray-700 dark:text-white" />
-                        </div>
-                        <div class="flex-1">
-                            <label for="password" class="block text-sm font-medium mb-1">Password</label>
-                            <input type="password" id="password" placeholder="********" 
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                                dark:bg-gray-700 dark:text-white" />
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-col md:flex-row items-center gap-4">
-                        <button id="basicAuthBtn" class="px-4 py-2 bg-primary dark:bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
-                            Login with Basic Auth
-                        </button>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">or</span>
-                        <button id="imsAuthBtn" class="px-4 py-2 bg-[#FA0F00] text-white rounded-md hover:bg-opacity-90 transition-colors">
-                            Login with Adobe IMS
-                        </button>
-                    </div>
-                    
-                    <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <h3 class="text-sm font-semibold mb-2">Manual Token Entry (For Testing)</h3>
-                        <div id="imsTokenSection">
-                            <label for="imsToken" class="block text-sm font-medium mb-1">IMS Access Token</label>
-                            <textarea id="imsToken" rows="2" placeholder="Paste your IMS token here for testing or if automatic detection fails"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                                dark:bg-gray-700 dark:text-white"></textarea>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                Note: Bearer token authentication will be used automatically if a token is provided here.
-                            </p>
-                            <button id="testTokenBtn" class="mt-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm rounded-md hover:bg-opacity-90 transition-colors">
-                                Validate Token
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="authStatus" class="hidden mt-4 p-3 rounded-md border">
-                    <!-- Will be populated dynamically with authentication status -->
-                </div>
+            <!-- Current Mode Indicator -->
+            <div class="mt-4 text-center">
+                <span class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-full text-sm font-medium">
+                    <span id="currentModeIcon">📝</span>
+                    <span id="currentModeLabel">Asset Renamer</span>
+                    <span>Selected</span>
+                </span>
             </div>
-        </div>
-        
-        <!-- Tab Navigation -->
-        <div class="mb-1">
-            <h2 class="text-base font-medium text-gray-600 dark:text-gray-400 mb-2">Current Mode: <span id="currentTabLabel" class="font-bold text-primary">Asset Renamer</span></h2>
-        </div>
-        <div class="mb-6 flex space-x-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 overflow-hidden">
-            <button class="tab-button py-2 px-4 rounded-md tab-active" data-tab="rename" data-label="Asset Renamer">Asset Renamer</button>
-            <button class="tab-button py-2 px-4 rounded-md tab-inactive" data-tab="metadata" data-label="Metadata Updater">Metadata Updater</button>
-            <button class="tab-button py-2 px-4 rounded-md tab-inactive" data-tab="delete" data-label="Bulk Delete">Bulk Delete</button>
-            <button class="tab-button py-2 px-4 rounded-md tab-inactive" data-tab="search" data-label="Bulk Search">Bulk Search</button>
         </div>
         
         <!-- File Input Section -->
@@ -695,6 +672,752 @@
                 </button>
             </div>
         </div>
+
+        <!-- Help & Documentation Section -->
+        <div id="helpConfigSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+            <div class="prose max-w-none dark:prose-invert">
+                <h2 class="text-2xl font-bold mb-6">📚 Assets Bulk Tool - Documentation</h2>
+                
+                <!-- Table of Contents -->
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-8">
+                    <h3 class="text-lg font-semibold mb-3">Table of Contents</h3>
+                    <ol class="list-decimal pl-5 space-y-1">
+                        <li><a href="#overview" class="text-primary hover:underline">Overview</a></li>
+                        <li><a href="#requirements" class="text-primary hover:underline">Requirements & Setup</a></li>
+                        <li><a href="#authentication" class="text-primary hover:underline">Authentication</a></li>
+                        <li><a href="#operations" class="text-primary hover:underline">Available Operations</a></li>
+                        <li><a href="#examples" class="text-primary hover:underline">Excel File Examples</a></li>
+                        <li><a href="#troubleshooting" class="text-primary hover:underline">Troubleshooting</a></li>
+                        <li><a href="#api-details" class="text-primary hover:underline">API Details</a></li>
+                    </ol>
+                </div>
+
+                <!-- Overview -->
+                <section id="overview" class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">🎯 Overview</h3>
+                    <p class="mb-4">The Assets Bulk Tool is a powerful web application designed to perform bulk operations on Adobe Experience Manager (AEM) assets. It provides four main operations to help you manage your Digital Asset Management (DAM) efficiently.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">📝 Asset Renamer</h4>
+                            <p class="text-sm">Bulk rename asset files by replacing or removing specific characters from filenames.</p>
+                        </div>
+                        <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">📋 Metadata Updater</h4>
+                            <p class="text-sm">Update asset metadata properties using data from Excel spreadsheets.</p>
+                        </div>
+                        <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">🗑️ Bulk Delete</h4>
+                            <p class="text-sm">Permanently delete multiple assets from your DAM in one operation.</p>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">🔍 Bulk Search</h4>
+                            <p class="text-sm">Find and download assets by SKU or metadata criteria with filtering options.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Requirements -->
+                <section id="requirements" class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">🔧 Requirements & Setup</h3>
+                    
+                    <h4 class="text-lg font-medium mb-3">System Requirements</h4>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li>Modern web browser (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)</li>
+                        <li>JavaScript enabled</li>
+                        <li>Access to Adobe Experience Manager (AEM) instance</li>
+                        <li>Valid AEM user credentials or Adobe IMS authentication</li>
+                    </ul>
+
+                    <h4 class="text-lg font-medium mb-3">Supported File Formats</h4>
+                    <ul class="list-disc pl-5 mb-4 space-y-1">
+                        <li><strong>Excel files:</strong> .xlsx, .xls</li>
+                        <li><strong>CSV files:</strong> .csv</li>
+                        <li><strong>Maximum file size:</strong> 10MB</li>
+                    </ul>
+
+                    <h4 class="text-lg font-medium mb-3">AEM Permissions Required</h4>
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                        <p class="mb-2"><strong>⚠️ Important:</strong> Your AEM user account needs the following permissions:</p>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li><strong>Read:</strong> Access to /content/dam and asset metadata</li>
+                            <li><strong>Write:</strong> Modify asset properties and metadata (for rename/metadata operations)</li>
+                            <li><strong>Delete:</strong> Remove assets (for delete operations)</li>
+                            <li><strong>Query:</strong> Search assets using Query Builder API</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Authentication -->
+                <section id="authentication" class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">🔐 Authentication</h3>
+                    
+                    <p class="mb-4">The tool supports three authentication methods:</p>
+
+                    <div class="space-y-4">
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <h4 class="font-semibold mb-2">1. Basic Authentication</h4>
+                            <p class="mb-2">Standard username/password authentication for local AEM instances.</p>
+                            <ul class="list-disc pl-5 text-sm space-y-1">
+                                <li>Best for: Local development, author instances</li>
+                                <li>Required: AEM host URL, username, password</li>
+                                <li>Example: admin/admin for local instances</li>
+                            </ul>
+                        </div>
+
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <h4 class="font-semibold mb-2">2. Adobe IMS Authentication</h4>
+                            <p class="mb-2">OAuth-based authentication for AEM Cloud Service instances.</p>
+                            <ul class="list-disc pl-5 text-sm space-y-1">
+                                <li>Best for: AEM as a Cloud Service, production environments</li>
+                                <li>Required: Adobe ID account with appropriate permissions</li>
+                                <li>Automatic token retrieval via popup window</li>
+                            </ul>
+                        </div>
+
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <h4 class="font-semibold mb-2">3. Manual Token Entry</h4>
+                            <p class="mb-2">For testing or when automatic authentication fails.</p>
+                            <ul class="list-disc pl-5 text-sm space-y-1">
+                                <li>Best for: Testing, troubleshooting, custom setups</li>
+                                <li>Required: Valid IMS access token</li>
+                                <li>Can be obtained from browser developer tools or Adobe I/O Console</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Operations -->
+                <section id="operations" class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">⚙️ Available Operations</h3>
+
+                    <!-- Asset Renamer -->
+                    <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-3">📝 Asset Renamer</h4>
+                        
+                        <p class="mb-3"><strong>Purpose:</strong> Bulk rename asset files by replacing or removing specific characters.</p>
+                        
+                        <h5 class="font-medium mb-2">How it works:</h5>
+                        <ol class="list-decimal pl-5 mb-3 space-y-1">
+                            <li>Upload Excel file with asset paths in one column</li>
+                            <li>Select characters to process (underscore, space, hyphen, period)</li>
+                            <li>Choose to replace with another character or remove completely</li>
+                            <li>Preview changes before execution</li>
+                            <li>Execute renames using AEM Assets HTTP API</li>
+                        </ol>
+
+                        <h5 class="font-medium mb-2">Example use cases:</h5>
+                        <ul class="list-disc pl-5 mb-3 space-y-1">
+                            <li>Replace underscores with hyphens: "product_image.jpg" → "product-image.jpg"</li>
+                            <li>Remove spaces from filenames: "my image.jpg" → "myimage.jpg"</li>
+                            <li>Standardize filename conventions across your DAM</li>
+                        </ul>
+                    </div>
+
+                    <!-- Metadata Updater -->
+                    <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-3">📋 Metadata Updater</h4>
+                        
+                        <p class="mb-3"><strong>Purpose:</strong> Update asset metadata properties using data from Excel spreadsheets.</p>
+                        
+                        <h5 class="font-medium mb-2">How it works:</h5>
+                        <ol class="list-decimal pl-5 mb-3 space-y-1">
+                            <li>Upload Excel file with asset paths and metadata values</li>
+                            <li>Map Excel columns to AEM metadata properties</li>
+                            <li>Add multiple property mappings as needed</li>
+                            <li>Preview metadata changes with HTTP request details</li>
+                            <li>Execute updates using AEM Assets HTTP API</li>
+                        </ol>
+
+                        <h5 class="font-medium mb-2">Common metadata properties:</h5>
+                        <ul class="list-disc pl-5 mb-3 space-y-1">
+                            <li><code>dc:title</code> - Asset title</li>
+                            <li><code>dc:description</code> - Asset description</li>
+                            <li><code>dc:subject</code> - Keywords/tags</li>
+                            <li><code>jcr:lastModified</code> - Last modified date</li>
+                            <li><code>cq:tags</code> - AEM tags</li>
+                        </ul>
+                    </div>
+
+                    <!-- Bulk Delete -->
+                    <div class="border border-red-200 dark:border-red-600 rounded-lg p-6 mb-6 bg-red-50 dark:bg-red-900/10">
+                        <h4 class="text-lg font-semibold mb-3">🗑️ Bulk Delete</h4>
+                        
+                        <div class="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg p-3 mb-3">
+                            <p class="text-red-800 dark:text-red-200 font-medium">⚠️ WARNING: Delete operations are permanent and cannot be undone!</p>
+                        </div>
+                        
+                        <p class="mb-3"><strong>Purpose:</strong> Permanently delete multiple assets from your DAM.</p>
+                        
+                        <h5 class="font-medium mb-2">How it works:</h5>
+                        <ol class="list-decimal pl-5 mb-3 space-y-1">
+                            <li>Upload Excel file with asset paths to delete</li>
+                            <li>Review the list of assets to be deleted</li>
+                            <li>Confirm the deletion operation</li>
+                            <li>Execute deletions using AEM Assets HTTP API</li>
+                        </ol>
+
+                        <h5 class="font-medium mb-2">Safety recommendations:</h5>
+                        <ul class="list-disc pl-5 mb-3 space-y-1">
+                            <li>Always backup your AEM instance before bulk deletions</li>
+                            <li>Test with a small subset first</li>
+                            <li>Verify asset paths are correct</li>
+                            <li>Coordinate with your team before executing</li>
+                        </ul>
+                    </div>
+
+                    <!-- Bulk Search -->
+                    <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-6 mb-6">
+                        <h4 class="text-lg font-semibold mb-3">🔍 Bulk Search</h4>
+                        
+                        <p class="mb-3"><strong>Purpose:</strong> Find and download assets by SKU or metadata criteria.</p>
+                        
+                        <h5 class="font-medium mb-2">How it works:</h5>
+                        <ol class="list-decimal pl-5 mb-3 space-y-1">
+                            <li>Upload Excel file with SKUs or search terms</li>
+                            <li>Configure search criteria (metadata property, base path, limits)</li>
+                            <li>Execute search using AEM Query Builder API</li>
+                            <li>Filter results by asset type, product shot, etc.</li>
+                            <li>Select and download asset manifest</li>
+                        </ol>
+
+                        <h5 class="font-medium mb-2">Search features:</h5>
+                        <ul class="list-disc pl-5 mb-3 space-y-1">
+                            <li>Search in multiple metadata properties</li>
+                            <li>Filter by asset type and product shot</li>
+                            <li>Bulk select and download</li>
+                            <li>Results grouped by SKU</li>
+                            <li>Thumbnail previews (when authenticated)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Excel Sheet Structure Guide -->
+                <section id="examples" class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">📊 Excel Sheet Structure Guide</h3>
+                    
+                    <!-- General Requirements -->
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 mb-6">
+                        <h4 class="font-semibold mb-3">📋 General Requirements for All Excel Files</h4>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li><strong>Header Row:</strong> First row must contain column headers (descriptive names)</li>
+                            <li><strong>Data Rows:</strong> Start from row 2, no empty rows between data</li>
+                            <li><strong>File Format:</strong> .xlsx, .xls, or .csv (Excel preferred for better compatibility)</li>
+                            <li><strong>File Size:</strong> Maximum 10MB</li>
+                            <li><strong>Encoding:</strong> UTF-8 for special characters</li>
+                            <li><strong>Empty Cells:</strong> Leave cells empty rather than using "N/A" or dashes</li>
+                        </ul>
+                    </div>
+
+                    <!-- Asset Path Format -->
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-700 mb-6">
+                        <h4 class="font-semibold mb-3">🔗 Asset Path Format</h4>
+                        <p class="mb-3">Asset paths must follow the correct AEM DAM structure:</p>
+                        <div class="bg-white dark:bg-gray-800 p-3 rounded border font-mono text-sm">
+                            <div class="text-green-600 dark:text-green-400">✅ Correct formats:</div>
+                            <div>/content/dam/products/laptop.jpg</div>
+                            <div>/content/dam/marketing/banners/summer-sale.png</div>
+                            <div>/content/dam/documents/manual.pdf</div>
+                            <br>
+                            <div class="text-red-600 dark:text-red-400">❌ Incorrect formats:</div>
+                            <div>laptop.jpg (missing path)</div>
+                            <div>products/laptop.jpg (missing /content/dam)</div>
+                            <div>\content\dam\products\laptop.jpg (wrong slashes)</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-8">
+                        <!-- Asset Renamer Structure -->
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold mb-4 flex items-center">
+                                <span class="text-2xl mr-2">📝</span>
+                                Asset Renamer - Excel Structure
+                            </h4>
+                            
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Required Columns:</h5>
+                                <ul class="list-disc pl-5 space-y-1 text-sm">
+                                    <li><strong>Asset Path:</strong> Full path to the asset in AEM DAM</li>
+                                </ul>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Example Structure:</h5>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full border border-gray-300 dark:border-gray-600 text-sm">
+                                        <thead class="bg-gray-100 dark:bg-gray-700">
+                                            <tr>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Asset Path</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">/content/dam/products/product_001.jpg</td></tr>
+                                            <tr><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">/content/dam/products/product_002.png</td></tr>
+                                            <tr><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">/content/dam/marketing/banner_image.jpg</td></tr>
+                                            <tr><td class="border border-gray-300 dark:border-gray-600 px-3 py-2">/content/dam/documents/user manual.pdf</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                <h6 class="font-medium mb-2">💡 Tips for Asset Renamer:</h6>
+                                <ul class="list-disc pl-5 text-sm space-y-1">
+                                    <li>Use any column header name (e.g., "Asset Path", "File Path", "DAM Path")</li>
+                                    <li>Include only assets that need renaming</li>
+                                    <li>Verify paths exist in your AEM instance before running</li>
+                                    <li>Test with a small batch first</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Metadata Updater Structure -->
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold mb-4 flex items-center">
+                                <span class="text-2xl mr-2">📋</span>
+                                Metadata Updater - Excel Structure
+                            </h4>
+                            
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Required Columns:</h5>
+                                <ul class="list-disc pl-5 space-y-1 text-sm">
+                                    <li><strong>Asset Path:</strong> Full path to the asset in AEM DAM (required)</li>
+                                    <li><strong>Metadata Columns:</strong> One or more columns with metadata values (flexible naming)</li>
+                                </ul>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Example Structure:</h5>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full border border-gray-300 dark:border-gray-600 text-sm">
+                                        <thead class="bg-gray-100 dark:bg-gray-700">
+                                            <tr>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Asset Path</th>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Title</th>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Description</th>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">SKU</th>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Keywords</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">/content/dam/products/laptop.jpg</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Gaming Laptop Pro</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">High-performance gaming laptop with RGB keyboard</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">LAP-001-RGB</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">gaming, laptop, RGB, performance</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">/content/dam/products/mouse.jpg</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Wireless Gaming Mouse</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Ergonomic wireless mouse for gaming</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">MOUSE-WL-01</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">mouse, wireless, gaming, ergonomic</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Common AEM Metadata Properties:</h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <h6 class="font-medium mb-1">Dublin Core (dc:)</h6>
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            <li><code>dc:title</code> - Asset title</li>
+                                            <li><code>dc:description</code> - Asset description</li>
+                                            <li><code>dc:subject</code> - Keywords/subjects</li>
+                                            <li><code>dc:creator</code> - Creator name</li>
+                                            <li><code>dc:rights</code> - Copyright info</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h6 class="font-medium mb-1">Custom Properties</h6>
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            <li><code>sku</code> - Product SKU</li>
+                                            <li><code>productId</code> - Product ID</li>
+                                            <li><code>brand</code> - Brand name</li>
+                                            <li><code>category</code> - Product category</li>
+                                            <li><code>cq:tags</code> - AEM tags</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                <h6 class="font-medium mb-2">💡 Tips for Metadata Updater:</h6>
+                                <ul class="list-disc pl-5 text-sm space-y-1">
+                                    <li>Column headers can be descriptive (e.g., "Product Title" maps to dc:title)</li>
+                                    <li>Empty cells will set the property to empty (not skip the update)</li>
+                                    <li>Use comma-separated values for multi-value properties</li>
+                                    <li>Special characters are preserved (UTF-8 encoding)</li>
+                                    <li>You can have additional columns that won't be used</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Delete Structure -->
+                        <div class="border border-red-200 dark:border-red-600 rounded-lg p-6 bg-red-50 dark:bg-red-900/10">
+                            <h4 class="text-lg font-semibold mb-4 flex items-center">
+                                <span class="text-2xl mr-2">🗑️</span>
+                                Bulk Delete - Excel Structure
+                            </h4>
+                            
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Required Columns:</h5>
+                                <ul class="list-disc pl-5 space-y-1 text-sm">
+                                    <li><strong>Asset Path:</strong> Full path to the asset to be deleted</li>
+                                </ul>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Example Structure:</h5>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full border border-gray-300 dark:border-gray-600 text-sm">
+                                        <thead class="bg-gray-100 dark:bg-gray-700">
+                                            <tr>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Asset Path</th>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Reason (Optional)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">/content/dam/temp/old-logo.png</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Outdated branding</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">/content/dam/archive/duplicate-file.jpg</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Duplicate content</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">/content/dam/test/sample.pdf</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Test file</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded p-3 mb-4">
+                                <h6 class="font-medium mb-2 text-red-800 dark:text-red-200">⚠️ Critical Safety Tips:</h6>
+                                <ul class="list-disc pl-5 text-sm space-y-1 text-red-800 dark:text-red-200">
+                                    <li><strong>BACKUP FIRST:</strong> Always backup your AEM instance before bulk deletions</li>
+                                    <li><strong>VERIFY PATHS:</strong> Double-check every asset path is correct</li>
+                                    <li><strong>TEST SMALL:</strong> Start with 5-10 assets to verify the process</li>
+                                    <li><strong>COORDINATE:</strong> Inform your team before deleting shared assets</li>
+                                    <li><strong>CHECK REFERENCES:</strong> Ensure assets aren't used in published content</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Search Structure -->
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold mb-4 flex items-center">
+                                <span class="text-2xl mr-2">🔍</span>
+                                Bulk Search - Excel Structure
+                            </h4>
+                            
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Required Columns:</h5>
+                                <ul class="list-disc pl-5 space-y-1 text-sm">
+                                    <li><strong>Search Terms:</strong> SKUs, product IDs, or other identifiers to search for</li>
+                                </ul>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Example Structure:</h5>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full border border-gray-300 dark:border-gray-600 text-sm">
+                                        <thead class="bg-gray-100 dark:bg-gray-700">
+                                            <tr>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">SKU</th>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Product Name (Optional)</th>
+                                                <th class="border border-gray-300 dark:border-gray-600 px-3 py-2 text-left">Category (Optional)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">PROD-12345</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Gaming Laptop</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Electronics</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">SKU-98765</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Wireless Mouse</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Accessories</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">ITEM-456</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">USB Cable</td>
+                                                <td class="border border-gray-300 dark:border-gray-600 px-3 py-2">Cables</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="font-medium mb-2">Alternative Search Term Examples:</h5>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <h6 class="font-medium mb-1">Product Identifiers</h6>
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            <li>SKU codes (SKU-123, PROD-456)</li>
+                                            <li>UPC/EAN barcodes</li>
+                                            <li>Model numbers</li>
+                                            <li>Part numbers</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h6 class="font-medium mb-1">Content Identifiers</h6>
+                                        <ul class="list-disc pl-5 space-y-1">
+                                            <li>Asset names (without extension)</li>
+                                            <li>Campaign codes</li>
+                                            <li>Project identifiers</li>
+                                            <li>Custom metadata values</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                <h6 class="font-medium mb-2">💡 Tips for Bulk Search:</h6>
+                                <ul class="list-disc pl-5 text-sm space-y-1">
+                                    <li>Use the most specific identifier available (SKU is usually best)</li>
+                                    <li>Additional columns are ignored but can help with organization</li>
+                                    <li>Search terms are case-insensitive</li>
+                                    <li>Partial matches may be found depending on search configuration</li>
+                                    <li>Empty cells in search column will be skipped</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Best Practices -->
+                        <div class="border border-green-200 dark:border-green-600 rounded-lg p-6 bg-green-50 dark:bg-green-900/10">
+                            <h4 class="text-lg font-semibold mb-4 flex items-center">
+                                <span class="text-2xl mr-2">✅</span>
+                                Excel Best Practices
+                            </h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h5 class="font-medium mb-2 text-green-800 dark:text-green-200">Do's</h5>
+                                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                                        <li>Use descriptive column headers</li>
+                                        <li>Keep data in consistent format</li>
+                                        <li>Remove extra spaces and line breaks</li>
+                                        <li>Use proper file paths with forward slashes</li>
+                                        <li>Test with a small batch first</li>
+                                        <li>Save backup of your Excel file</li>
+                                        <li>Validate paths in AEM before processing</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h5 class="font-medium mb-2 text-red-800 dark:text-red-200">Don'ts</h5>
+                                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                                        <li>Don't use merged cells</li>
+                                        <li>Don't include empty rows in data</li>
+                                        <li>Don't use special formatting (colors, fonts)</li>
+                                        <li>Don't use formulas in data cells</li>
+                                        <li>Don't include thousands separators in numbers</li>
+                                        <li>Don't use backslashes in file paths</li>
+                                        <li>Don't exceed 10MB file size</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Troubleshooting -->
+                <section id="troubleshooting" class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">🔧 Troubleshooting</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <h4 class="font-semibold mb-2">Authentication Issues</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li><strong>401 Unauthorized:</strong> Check credentials, verify user permissions</li>
+                                <li><strong>IMS popup blocked:</strong> Allow popups for this site</li>
+                                <li><strong>Token expired:</strong> Re-authenticate or get a new token</li>
+                                <li><strong>CORS errors:</strong> The app uses a CORS proxy - check network connectivity</li>
+                            </ul>
+                        </div>
+
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <h4 class="font-semibold mb-2">File Upload Issues</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li><strong>File too large:</strong> Maximum 10MB, split large files</li>
+                                <li><strong>Unsupported format:</strong> Use .xlsx, .xls, or .csv files only</li>
+                                <li><strong>Empty sheet:</strong> Ensure your Excel sheet has data</li>
+                                <li><strong>No headers:</strong> First row should contain column headers</li>
+                            </ul>
+                        </div>
+
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <h4 class="font-semibold mb-2">Operation Failures</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li><strong>404 Not Found:</strong> Asset path doesn't exist, check spelling</li>
+                                <li><strong>403 Forbidden:</strong> Insufficient permissions for the operation</li>
+                                <li><strong>500 Server Error:</strong> AEM instance issue, check server status</li>
+                                <li><strong>Network timeout:</strong> Large operations may take time, be patient</li>
+                            </ul>
+                        </div>
+
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <h4 class="font-semibold mb-2">Performance Tips</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li><strong>Batch size:</strong> Process 50-100 assets at a time for best performance</li>
+                                <li><strong>Network speed:</strong> Use wired connection for large operations</li>
+                                <li><strong>AEM load:</strong> Avoid peak usage times when possible</li>
+                                <li><strong>Browser memory:</strong> Close other tabs for large operations</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- API Details -->
+                <section id="api-details" class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">🔌 API Details</h3>
+                    
+                    <p class="mb-4">The tool uses standard AEM APIs for all operations:</p>
+
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">Assets HTTP API</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li><strong>Base URL:</strong> <code>/api/assets</code></li>
+                                <li><strong>Rename:</strong> <code>MOVE</code> method with <code>X-Destination</code> header</li>
+                                <li><strong>Metadata:</strong> <code>PUT</code> method with JSON payload</li>
+                                <li><strong>Delete:</strong> <code>DELETE</code> method</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">Query Builder API</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li><strong>Endpoint:</strong> <code>/bin/querybuilder.json</code></li>
+                                <li><strong>Method:</strong> <code>GET</code> with query parameters</li>
+                                <li><strong>Used for:</strong> Asset search and discovery</li>
+                                <li><strong>Returns:</strong> Asset metadata and paths</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">CORS Proxy</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-sm">
+                                <li><strong>Purpose:</strong> Bypass browser CORS restrictions</li>
+                                <li><strong>URL:</strong> <code>https://cors-proxy.philipp-koch.workers.dev/</code></li>
+                                <li><strong>Security:</strong> Authentication headers are forwarded</li>
+                                <li><strong>Limitation:</strong> Third-party service dependency</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 mt-4">
+                        <h4 class="font-semibold mb-2">🛡️ Security Considerations</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-sm">
+                            <li>All operations require proper AEM authentication</li>
+                            <li>CORS proxy is used for cross-origin requests</li>
+                            <li>No credentials are stored locally or transmitted to third parties</li>
+                            <li>All API calls follow AEM security best practices</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Footer -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-6 mt-8 text-center">
+                    <p class="text-gray-600 dark:text-gray-400">
+                        <strong>Need help?</strong> Check the troubleshooting section above or verify your AEM instance configuration.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Authentication Modal -->
+    <div id="authModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold">Authentication Settings</h2>
+                    <button id="closeAuthModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6">
+                <!-- AEM Host -->
+                <div class="mb-4">
+                    <label for="aemHost" class="block text-sm font-medium mb-1">AEM Host</label>
+                    <input type="text" id="aemHost" placeholder="http://localhost:4502" 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                        dark:bg-gray-700 dark:text-white" />
+                </div>
+
+                <!-- Basic Auth Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-3">Basic Authentication</h3>
+                    <div class="grid grid-cols-1 gap-3">
+                        <div>
+                            <label for="username" class="block text-sm font-medium mb-1">Username</label>
+                            <input type="text" id="username" placeholder="admin" 
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                                dark:bg-gray-700 dark:text-white" />
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-medium mb-1">Password</label>
+                            <input type="password" id="password" placeholder="********" 
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                                dark:bg-gray-700 dark:text-white" />
+                        </div>
+                    </div>
+                    <button id="basicAuthBtn" class="mt-3 w-full px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                        Login with Basic Auth
+                    </button>
+                </div>
+
+                <!-- Adobe IMS Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-3">Adobe IMS Authentication</h3>
+                    <button id="imsAuthBtn" class="w-full px-4 py-2 bg-[#FA0F00] text-white rounded-md hover:bg-opacity-90 transition-colors">
+                        Login with Adobe IMS
+                    </button>
+                </div>
+
+                <!-- Manual Token Entry -->
+                <div class="mb-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h3 class="text-sm font-semibold mb-2">Manual Token Entry (For Testing)</h3>
+                    <div id="imsTokenSection">
+                        <label for="imsToken" class="block text-sm font-medium mb-1">IMS Access Token</label>
+                        <textarea id="imsToken" rows="3" placeholder="Paste your IMS token here for testing or if automatic detection fails"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                            focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                            dark:bg-gray-700 dark:text-white resize-none"></textarea>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Note: Bearer token authentication will be used automatically if a token is provided here.
+                        </p>
+                        <button id="testTokenBtn" class="mt-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm rounded-md hover:bg-opacity-90 transition-colors">
+                            Validate Token
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Authentication Status -->
+                <div id="authStatus" class="hidden p-3 rounded-md border">
+                    <!-- Will be populated dynamically with authentication status -->
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- IMS Authentication Configuration -->
@@ -904,11 +1627,11 @@
             // Handle IMS redirect on page load
             handleImsRedirect();
             
-            // Setup collapsible authentication panel
-            setupCollapsiblePanel();
+            // Setup authentication modal
+            setupAuthModal();
             
-            // Setup tabs
-            setupTabs();
+            // Setup mode cards
+            setupModeCards();
             
             // State management
             let workbook = null;
@@ -1047,28 +1770,122 @@
                 }, 1500);
             });
             
-            // Setup tab functionality
-            function setupTabs() {
-                const tabButtons = document.querySelectorAll('.tab-button');
-                const currentTabLabel = document.getElementById('currentTabLabel');
+            // Setup authentication modal functionality
+            function setupAuthModal() {
+                const authModalBtn = document.getElementById('authModalBtn');
+                const authModal = document.getElementById('authModal');
+                const closeAuthModal = document.getElementById('closeAuthModal');
                 
-                tabButtons.forEach(button => {
-                    button.addEventListener('click', () => {
+                // Open modal when auth button is clicked
+                authModalBtn.addEventListener('click', () => {
+                    authModal.classList.remove('hidden');
+                });
+                
+                // Close modal when close button is clicked
+                closeAuthModal.addEventListener('click', () => {
+                    authModal.classList.add('hidden');
+                });
+                
+                // Close modal when clicking outside
+                authModal.addEventListener('click', (e) => {
+                    if (e.target === authModal) {
+                        authModal.classList.add('hidden');
+                    }
+                });
+                
+                // Close modal on Escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && !authModal.classList.contains('hidden')) {
+                        authModal.classList.add('hidden');
+                    }
+                });
+                
+                // Update auth status indicator and text when authentication state changes
+                function updateAuthButtonUI() {
+                    const authStatusIndicator = document.getElementById('authStatusIndicator');
+                    const authButtonText = document.getElementById('authButtonText');
+                    
+                    if (isAuthenticated) {
+                        authStatusIndicator.className = 'w-3 h-3 rounded-full bg-green-500';
+                        authButtonText.textContent = `Authenticated (${authMethod})`;
+                    } else {
+                        authStatusIndicator.className = 'w-3 h-3 rounded-full bg-gray-400';
+                        authButtonText.textContent = 'Authentication';
+                    }
+                }
+                
+                // Override the updateAuthStatusUI function to also update the header button
+                const originalUpdateAuthStatusUI = updateAuthStatusUI;
+                updateAuthStatusUI = function(isSuccessful, method) {
+                    // Call original function
+                    authStatus.classList.remove('hidden');
+                    
+                    if (isSuccessful) {
+                        isAuthenticated = true;
+                        authMethod = method;
+                        
+                        authStatus.className = 'mt-4 p-3 rounded-md border border-green-200 bg-green-50 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400';
+                        authStatus.innerHTML = `
+                            <div class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Authenticated with ${method} Authentication</span>
+                            </div>
+                        `;
+                    } else {
+                        isAuthenticated = false;
+                        authMethod = null;
+                        
+                        authStatus.className = 'mt-4 p-3 rounded-md border border-red-200 bg-red-50 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400';
+                        authStatus.innerHTML = `
+                            <div class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>Authentication Failed</span>
+                        </div>
+                    `;
+                    }
+                    
+                    // Update header button
+                    updateAuthButtonUI();
+                };
+            }
+            
+            // Setup mode cards functionality
+            function setupModeCards() {
+                const modeCards = document.querySelectorAll('.mode-card');
+                const currentModeIcon = document.getElementById('currentModeIcon');
+                const currentModeLabel = document.getElementById('currentModeLabel');
+                
+                // Mode icons mapping
+                const modeIcons = {
+                    'rename': '📝',
+                    'metadata': '📋',
+                    'delete': '🗑️',
+                    'search': '🔍',
+                    'help': '📚'
+                };
+                
+                modeCards.forEach(card => {
+                    card.addEventListener('click', () => {
                         // Update currentTab value
-                        currentTab = button.getAttribute('data-tab');
+                        currentTab = card.getAttribute('data-tab');
                         
-                        // Update the current tab label
-                        const tabLabel = button.getAttribute('data-label');
-                        currentTabLabel.textContent = tabLabel;
+                        // Update the current mode label and icon
+                        const tabLabel = card.getAttribute('data-label');
+                        currentModeLabel.textContent = tabLabel;
+                        currentModeIcon.textContent = modeIcons[currentTab] || '📝';
                         
-                        // Update active tab button
-                        tabButtons.forEach(btn => {
-                            if (btn === button) {
-                                btn.classList.remove('tab-inactive');
-                                btn.classList.add('tab-active');
+                        // Update active card styling
+                        modeCards.forEach(c => {
+                            if (c === card) {
+                                c.classList.add('border-primary', 'bg-primary/5', 'dark:bg-primary/10');
+                                c.classList.remove('border-gray-200', 'dark:border-gray-700');
                             } else {
-                                btn.classList.remove('tab-active');
-                                btn.classList.add('tab-inactive');
+                                c.classList.remove('border-primary', 'bg-primary/5', 'dark:bg-primary/10');
+                                c.classList.add('border-gray-200', 'dark:border-gray-700');
                             }
                         });
                         
@@ -1077,8 +1894,12 @@
                             content.classList.add('hidden');
                         });
                         
+                        // Show help section immediately if selected (doesn't require file data)
+                        if (currentTab === 'help') {
+                            document.getElementById('helpConfigSection').classList.remove('hidden');
+                        }
                         // Show appropriate config section if we have file data
-                        if (workbook && assetPathColumnSelect.value) {
+                        else if (workbook && assetPathColumnSelect.value) {
                             if (currentTab === 'rename') {
                                 renameConfigSection.classList.remove('hidden');
                             } else if (currentTab === 'metadata') {
@@ -1090,8 +1911,23 @@
                                 document.getElementById('searchConfigSection').classList.remove('hidden');
                             }
                         }
+                        
+                        // Update column selection label based on mode
+                        if (assetPathColumnSelect) {
+                            if (currentTab === 'search') {
+                                document.querySelector('label[for="assetPathColumnSelect"]').textContent = 'Select SKU Column';
+                            } else {
+                                document.querySelector('label[for="assetPathColumnSelect"]').textContent = 'Select Asset Path Column';
+                            }
+                        }
                     });
                 });
+                
+                // Initialize first card as active (Asset Renamer)
+                if (modeCards.length > 0) {
+                    modeCards[0].classList.add('border-primary', 'bg-primary/5', 'dark:bg-primary/10');
+                    modeCards[0].classList.remove('border-gray-200', 'dark:border-gray-700');
+                }
             }
             
             // Add a new metadata mapping row
