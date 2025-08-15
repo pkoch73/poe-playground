@@ -259,24 +259,37 @@
                 
                 <div id="mappingsContainer" class="space-y-3">
                     <!-- Initial mapping row -->
-                    <div class="mapping-row flex flex-col md:flex-row gap-3 items-start md:items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-                        <div class="flex-1">
-                            <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Property Name</label>
-                            <input type="text" placeholder="dc:title" class="property-name w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white" value="dc:title" />
+                    <div class="mapping-row flex flex-col gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                        <div class="flex flex-col md:flex-row gap-3 items-start md:items-center">
+                            <div class="flex-1">
+                                <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Property Name</label>
+                                <input type="text" placeholder="dc:title" class="property-name w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white" value="dc:title" />
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Value Column</label>
+                                <select class="value-column w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white">
+                                    <option value="">Select column</option>
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="flex items-end justify-end h-full pt-6 md:pt-0">
+                                <button class="remove-mapping p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 dark:hover:bg-red-900">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex-1">
-                            <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Value Column</label>
-                            <select class="value-column w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white">
-                                <option value="">Select column</option>
-                                <!-- Options will be populated dynamically -->
-                            </select>
-                        </div>
-                        <div class="flex items-end justify-end h-full pt-6 md:pt-0">
-                            <button class="remove-mapping p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 dark:hover:bg-red-900">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
+                        <div class="flex flex-col md:flex-row gap-3 items-start md:items-center">
+                            <div class="flex items-center">
+                                <input type="checkbox" class="is-multivalue form-checkbox h-4 w-4 text-primary rounded" id="multivalue-dc-title">
+                                <label for="multivalue-dc-title" class="ml-2 text-sm text-gray-600 dark:text-gray-300">Multi-value property</label>
+                            </div>
+                            <div class="flex-1 multivalue-separator-container hidden">
+                                <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Value Separator</label>
+                                <input type="text" placeholder="," class="multivalue-separator w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white" value="," />
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Character(s) to split values (e.g., "," or "|" or ";")</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1691,7 +1704,7 @@
             document.getElementById('resetBtn').addEventListener('click', resetApp);
             addMappingBtn.addEventListener('click', addMetadataMapping);
             
-            // Initialize event listeners for removing metadata mappings
+            // Initialize event listeners for removing metadata mappings and multi-value checkboxes
             document.addEventListener('click', function(e) {
                 if (e.target.closest('.remove-mapping')) {
                     const mappingRow = e.target.closest('.mapping-row');
@@ -1699,6 +1712,20 @@
                         mappingRow.remove();
                     } else {
                         showNotification('Cannot remove the last mapping row', 'warning');
+                    }
+                }
+            });
+            
+            // Initialize event listener for initial multi-value checkbox
+            document.addEventListener('change', function(e) {
+                if (e.target.classList.contains('is-multivalue')) {
+                    const mappingRow = e.target.closest('.mapping-row');
+                    const separatorContainer = mappingRow.querySelector('.multivalue-separator-container');
+                    
+                    if (e.target.checked) {
+                        separatorContainer.classList.remove('hidden');
+                    } else {
+                        separatorContainer.classList.add('hidden');
                     }
                 }
             });
@@ -1934,30 +1961,56 @@
             function addMetadataMapping() {
                 const mappingsContainer = document.getElementById('mappingsContainer');
                 const newRow = document.createElement('div');
-                newRow.className = 'mapping-row flex flex-col md:flex-row gap-3 items-start md:items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md';
+                const uniqueId = 'multivalue-' + Math.random().toString(36).substring(2, 15);
+                newRow.className = 'mapping-row flex flex-col gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-md';
                 
                 newRow.innerHTML = `
-                    <div class="flex-1">
-                        <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Property Name</label>
-                        <input type="text" placeholder="dc:description" class="property-name w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white" />
+                    <div class="flex flex-col md:flex-row gap-3 items-start md:items-center">
+                        <div class="flex-1">
+                            <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Property Name</label>
+                            <input type="text" placeholder="dc:description" class="property-name w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white" />
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Value Column</label>
+                            <select class="value-column w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white">
+                                <option value="">Select column</option>
+                                <!-- Options will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="flex items-end justify-end h-full pt-6 md:pt-0">
+                            <button class="remove-mapping p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 dark:hover:bg-red-900">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex-1">
-                        <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Value Column</label>
-                        <select class="value-column w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white">
-                            <option value="">Select column</option>
-                            <!-- Options will be populated dynamically -->
-                        </select>
-                    </div>
-                    <div class="flex items-end justify-end h-full pt-6 md:pt-0">
-                        <button class="remove-mapping p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 dark:hover:bg-red-900">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
+                    <div class="flex flex-col md:flex-row gap-3 items-start md:items-center">
+                        <div class="flex items-center">
+                            <input type="checkbox" class="is-multivalue form-checkbox h-4 w-4 text-primary rounded" id="${uniqueId}">
+                            <label for="${uniqueId}" class="ml-2 text-sm text-gray-600 dark:text-gray-300">Multi-value property</label>
+                        </div>
+                        <div class="flex-1 multivalue-separator-container hidden">
+                            <label class="block text-sm mb-1 text-gray-600 dark:text-gray-300">Value Separator</label>
+                            <input type="text" placeholder="," class="multivalue-separator w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-white" value="," />
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Character(s) to split values (e.g., "," or "|" or ";")</p>
+                        </div>
                     </div>
                 `;
                 
                 mappingsContainer.appendChild(newRow);
+                
+                // Add event listener for multi-value checkbox
+                const multivalueCheckbox = newRow.querySelector('.is-multivalue');
+                const separatorContainer = newRow.querySelector('.multivalue-separator-container');
+                
+                multivalueCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        separatorContainer.classList.remove('hidden');
+                    } else {
+                        separatorContainer.classList.add('hidden');
+                    }
+                });
                 
                 // Populate the column options in the new row
                 populateMetadataColumnOptions();
@@ -2467,11 +2520,15 @@
                     document.querySelectorAll('.mapping-row').forEach(row => {
                         const propertyName = row.querySelector('.property-name').value.trim();
                         const valueColumnIndex = row.querySelector('.value-column').value;
+                        const isMultivalue = row.querySelector('.is-multivalue').checked;
+                        const separator = row.querySelector('.multivalue-separator').value || ',';
                         
                         if (propertyName && valueColumnIndex) {
                             mappings.push({
                                 property: propertyName,
-                                columnIndex: parseInt(valueColumnIndex)
+                                columnIndex: parseInt(valueColumnIndex),
+                                isMultivalue: isMultivalue,
+                                separator: separator
                             });
                         }
                     });
@@ -2496,9 +2553,26 @@
                             
                             mappings.forEach(mapping => {
                                 const value = row[mapping.columnIndex];
-                                // Convert null, undefined, or empty values to empty string
-                                // Always add the property (even if empty) to ensure metadata update occurs
-                                properties[mapping.property] = (value !== undefined && value !== null) ? String(value) : '';
+                                let processedValue;
+                                
+                                if (mapping.isMultivalue) {
+                                    // Handle multi-value property
+                                    if (value !== undefined && value !== null && String(value).trim()) {
+                                        // Split by separator and clean up values
+                                        const values = String(value).split(mapping.separator)
+                                            .map(v => v.trim())
+                                            .filter(v => v !== '');
+                                        processedValue = values;
+                                    } else {
+                                        // Empty array for reset
+                                        processedValue = [];
+                                    }
+                                } else {
+                                    // Handle single-value property
+                                    processedValue = (value !== undefined && value !== null) ? String(value) : '';
+                                }
+                                
+                                properties[mapping.property] = processedValue;
                                 hasValues = true;
                             });
                             
