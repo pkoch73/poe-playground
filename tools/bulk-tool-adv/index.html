@@ -3061,9 +3061,10 @@
                     progressTotal.textContent = allUpdates.length;
                     progressStatus.textContent = 'Starting metadata updates...';
                     
-                    // Initialize counters
+                    // Initialize counters and error tracking
                     let successCount = 0;
                     let failureCount = 0;
+                    const failureDetails = []; // Store detailed failure information
                     
                     // Process in chunks
                     const CHUNK_SIZE = 50;
@@ -3139,10 +3140,41 @@
                                     successCount++;
                                 } else {
                                     failureCount++;
-                                    console.error(`Failed to update ${update.assetPath}: ${response.status}`);
+                                    
+                                    // Capture detailed error information
+                                    let errorMessage = 'Unknown error';
+                                    try {
+                                        const errorText = await response.text();
+                                        errorMessage = errorText || `HTTP ${response.status} ${response.statusText}`;
+                                    } catch (e) {
+                                        errorMessage = `HTTP ${response.status} ${response.statusText}`;
+                                    }
+                                    
+                                    // Store failure details
+                                    failureDetails.push({
+                                        assetPath: update.assetPath,
+                                        errorCode: response.status,
+                                        errorMessage: errorMessage,
+                                        timestamp: new Date().toISOString(),
+                                        propertiesCount: Object.keys(finalProperties).length,
+                                        url: targetUrl
+                                    });
+                                    
+                                    console.error(`Failed to update ${update.assetPath}: ${response.status} - ${errorMessage}`);
                                 }
                             } catch (error) {
                                 failureCount++;
+                                
+                                // Store network/execution error details
+                                failureDetails.push({
+                                    assetPath: update.assetPath,
+                                    errorCode: 'NETWORK_ERROR',
+                                    errorMessage: error.message,
+                                    timestamp: new Date().toISOString(),
+                                    propertiesCount: Object.keys(update.properties).length,
+                                    url: 'N/A'
+                                });
+                                
                                 console.error(`Error processing ${update.assetPath}:`, error);
                             }
                             
@@ -3172,17 +3204,57 @@
                         document.getElementById('successCount').textContent = successCount;
                         document.getElementById('failureCount').textContent = failureCount;
                         
-                        // Log results
+                        // Log results with detailed error reporting
                         addToLog('Metadata update operation completed', 'header');
                         addToLog(`Total assets processed: ${allUpdates.length}`, 'info');
                         addToLog(`Successful updates: ${successCount}`, 'success');
                         addToLog(`Failed updates: ${failureCount}`, failureCount > 0 ? 'error' : 'info');
                         
+                        // Add detailed failure report if there are failures
+                        if (failureDetails.length > 0) {
+                            addToLog('', 'info'); // Empty line for spacing
+                            addToLog('📋 DETAILED FAILURE REPORT', 'header');
+                            addToLog('', 'info'); // Empty line for spacing
+                            
+                            // Group failures by error code for better analysis
+                            const failuresByCode = {};
+                            failureDetails.forEach(failure => {
+                                if (!failuresByCode[failure.errorCode]) {
+                                    failuresByCode[failure.errorCode] = [];
+                                }
+                                failuresByCode[failure.errorCode].push(failure);
+                            });
+                            
+                            // Log summary by error code
+                            addToLog('📊 FAILURE SUMMARY BY ERROR CODE:', 'info');
+                            Object.entries(failuresByCode).forEach(([errorCode, failures]) => {
+                                addToLog(`   ${errorCode}: ${failures.length} assets`, 'error');
+                            });
+                            addToLog('', 'info'); // Empty line for spacing
+                            
+                            // Log individual failure details
+                            addToLog('📝 INDIVIDUAL FAILURE DETAILS:', 'info');
+                            failureDetails.forEach((failure, index) => {
+                                addToLog(`${index + 1}. Asset: ${failure.assetPath}`, 'error');
+                                addToLog(`   Error Code: ${failure.errorCode}`, 'error');
+                                addToLog(`   Error Message: ${failure.errorMessage}`, 'error');
+                                addToLog(`   Properties Count: ${failure.propertiesCount}`, 'info');
+                                addToLog(`   Timestamp: ${new Date(failure.timestamp).toLocaleString()}`, 'info');
+                                if (failure.url !== 'N/A') {
+                                    addToLog(`   Request URL: ${failure.url}`, 'info');
+                                }
+                                addToLog('', 'info'); // Empty line between failures
+                            });
+                            
+                            // Generate downloadable error report
+                            generateErrorReport(failureDetails, successCount, allUpdates.length);
+                        }
+                        
                         if (successCount > 0) {
                             showNotification(`Successfully updated metadata for ${successCount} assets`, 'success');
                         }
                         if (failureCount > 0) {
-                            showNotification(`${failureCount} assets failed to update`, 'error');
+                            showNotification(`${failureCount} assets failed to update - check detailed report below`, 'error');
                         }
                     }, 1000);
                     
@@ -3195,6 +3267,125 @@
                     executeBtn.disabled = false;
                     executeBtn.textContent = 'Execute Metadata Updates';
                 }
+            }
+
+            // Generate downloadable error report
+            function generateErrorReport(failureDetails, successCount, totalCount) {
+                if (failureDetails.length === 0) return;
+                
+                // Create comprehensive error report
+                const report = {
+                    executionSummary: {
+                        timestamp: new Date().toISOString(),
+                        totalAssets: totalCount,
+                        successCount: successCount,
+                        failureCount: failureDetails.length,
+                        successRate: ((successCount / totalCount) * 100).toFixed(1) + '%'
+                    },
+                    errorAnalysis: {},
+                    detailedFailures: failureDetails
+                };
+                
+                // Analyze error patterns
+                const errorCounts = {};
+                const errorSamples = {};
+                
+                failureDetails.forEach(failure => {
+                    const errorCode = failure.errorCode;
+                    
+                    // Count occurrences
+                    errorCounts[errorCode] = (errorCounts[errorCode] || 0) + 1;
+                    
+                    // Store sample error messages
+                    if (!errorSamples[errorCode]) {
+                        errorSamples[errorCode] = failure.errorMessage;
+                    }
+                });
+                
+                // Add error analysis
+                Object.entries(errorCounts).forEach(([errorCode, count]) => {
+                    let description = '';
+                    let possibleCauses = [];
+                    let recommendations = [];
+                    
+                    switch (errorCode) {
+                        case '401':
+                            description = 'Unauthorized - Authentication failed';
+                            possibleCauses = ['Invalid credentials', 'Token expired', 'Insufficient permissions'];
+                            recommendations = ['Re-authenticate', 'Check user permissions', 'Verify token validity'];
+                            break;
+                        case '403':
+                            description = 'Forbidden - Access denied';
+                            possibleCauses = ['Insufficient permissions', 'Asset locked', 'Read-only user'];
+                            recommendations = ['Check user permissions for write access', 'Verify asset is not locked', 'Contact AEM administrator'];
+                            break;
+                        case '404':
+                            description = 'Not Found - Asset does not exist';
+                            possibleCauses = ['Incorrect asset path', 'Asset deleted', 'Path case sensitivity'];
+                            recommendations = ['Verify asset paths in Excel file', 'Check if assets were moved or deleted'];
+                            break;
+                        case '409':
+                            description = 'Conflict - Resource conflict';
+                            possibleCauses = ['Asset being modified by another user', 'Validation conflicts'];
+                            recommendations = ['Retry operation', 'Check for concurrent modifications'];
+                            break;
+                        case '500':
+                            description = 'Internal Server Error - AEM server issue';
+                            possibleCauses = ['AEM server overload', 'Invalid metadata schema', 'Server configuration issue'];
+                            recommendations = ['Contact AEM administrator', 'Check server logs', 'Retry with smaller batches'];
+                            break;
+                        case 'NETWORK_ERROR':
+                            description = 'Network Error - Connection issue';
+                            possibleCauses = ['Network connectivity', 'CORS proxy issue', 'Timeout'];
+                            recommendations = ['Check internet connection', 'Retry operation', 'Reduce batch size'];
+                            break;
+                        default:
+                            description = `HTTP ${errorCode} Error`;
+                            possibleCauses = ['See error message for details'];
+                            recommendations = ['Check AEM server logs', 'Contact system administrator'];
+                    }
+                    
+                    report.errorAnalysis[errorCode] = {
+                        count: count,
+                        percentage: ((count / failureDetails.length) * 100).toFixed(1) + '%',
+                        description: description,
+                        sampleMessage: errorSamples[errorCode],
+                        possibleCauses: possibleCauses,
+                        recommendations: recommendations
+                    };
+                });
+                
+                // Create downloadable report
+                const reportBlob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                const reportUrl = URL.createObjectURL(reportBlob);
+                
+                // Add download link to log
+                addToLog('', 'info');
+                addToLog('💾 DOWNLOADABLE REPORT GENERATED', 'header');
+                
+                // Create clickable download link in the log
+                const downloadLink = document.createElement('div');
+                downloadLink.className = 'mb-1 mt-2';
+                downloadLink.innerHTML = `
+                    <a href="${reportUrl}" download="metadata-update-error-report-${new Date().toISOString().split('T')[0]}.json" 
+                       class="inline-flex items-center px-3 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download Error Report (JSON)
+                    </a>
+                `;
+                
+                document.getElementById('resultsLog').appendChild(downloadLink);
+                
+                // Also show a summary in the log
+                addToLog(`Report contains ${failureDetails.length} failures across ${Object.keys(errorCounts).length} error types`, 'info');
+                addToLog('The report includes error analysis and recommendations for each failure type.', 'info');
+                
+                // Clean up URL after some time
+                setTimeout(() => {
+                    URL.revokeObjectURL(reportUrl);
+                }, 60000);
             }
             
             // Helper function to build API path from asset path
