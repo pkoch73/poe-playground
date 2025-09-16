@@ -189,55 +189,129 @@
         
         <!-- Rename Configuration Section -->
         <div id="renameConfigSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
-            <h2 class="text-xl font-semibold mb-4">Renaming Configuration</h2>
+            <h2 class="text-xl font-semibold mb-4">Advanced Pattern-Based Renaming</h2>
             
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Characters to Process</label>
-                <div class="flex flex-wrap gap-3">
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" checked class="char-checkbox form-checkbox h-5 w-5 text-primary" data-char="_">
-                        <span class="ml-2">Underscore (_)</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" class="char-checkbox form-checkbox h-5 w-5 text-primary" data-char=" ">
-                        <span class="ml-2">Space ( )</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" class="char-checkbox form-checkbox h-5 w-5 text-primary" data-char="-">
-                        <span class="ml-2">Hyphen (-)</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" class="char-checkbox form-checkbox h-5 w-5 text-primary" data-char=".">
-                        <span class="ml-2">Period (.)</span>
-                    </label>
+            <!-- Pattern List Container -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="block text-sm font-medium">Find & Replace Patterns</label>
+                    <button id="addPatternBtn" class="text-primary hover:underline flex items-center text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Add Pattern
+                    </button>
                 </div>
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Action</label>
-                <div class="flex gap-4">
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="action" value="replace" checked 
-                            class="form-radio h-5 w-5 text-primary">
-                        <span class="ml-2">Replace with:</span>
-                    </label>
-                    <input type="text" id="replaceWith" value="-" placeholder="Replacement character" 
-                        class="w-24 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                        dark:bg-gray-700 dark:text-white" />
+                
+                <!-- Pattern Validation Messages -->
+                <div id="patternValidationMessages" class="mb-3 hidden">
+                    <!-- Validation messages will be populated here -->
+                </div>
+                
+                <div id="patternsContainer" class="space-y-3">
+                    <!-- Initial pattern row -->
+                    <div class="pattern-row border border-gray-200 dark:border-gray-600 rounded-lg p-4" data-pattern-id="1">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Pattern 1</span>
+                                <div class="pattern-status hidden">
+                                    <!-- Status indicators will be shown here -->
+                                </div>
+                            </div>
+                            <button class="remove-pattern-btn text-red-500 hover:text-red-700 p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
                         
-                    <label class="inline-flex items-center">
-                        <input type="radio" name="action" value="remove" 
-                            class="form-radio h-5 w-5 text-primary">
-                        <span class="ml-2">Remove completely</span>
-                    </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Find Text</label>
+                                <input type="text" class="pattern-find w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white" 
+                                    placeholder="e.g., ABC or old_prefix_" value="_" />
+                                <div class="pattern-find-validation text-xs mt-1 hidden"></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Replace With</label>
+                                <input type="text" class="pattern-replace w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white" 
+                                    placeholder="e.g., GT or new-prefix-" value="-" />
+                                <div class="pattern-replace-validation text-xs mt-1 hidden"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-4 text-sm">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="pattern-case-sensitive form-checkbox h-4 w-4 text-primary rounded">
+                                <span class="ml-2">Case sensitive</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="pattern-whole-word form-checkbox h-4 w-4 text-primary rounded">
+                                <span class="ml-2">Whole word only</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" class="pattern-regex form-checkbox h-4 w-4 text-primary rounded">
+                                <span class="ml-2">Regular expression</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Pattern Test Area -->
+                        <div class="pattern-test-area mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded border hidden">
+                            <div class="text-xs font-medium mb-2">Pattern Test:</div>
+                            <div class="pattern-test-result text-xs"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    <p>Patterns are applied in order from top to bottom. Use "Whole word only" to avoid partial matches.</p>
                 </div>
             </div>
             
+            <!-- Conflict Detection -->
+            <div id="conflictDetection" class="mb-4 hidden">
+                <div class="p-3 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200 rounded-md border border-yellow-200 dark:border-yellow-700">
+                    <div class="flex items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                            <p class="font-medium">Pattern Conflicts Detected</p>
+                            <div id="conflictDetails" class="mt-1 text-sm">
+                                <!-- Conflict details will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Pattern Templates -->
             <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Quick Templates</label>
+                <div class="flex flex-wrap gap-2">
+                    <button class="pattern-template-btn px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors" data-template="underscore-to-hyphen">
+                        _ → -
+                    </button>
+                    <button class="pattern-template-btn px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors" data-template="space-to-hyphen">
+                        Space → -
+                    </button>
+                    <button class="pattern-template-btn px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors" data-template="remove-spaces">
+                        Remove Spaces
+                    </button>
+                    <button class="pattern-template-btn px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors" data-template="lowercase">
+                        To Lowercase
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
                 <button id="renamePreviewBtn" 
                     class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
                     Preview Changes (Dry Run)
+                </button>
+                <button id="validatePatternsBtn" 
+                    class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-opacity-90 transition-colors">
+                    Validate Patterns
                 </button>
             </div>
         </div>
@@ -1755,6 +1829,17 @@
             document.getElementById('resetBtn').addEventListener('click', resetApp);
             addMappingBtn.addEventListener('click', addMetadataMapping);
             
+            // Pattern management event listeners
+            document.getElementById('addPatternBtn').addEventListener('click', addPatternRow);
+            document.getElementById('validatePatternsBtn').addEventListener('click', validatePatterns);
+            
+            // Pattern template buttons
+            document.querySelectorAll('.pattern-template-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    applyPatternTemplate(this.getAttribute('data-template'));
+                });
+            });
+            
             // Initialize event listeners for removing metadata mappings and multi-value checkboxes
             document.addEventListener('click', function(e) {
                 if (e.target.closest('.remove-mapping')) {
@@ -2495,10 +2580,16 @@
                 }
             }
             
-            // Preview rename changes
+            // Preview rename changes - Enhanced version with pattern-based processing
             function previewRenames() {
                 if (!sheetData || sheetData.length <= 1) {
                     showNotification('No data to process', 'error');
+                    return;
+                }
+                
+                // Ensure we have a valid asset path column selection
+                if (!assetPathColumnSelect || assetPathColumnSelect.value === '') {
+                    showNotification('Please select an asset path column', 'error');
                     return;
                 }
                 
@@ -2519,38 +2610,86 @@
                         return;
                     }
                     
-                    // Get characters to process
-                    const charsToProcess = Array.from(document.querySelectorAll('.char-checkbox:checked'))
-                        .map(checkbox => checkbox.getAttribute('data-char'));
+                    // Collect patterns from the UI with proper null checks
+                    const patterns = [];
+                    const patternRows = document.querySelectorAll('.pattern-row');
                     
-                    // Get action and replacement
-                    const action = document.querySelector('input[name="action"]:checked').value;
-                    const replacement = action === 'replace' ? document.getElementById('replaceWith').value : '';
+                    if (patternRows.length === 0) {
+                        showNotification('No pattern configuration found. Please refresh the page and try again.', 'error');
+                        return;
+                    }
                     
-                    // Generate renamed paths
+                    patternRows.forEach(row => {
+                        const findInput = row.querySelector('.pattern-find');
+                        const replaceInput = row.querySelector('.pattern-replace');
+                        const caseSensitive = row.querySelector('.pattern-case-sensitive');
+                        const wholeWord = row.querySelector('.pattern-whole-word');
+                        const regex = row.querySelector('.pattern-regex');
+                        
+                        // Check if all required elements exist
+                        if (!findInput || !replaceInput || !caseSensitive || !wholeWord || !regex) {
+                            console.warn('Pattern row missing required elements:', row);
+                            return;
+                        }
+                        
+                        const findText = findInput.value ? findInput.value.trim() : '';
+                        if (findText) {
+                            patterns.push({
+                                find: findText,
+                                replace: replaceInput.value || '',
+                                caseSensitive: caseSensitive.checked || false,
+                                wholeWord: wholeWord.checked || false,
+                                regex: regex.checked || false
+                            });
+                        }
+                    });
+                    
+                    if (patterns.length === 0) {
+                        showNotification('No valid patterns defined. Please enter at least one find text pattern.', 'warning');
+                        return;
+                    }
+                    
+                    // Validate patterns before proceeding
+                    const validation = validatePatterns();
+                    if (!validation.allValid) {
+                        showNotification('Please fix pattern errors before previewing', 'error');
+                        return;
+                    }
+                    
+                    if (validation.conflicts) {
+                        showNotification('Pattern conflicts detected. Results may be unpredictable.', 'warning');
+                    }
+                    
+                    // Apply patterns to generate renamed paths
                     renamedPaths = assetPaths.map(path => {
                         // Extract path components
                         const lastSlashIndex = path.lastIndexOf('/');
                         const directory = path.substring(0, lastSlashIndex + 1);
                         const filename = path.substring(lastSlashIndex + 1);
                         
-                        // Process filename
+                        // Apply all patterns in sequence to the filename
                         let newFilename = filename;
-                        charsToProcess.forEach(char => {
-                            const escapedChar = char === '.' ? '\\.' : char;
-                            const regex = new RegExp(escapedChar, 'g');
-                            newFilename = newFilename.replace(regex, replacement);
-                        });
+                        for (const pattern of patterns) {
+                            try {
+                                newFilename = applyPatternToString(newFilename, pattern);
+                            } catch (error) {
+                                console.error(`Error applying pattern to ${filename}:`, error);
+                                // Skip this pattern and continue with others
+                            }
+                        }
                         
                         return directory + newFilename;
                     });
                     
-                    // Populate preview table
-                    populateRenamePreviewTable(assetPaths, renamedPaths);
+                    // Populate preview table with step-by-step transformation details
+                    populateEnhancedRenamePreviewTable(assetPaths, renamedPaths, patterns);
                     
                     // Show preview section
                     renamePreviewSection.classList.remove('hidden');
+                    renameConfigSection.classList.add('hidden');
+                    
                 } catch (error) {
+                    console.error('Preview error:', error);
                     showNotification('Error generating preview: ' + error.message, 'error');
                 }
             }
@@ -4415,6 +4554,813 @@
                     `;
                 }
             }
+            
+            // Pattern management functionality
+            let patternIdCounter = 1;
+            
+            // Add a new pattern row
+            function addPatternRow() {
+                patternIdCounter++;
+                const patternsContainer = document.getElementById('patternsContainer');
+                const patternRow = document.createElement('div');
+                patternRow.className = 'pattern-row border border-gray-200 dark:border-gray-600 rounded-lg p-4';
+                patternRow.setAttribute('data-pattern-id', patternIdCounter);
+                
+                patternRow.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Pattern ${patternIdCounter}</span>
+                            <div class="pattern-status hidden">
+                                <!-- Status indicators will be shown here -->
+                            </div>
+                        </div>
+                        <button class="remove-pattern-btn text-red-500 hover:text-red-700 p-1 rounded" onclick="removePatternRow(${patternIdCounter})">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Find Text</label>
+                            <input type="text" class="pattern-find w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white" 
+                                placeholder="e.g., ABC or old_prefix_" />
+                            <div class="pattern-find-validation text-xs mt-1 hidden"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Replace With</label>
+                            <input type="text" class="pattern-replace w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white" 
+                                placeholder="e.g., GT or new-prefix-" />
+                            <div class="pattern-replace-validation text-xs mt-1 hidden"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" class="pattern-case-sensitive form-checkbox h-4 w-4 text-primary rounded">
+                            <span class="ml-2">Case sensitive</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" class="pattern-whole-word form-checkbox h-4 w-4 text-primary rounded">
+                            <span class="ml-2">Whole word only</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" class="pattern-regex form-checkbox h-4 w-4 text-primary rounded">
+                            <span class="ml-2">Regular expression</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Pattern Test Area -->
+                    <div class="pattern-test-area mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded border hidden">
+                        <div class="text-xs font-medium mb-2">Pattern Test:</div>
+                        <div class="pattern-test-result text-xs"></div>
+                    </div>
+                `;
+                
+                patternsContainer.appendChild(patternRow);
+                
+                // Add event listeners for real-time validation
+                setupPatternRowEvents(patternRow);
+                
+                // Update remove button states
+                updateRemoveButtonStates();
+                
+                // Auto-focus the find text input
+                patternRow.querySelector('.pattern-find').focus();
+            }
+            
+            // Remove pattern row
+            function removePatternRow(patternId) {
+                const patternRows = document.querySelectorAll('.pattern-row');
+                
+                // Don't allow removing the last pattern
+                if (patternRows.length <= 1) {
+                    showNotification('Cannot remove the last pattern. At least one pattern is required.', 'warning');
+                    return;
+                }
+                
+                const patternRow = document.querySelector(`[data-pattern-id="${patternId}"]`);
+                if (patternRow) {
+                    patternRow.remove();
+                    updateRemoveButtonStates();
+                    validatePatterns(); // Re-validate after removal
+                }
+            }
+            
+            // Update remove button states
+            function updateRemoveButtonStates() {
+                const patternRows = document.querySelectorAll('.pattern-row');
+                const removeButtons = document.querySelectorAll('.remove-pattern-btn');
+                
+                removeButtons.forEach(button => {
+                    if (patternRows.length <= 1) {
+                        button.disabled = true;
+                        button.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        button.disabled = false;
+                        button.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+            }
+            
+            // Setup event listeners for a pattern row
+            function setupPatternRowEvents(patternRow) {
+                const findInput = patternRow.querySelector('.pattern-find');
+                const replaceInput = patternRow.querySelector('.pattern-replace');
+                const caseSensitive = patternRow.querySelector('.pattern-case-sensitive');
+                const wholeWord = patternRow.querySelector('.pattern-whole-word');
+                const regex = patternRow.querySelector('.pattern-regex');
+                
+                // Real-time validation on input
+                [findInput, replaceInput].forEach(input => {
+                    input.addEventListener('input', () => {
+                        validatePatternRow(patternRow);
+                        updatePatternTest(patternRow);
+                    });
+                });
+                
+                // Validation on option changes
+                [caseSensitive, wholeWord, regex].forEach(checkbox => {
+                    checkbox.addEventListener('change', () => {
+                        validatePatternRow(patternRow);
+                        updatePatternTest(patternRow);
+                    });
+                });
+                
+                // Show pattern test area on focus
+                [findInput, replaceInput].forEach(input => {
+                    input.addEventListener('focus', () => {
+                        const testArea = patternRow.querySelector('.pattern-test-area');
+                        testArea.classList.remove('hidden');
+                        updatePatternTest(patternRow);
+                    });
+                });
+            }
+            
+            // Validate a single pattern row
+            function validatePatternRow(patternRow) {
+                const findInput = patternRow.querySelector('.pattern-find');
+                const replaceInput = patternRow.querySelector('.pattern-replace');
+                const regex = patternRow.querySelector('.pattern-regex');
+                const findValidation = patternRow.querySelector('.pattern-find-validation');
+                const replaceValidation = patternRow.querySelector('.pattern-replace-validation');
+                const patternStatus = patternRow.querySelector('.pattern-status');
+                
+                let isValid = true;
+                let warnings = [];
+                let errors = [];
+                
+                // Validate find text
+                const findText = findInput.value.trim();
+                if (!findText) {
+                    errors.push('Find text cannot be empty');
+                    findValidation.textContent = 'Find text is required';
+                    findValidation.className = 'text-xs mt-1 text-red-600 dark:text-red-400';
+                    findValidation.classList.remove('hidden');
+                    isValid = false;
+                } else {
+                    // Validate regex if enabled
+                    if (regex.checked) {
+                        try {
+                            new RegExp(findText);
+                            findValidation.classList.add('hidden');
+                        } catch (e) {
+                            errors.push('Invalid regular expression');
+                            findValidation.textContent = 'Invalid regular expression: ' + e.message;
+                            findValidation.className = 'text-xs mt-1 text-red-600 dark:text-red-400';
+                            findValidation.classList.remove('hidden');
+                            isValid = false;
+                        }
+                    } else {
+                        findValidation.classList.add('hidden');
+                    }
+                }
+                
+                // Validate replace text (warnings only)
+                const replaceText = replaceInput.value;
+                if (replaceText === findText && findText) {
+                    warnings.push('Replace text is same as find text - no changes will occur');
+                    replaceValidation.textContent = 'No changes will occur (same as find text)';
+                    replaceValidation.className = 'text-xs mt-1 text-yellow-600 dark:text-yellow-400';
+                    replaceValidation.classList.remove('hidden');
+                } else {
+                    replaceValidation.classList.add('hidden');
+                }
+                
+                // Update pattern status indicator
+                updatePatternStatus(patternStatus, isValid, warnings, errors);
+                
+                return { isValid, warnings, errors };
+            }
+            
+            // Update pattern status indicator
+            function updatePatternStatus(statusElement, isValid, warnings, errors) {
+                statusElement.innerHTML = '';
+                
+                if (errors.length > 0) {
+                    statusElement.innerHTML = `
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Error
+                        </span>
+                    `;
+                    statusElement.classList.remove('hidden');
+                } else if (warnings.length > 0) {
+                    statusElement.innerHTML = `
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Warning
+                        </span>
+                    `;
+                    statusElement.classList.remove('hidden');
+                } else if (isValid) {
+                    statusElement.innerHTML = `
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Valid
+                        </span>
+                    `;
+                    statusElement.classList.remove('hidden');
+                } else {
+                    statusElement.classList.add('hidden');
+                }
+            }
+            
+            // Update pattern test with sample transformations
+            function updatePatternTest(patternRow) {
+                const findInput = patternRow.querySelector('.pattern-find');
+                const replaceInput = patternRow.querySelector('.pattern-replace');
+                const caseSensitive = patternRow.querySelector('.pattern-case-sensitive');
+                const wholeWord = patternRow.querySelector('.pattern-whole-word');
+                const regex = patternRow.querySelector('.pattern-regex');
+                const testResult = patternRow.querySelector('.pattern-test-result');
+                
+                const findText = findInput.value.trim();
+                const replaceText = replaceInput.value;
+                
+                if (!findText) {
+                    testResult.innerHTML = 'Enter find text to see test results';
+                    return;
+                }
+                
+                // Sample test strings
+                const testStrings = [
+                    'sample_file_name.jpg',
+                    'Product ABC_Detail.png',
+                    'old-style-filename.pdf',
+                    'test.file.with.dots.txt',
+                    'UPPERCASE_FILE.JPG'
+                ];
+                
+                const results = testStrings.map(testString => {
+                    try {
+                        const result = applyPatternToString(testString, {
+                            find: findText,
+                            replace: replaceText,
+                            caseSensitive: caseSensitive.checked,
+                            wholeWord: wholeWord.checked,
+                            regex: regex.checked
+                        });
+                        
+                        const changed = result !== testString;
+                        return {
+                            original: testString,
+                            result: result,
+                            changed: changed
+                        };
+                    } catch (error) {
+                        return {
+                            original: testString,
+                            result: 'Error: ' + error.message,
+                            changed: false,
+                            error: true
+                        };
+                    }
+                });
+                
+                // Display results
+                testResult.innerHTML = results.map(r => {
+                    if (r.error) {
+                        return `<div class="mb-1 text-red-600 dark:text-red-400">${r.original} → ${r.result}</div>`;
+                    } else if (r.changed) {
+                        return `<div class="mb-1"><span class="text-gray-500">${r.original}</span> → <span class="font-medium text-primary">${r.result}</span></div>`;
+                    } else {
+                        return `<div class="mb-1 text-gray-500">${r.original} (no change)</div>`;
+                    }
+                }).join('');
+            }
+            
+            // Apply a single pattern to a string
+            function applyPatternToString(text, pattern) {
+                if (!pattern.find) return text;
+                
+                let result = text;
+                
+                try {
+                    if (pattern.regex) {
+                        // Use as regular expression
+                        const flags = pattern.caseSensitive ? 'g' : 'gi';
+                        const regex = new RegExp(pattern.find, flags);
+                        result = result.replace(regex, pattern.replace);
+                    } else if (pattern.wholeWord) {
+                        // Whole word matching
+                        const escapedFind = pattern.find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const flags = pattern.caseSensitive ? 'g' : 'gi';
+                        const regex = new RegExp(`\\b${escapedFind}\\b`, flags);
+                        result = result.replace(regex, pattern.replace);
+                    } else {
+                        // Simple string replacement
+                        if (pattern.caseSensitive) {
+                            result = result.split(pattern.find).join(pattern.replace);
+                        } else {
+                            // Case-insensitive replacement
+                            const regex = new RegExp(pattern.find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                            result = result.replace(regex, pattern.replace);
+                        }
+                    }
+                } catch (error) {
+                    throw new Error('Pattern application failed: ' + error.message);
+                }
+                
+                return result;
+            }
+            
+            // Validate all patterns and detect conflicts
+            function validatePatterns() {
+                const patternRows = document.querySelectorAll('.pattern-row');
+                const validationMessages = document.getElementById('patternValidationMessages');
+                const conflictDetection = document.getElementById('conflictDetection');
+                const conflictDetails = document.getElementById('conflictDetails');
+                
+                let allValid = true;
+                let allWarnings = [];
+                let allErrors = [];
+                const patterns = [];
+                
+                // Validate each pattern row
+                patternRows.forEach((row, index) => {
+                    const validation = validatePatternRow(row);
+                    if (!validation.isValid) {
+                        allValid = false;
+                    }
+                    allWarnings.push(...validation.warnings.map(w => `Pattern ${index + 1}: ${w}`));
+                    allErrors.push(...validation.errors.map(e => `Pattern ${index + 1}: ${e}`));
+                    
+                    // Collect pattern data for conflict analysis
+                    const findInput = row.querySelector('.pattern-find');
+                    const replaceInput = row.querySelector('.pattern-replace');
+                    const caseSensitive = row.querySelector('.pattern-case-sensitive');
+                    const wholeWord = row.querySelector('.pattern-whole-word');
+                    const regex = row.querySelector('.pattern-regex');
+                    
+                    if (findInput.value.trim()) {
+                        patterns.push({
+                            index: index + 1,
+                            find: findInput.value.trim(),
+                            replace: replaceInput.value,
+                            caseSensitive: caseSensitive.checked,
+                            wholeWord: wholeWord.checked,
+                            regex: regex.checked
+                        });
+                    }
+                });
+                
+                // Analyze pattern conflicts
+                const conflicts = analyzePatternConflicts(patterns);
+                
+                // Display validation messages
+                if (allErrors.length > 0 || allWarnings.length > 0) {
+                    validationMessages.innerHTML = `
+                        ${allErrors.length > 0 ? `
+                        <div class="p-3 bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-200 rounded-md border border-red-200 dark:border-red-700 mb-2">
+                            <div class="font-medium mb-1">Errors found:</div>
+                            <ul class="list-disc pl-5 text-sm">
+                                ${allErrors.map(error => `<li>${error}</li>`).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
+                        ${allWarnings.length > 0 ? `
+                        <div class="p-3 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200 rounded-md border border-yellow-200 dark:border-yellow-700">
+                            <div class="font-medium mb-1">Warnings:</div>
+                            <ul class="list-disc pl-5 text-sm">
+                                ${allWarnings.map(warning => `<li>${warning}</li>`).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
+                    `;
+                    validationMessages.classList.remove('hidden');
+                } else {
+                    validationMessages.classList.add('hidden');
+                }
+                
+                // Display conflict detection
+                if (conflicts.length > 0) {
+                    conflictDetails.innerHTML = `
+                        <ul class="list-disc pl-5 text-sm space-y-1">
+                            ${conflicts.map(conflict => `<li>${conflict}</li>`).join('')}
+                        </ul>
+                        <div class="mt-2 text-sm">
+                            <strong>Recommendation:</strong> Review pattern order and consider combining or modifying conflicting patterns.
+                        </div>
+                    `;
+                    conflictDetection.classList.remove('hidden');
+                } else {
+                    conflictDetection.classList.add('hidden');
+                }
+                
+                // Show success message if everything is valid and no conflicts
+                if (allValid && allWarnings.length === 0 && conflicts.length === 0) {
+                    showNotification('All patterns are valid and no conflicts detected', 'success');
+                }
+                
+                return { allValid, conflicts: conflicts.length > 0 };
+            }
+            
+            // Analyze pattern conflicts
+            function analyzePatternConflicts(patterns) {
+                const conflicts = [];
+                
+                if (patterns.length < 2) return conflicts;
+                
+                // Test with sample strings to detect conflicts
+                const testStrings = [
+                    'test_file-name.jpg',
+                    'Sample ABC File.png',
+                    'product-123_detail.pdf',
+                    'OLD_FILE_NAME.txt'
+                ];
+                
+                for (const testString of testStrings) {
+                    let current = testString;
+                    const transformations = [];
+                    
+                    // Apply patterns in sequence
+                    for (let i = 0; i < patterns.length; i++) {
+                        const pattern = patterns[i];
+                        try {
+                            const result = applyPatternToString(current, pattern);
+                            if (result !== current) {
+                                transformations.push({
+                                    patternIndex: i,
+                                    from: current,
+                                    to: result,
+                                    pattern: pattern
+                                });
+                                current = result;
+                            }
+                        } catch (error) {
+                            // Skip invalid patterns
+                        }
+                    }
+                    
+                    // Analyze transformations for conflicts
+                    if (transformations.length > 1) {
+                        // Check for overlapping changes
+                        for (let i = 0; i < transformations.length - 1; i++) {
+                            const current = transformations[i];
+                            const next = transformations[i + 1];
+                            
+                            // Check if the second pattern affects the result of the first
+                            if (next.from !== current.to) {
+                                // This is expected - second pattern working on result of first
+                            } else {
+                                // Check for potential order-dependent results
+                                const reverseTest = applyPatternsInOrder(testString, [patterns[next.patternIndex], patterns[current.patternIndex]]);
+                                const forwardTest = applyPatternsInOrder(testString, [patterns[current.patternIndex], patterns[next.patternIndex]]);
+                                
+                                if (reverseTest !== forwardTest) {
+                                    conflicts.push(`Patterns ${current.pattern.index} and ${next.pattern.index} produce different results when applied in different orders (example: "${testString}")`);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Check for redundant patterns
+                for (let i = 0; i < patterns.length; i++) {
+                    for (let j = i + 1; j < patterns.length; j++) {
+                        const p1 = patterns[i];
+                        const p2 = patterns[j];
+                        
+                        // Check for identical patterns
+                        if (p1.find === p2.find && 
+                            p1.replace === p2.replace && 
+                            p1.caseSensitive === p2.caseSensitive &&
+                            p1.wholeWord === p2.wholeWord &&
+                            p1.regex === p2.regex) {
+                            conflicts.push(`Patterns ${p1.index} and ${p2.index} are identical and redundant`);
+                        }
+                        
+                        // Check for conflicting replacements of the same text
+                        if (p1.find === p2.find && 
+                            p1.replace !== p2.replace &&
+                            p1.caseSensitive === p2.caseSensitive &&
+                            p1.wholeWord === p2.wholeWord &&
+                            p1.regex === p2.regex) {
+                            conflicts.push(`Patterns ${p1.index} and ${p2.index} replace the same text ("${p1.find}") with different values`);
+                        }
+                    }
+                }
+                
+                return [...new Set(conflicts)]; // Remove duplicates
+            }
+            
+            // Apply multiple patterns in order to a string
+            function applyPatternsInOrder(text, patterns) {
+                let result = text;
+                for (const pattern of patterns) {
+                    try {
+                        result = applyPatternToString(result, pattern);
+                    } catch (error) {
+                        // Skip invalid patterns
+                    }
+                }
+                return result;
+            }
+            
+            // Apply pattern templates
+            function applyPatternTemplate(templateName) {
+                const patternsContainer = document.getElementById('patternsContainer');
+                
+                // Clear existing patterns
+                patternsContainer.innerHTML = '';
+                patternIdCounter = 0;
+                
+                // Apply template
+                switch (templateName) {
+                    case 'underscore-to-hyphen':
+                        addPatternWithValues('_', '-', false, false, false);
+                        break;
+                    case 'space-to-hyphen':
+                        addPatternWithValues(' ', '-', false, false, false);
+                        break;
+                    case 'remove-spaces':
+                        addPatternWithValues(' ', '', false, false, false);
+                        break;
+                    case 'lowercase':
+                        // This requires a more complex implementation using regex
+                        addPatternWithValues('([A-Z])', function(match, p1) { return p1.toLowerCase(); }, false, false, true);
+                        // For demo purposes, we'll use a simpler approach
+                        const patternRow = document.querySelector('.pattern-row:last-child');
+                        if (patternRow) {
+                            patternRow.querySelector('.pattern-find').value = '[A-Z]';
+                            patternRow.querySelector('.pattern-replace').value = '';
+                            patternRow.querySelector('.pattern-regex').checked = true;
+                            // Add a note that this requires manual implementation
+                            const testArea = patternRow.querySelector('.pattern-test-area');
+                            testArea.classList.remove('hidden');
+                            testArea.querySelector('.pattern-test-result').innerHTML = '<div class="text-yellow-600 dark:text-yellow-400">Note: Lowercase conversion requires custom implementation</div>';
+                        }
+                        break;
+                }
+                
+                updateRemoveButtonStates();
+                validatePatterns();
+            }
+            
+            // Add pattern with pre-filled values
+            function addPatternWithValues(find, replace, caseSensitive, wholeWord, regex) {
+                addPatternRow();
+                
+                const lastPattern = document.querySelector('.pattern-row:last-child');
+                if (lastPattern) {
+                    lastPattern.querySelector('.pattern-find').value = find;
+                    lastPattern.querySelector('.pattern-replace').value = replace;
+                    lastPattern.querySelector('.pattern-case-sensitive').checked = caseSensitive;
+                    lastPattern.querySelector('.pattern-whole-word').checked = wholeWord;
+                    lastPattern.querySelector('.pattern-regex').checked = regex;
+                    
+                    // Trigger validation
+                    validatePatternRow(lastPattern);
+                    updatePatternTest(lastPattern);
+                }
+            }
+            
+            // Setup event listeners for existing pattern rows on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                const existingPatternRows = document.querySelectorAll('.pattern-row');
+                existingPatternRows.forEach(setupPatternRowEvents);
+                updateRemoveButtonStates();
+            });
+            
+            // Enhanced preview renames function with pattern-based processing
+            function previewRenamesEnhanced() {
+                if (!sheetData || sheetData.length <= 1) {
+                    showNotification('No data to process', 'error');
+                    return;
+                }
+                
+                // Ensure we have a valid asset path column selection
+                if (!assetPathColumnSelect || assetPathColumnSelect.value === '') {
+                    showNotification('Please select an asset path column', 'error');
+                    return;
+                }
+                
+                try {
+                    // Get selected column index
+                    const columnIndex = parseInt(assetPathColumnSelect.value);
+                    
+                    // Skip header row
+                    const dataRows = sheetData.slice(1);
+                    
+                    // Get asset paths from selected column
+                    assetPaths = dataRows.map(row => {
+                        return row[columnIndex] || '';
+                    }).filter(path => path.trim() !== '');
+                    
+                    if (assetPaths.length === 0) {
+                        showNotification('No asset paths found in the selected column', 'warning');
+                        return;
+                    }
+                    
+                    // Collect patterns from the UI with proper null checks
+                    const patterns = [];
+                    const patternRows = document.querySelectorAll('.pattern-row');
+                    
+                    if (patternRows.length === 0) {
+                        showNotification('No pattern configuration found. Please refresh the page and try again.', 'error');
+                        return;
+                    }
+                    
+                    patternRows.forEach(row => {
+                        const findInput = row.querySelector('.pattern-find');
+                        const replaceInput = row.querySelector('.pattern-replace');
+                        const caseSensitive = row.querySelector('.pattern-case-sensitive');
+                        const wholeWord = row.querySelector('.pattern-whole-word');
+                        const regex = row.querySelector('.pattern-regex');
+                        
+                        // Check if all required elements exist
+                        if (!findInput || !replaceInput || !caseSensitive || !wholeWord || !regex) {
+                            console.warn('Pattern row missing required elements:', row);
+                            return;
+                        }
+                        
+                        const findText = findInput.value ? findInput.value.trim() : '';
+                        if (findText) {
+                            patterns.push({
+                                find: findText,
+                                replace: replaceInput.value || '',
+                                caseSensitive: caseSensitive.checked || false,
+                                wholeWord: wholeWord.checked || false,
+                                regex: regex.checked || false
+                            });
+                        }
+                    });
+                    
+                    if (patterns.length === 0) {
+                        showNotification('No valid patterns defined. Please enter at least one find text pattern.', 'warning');
+                        return;
+                    }
+                    
+                    // Validate patterns before proceeding
+                    const validation = validatePatterns();
+                    if (!validation.allValid) {
+                        showNotification('Please fix pattern errors before previewing', 'error');
+                        return;
+                    }
+                    
+                    if (validation.conflicts) {
+                        showNotification('Pattern conflicts detected. Results may be unpredictable.', 'warning');
+                    }
+                    
+                    // Apply patterns to generate renamed paths
+                    renamedPaths = assetPaths.map(path => {
+                        // Extract path components
+                        const lastSlashIndex = path.lastIndexOf('/');
+                        const directory = path.substring(0, lastSlashIndex + 1);
+                        const filename = path.substring(lastSlashIndex + 1);
+                        
+                        // Apply all patterns in sequence to the filename
+                        let newFilename = filename;
+                        for (const pattern of patterns) {
+                            try {
+                                newFilename = applyPatternToString(newFilename, pattern);
+                            } catch (error) {
+                                console.error(`Error applying pattern to ${filename}:`, error);
+                                // Skip this pattern and continue with others
+                            }
+                        }
+                        
+                        return directory + newFilename;
+                    });
+                    
+                    // Populate preview table with step-by-step transformation details
+                    populateEnhancedRenamePreviewTable(assetPaths, renamedPaths, patterns);
+                    
+                    // Show preview section
+                    renamePreviewSection.classList.remove('hidden');
+                    renameConfigSection.classList.add('hidden');
+                    
+                } catch (error) {
+                    console.error('Preview error:', error);
+                    showNotification('Error generating preview: ' + error.message, 'error');
+                }
+            }
+            
+            // Enhanced preview table with step-by-step transformation
+            function populateEnhancedRenamePreviewTable(originalPaths, newPaths, patterns) {
+                renamePreviewTableBody.innerHTML = '';
+                
+                let changeCount = 0;
+                
+                originalPaths.forEach((path, index) => {
+                    const newPath = newPaths[index];
+                    
+                    // Skip if path didn't change
+                    if (path === newPath) return;
+                    
+                    changeCount++;
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 dark:hover:bg-gray-800';
+                    
+                    // Original path cell
+                    const originalCell = document.createElement('td');
+                    originalCell.className = 'py-3 px-4 text-sm align-top';
+                    originalCell.textContent = path;
+                    row.appendChild(originalCell);
+                    
+                    // Transformation details cell
+                    const transformationCell = document.createElement('td');
+                    transformationCell.className = 'py-3 px-4 text-sm';
+                    
+                    // Show step-by-step transformation
+                    const lastSlashIndex = path.lastIndexOf('/');
+                    const directory = path.substring(0, lastSlashIndex + 1);
+                    const originalFilename = path.substring(lastSlashIndex + 1);
+                    
+                    let transformationHtml = `
+                        <div class="mb-2">
+                            <span class="text-gray-600 dark:text-gray-400">Directory:</span> ${directory}
+                        </div>
+                        <div class="space-y-1">
+                            <div class="text-xs font-medium">Filename transformation:</div>
+                    `;
+                    
+                    // Apply patterns step by step for visualization
+                    let currentFilename = originalFilename;
+                    transformationHtml += `<div class="text-xs">1. Start: <span class="font-mono">${currentFilename}</span></div>`;
+                    
+                    patterns.forEach((pattern, patternIndex) => {
+                        try {
+                            const result = applyPatternToString(currentFilename, pattern);
+                            if (result !== currentFilename) {
+                                transformationHtml += `<div class="text-xs">
+                                    ${patternIndex + 2}. Pattern "${pattern.find}" → "${pattern.replace}": 
+                                    <span class="font-mono text-primary">${result}</span>
+                                </div>`;
+                                currentFilename = result;
+                            } else {
+                                transformationHtml += `<div class="text-xs text-gray-500">
+                                    ${patternIndex + 2}. Pattern "${pattern.find}" → "${pattern.replace}": (no change)
+                                </div>`;
+                            }
+                        } catch (error) {
+                            transformationHtml += `<div class="text-xs text-red-600">
+                                ${patternIndex + 2}. Pattern "${pattern.find}": Error - ${error.message}
+                            </div>`;
+                        }
+                    });
+                    
+                    transformationHtml += `
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                            <span class="text-sm font-medium">Final result:</span><br>
+                            <span class="font-mono text-primary">${newPath}</span>
+                        </div>
+                    `;
+                    
+                    transformationCell.innerHTML = transformationHtml;
+                    row.appendChild(transformationCell);
+                    
+                    renamePreviewTableBody.appendChild(row);
+                });
+                
+                if (changeCount === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 2;
+                    cell.className = 'py-4 text-center text-sm text-gray-500 dark:text-gray-400';
+                    cell.textContent = 'No changes required - all paths already match the configured patterns';
+                    row.appendChild(cell);
+                    renamePreviewTableBody.appendChild(row);
+                }
+                
+                // Update the preview button to show summary
+                const changedCount = changeCount;
+                const totalCount = originalPaths.length;
+                showNotification(`Preview generated: ${changedCount} of ${totalCount} files will be renamed`, 'success');
+            }
+            
+            // Override the original preview function to use the enhanced version
+            window.previewRenames = previewRenamesEnhanced;
             
             // Notification system
             function showNotification(message, type = 'info', duration = 5000) {
