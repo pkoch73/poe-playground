@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEM AI Agents Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4A49B8'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #5D5CDE 0%, #7C4DFF 100%);
+        }
+        .agent-card {
+            transition: all 0.3s ease;
+        }
+        .agent-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(93, 92, 222, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <!-- Header -->
+    <header class="gradient-bg text-white py-8 mb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold mb-4">AEM AI Agents Dashboard</h1>
+                <p class="text-xl opacity-90 max-w-4xl mx-auto">
+                    A portfolio of specialized AI agents organized into four core areas: Generation, Governance, Optimization, and Engagement
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        
+        <!-- Core Categories Overview -->
+        <div class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Core Areas Overview</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border-l-4 border-blue-500">
+                    <div class="flex items-center mb-3">
+                        <i class="fas fa-lightbulb text-blue-500 text-xl mr-3"></i>
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Generation</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Accelerate creation with agents that produce and advise on content</p>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border-l-4 border-green-500">
+                    <div class="flex items-center mb-3">
+                        <i class="fas fa-shield-alt text-green-500 text-xl mr-3"></i>
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Governance</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Enforce brand, compliance, and business rules automatically</p>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border-l-4 border-orange-500">
+                    <div class="flex items-center mb-3">
+                        <i class="fas fa-chart-line text-orange-500 text-xl mr-3"></i>
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Optimization</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Continuously improve performance with agent-driven insights</p>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border-l-4 border-purple-500">
+                    <div class="flex items-center mb-3">
+                        <i class="fas fa-users text-purple-500 text-xl mr-3"></i>
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Engagement</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Enable AI-powered experiences that guide and activate customers</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Idea + Content Generation -->
+        <section class="mb-12">
+            <div class="flex items-center mb-6">
+                <div class="w-4 h-4 bg-blue-500 rounded-full mr-3"></div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Idea + Content Generation</h2>
+                <span class="ml-3 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm rounded-full">Practitioner</span>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Experience Production Agent -->
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Experience Production Agent</h3>
+                                <span class="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-xs rounded-full">High Complexity (4)</span>
+                            </div>
+                            <i class="fas fa-cogs text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Corey (sites)</span>
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">John (assets)</span>
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Anurag (forms)</span>
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Shankari (foundation)</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Capabilities:</h4>
+                            <ul class="space-y-1">
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Page Content Update (v1)
+                                </li>
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Page Content Creation (v1)
+                                </li>
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Brief Processing (v1)
+                                </li>
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Forms Creation/Import (v1)
+                                </li>
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Forms Business Logic (v1)
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Experience Advisory Agent -->
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Experience Advisory Agent</h3>
+                                <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-xs rounded-full">Medium Complexity (3)</span>
+                            </div>
+                            <i class="fas fa-compass text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Apoorva G (leads, assets)</span>
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Peter K (foundation)</span>
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Arun T (forms)</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Capabilities:</h4>
+                            <ul class="space-y-1">
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Content Advisor (v1)
+                                </li>
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Search (v1)
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Governance -->
+        <section class="mb-12">
+            <div class="flex items-center mb-6">
+                <div class="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Governance</h2>
+                <span class="ml-3 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm rounded-full">Practitioner</span>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Experience Governance Agent -->
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Experience Governance Agent</h3>
+                                <span class="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-xs rounded-full">High Complexity (4)</span>
+                            </div>
+                            <i class="fas fa-shield-alt text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Philipp Kapfer (security)</span>
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">John Tapley (brand)</span>
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Corey D (brand)</span>
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">James Cornish (metadata)</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Capabilities:</h4>
+                            <ul class="space-y-1">
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                    Security Governance
+                                </li>
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                    Brand
+                                </li>
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                    Metadata and taxonomy
+                                </li>
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Content Hub ABAC permissions (v1)
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activation + Optimization -->
+        <section class="mb-12">
+            <div class="flex items-center mb-6">
+                <div class="w-4 h-4 bg-orange-500 rounded-full mr-3"></div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Activation + Optimization</h2>
+                <span class="ml-3 px-3 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 text-sm rounded-full">Practitioner</span>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Sites Optimization Agent -->
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Sites Optimization Agent</h3>
+                                <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-xs rounded-full">Medium Complexity (2)</span>
+                            </div>
+                            <i class="fas fa-chart-line text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Hyman Chung (sites)</span>
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Pedro Ferreira (CS - foundation)</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Capabilities:</h4>
+                            <ul class="space-y-1">
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Website Analyzer (v1)
+                                </li>
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Forms Optimizer (v1)
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Optimization Agent -->
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Content Optimization Agent</h3>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">Low Complexity (1)</span>
+                            </div>
+                            <i class="fas fa-file-alt text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Apoorva Gupta (assets)</span>
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Capabilities:</h4>
+                            <ul class="space-y-1">
+                                <li class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    Dynamic Media (v1)
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market Intelligence Agent -->
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Market Intelligence Agent</h3>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">Low Complexity (1)</span>
+                            </div>
+                            <i class="fas fa-brain text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Aditi D (sites)</span>
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Status:</h4>
+                            <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-xs rounded">In Development</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Brand Engagement -->
+        <section class="mb-12">
+            <div class="flex items-center mb-6">
+                <div class="w-4 h-4 bg-purple-500 rounded-full mr-3"></div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Brand Engagement</h2>
+                <span class="ml-3 px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-sm rounded-full">Customer-facing</span>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Site Advisor Agent -->
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Site Advisor Agent</h3>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">Low Complexity (1)</span>
+                            </div>
+                            <i class="fas fa-user-friends text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Peter Klassen (foundation)</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <span class="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm rounded-full">v1 Available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Adobe Internal Use -->
+        <section class="mb-12">
+            <div class="flex items-center mb-6">
+                <div class="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Adobe Internal Use</h2>
+                <span class="ml-3 px-3 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-sm rounded-full">Internal</span>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Mr. Fluffyjaws -->
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Mr. Fluffyjaws</h3>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">Low Complexity (1)</span>
+                            </div>
+                            <i class="fas fa-database text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Data Advisory Agent - Unify all internal agent needs</p>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Shweta Dua (foundation)</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <span class="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm rounded-full">v1 Available</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Digital Insights Agent -->
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Digital Insights Agent</h3>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">Low Complexity (1)</span>
+                            </div>
+                            <i class="fas fa-chart-pie text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Generate business insights for a particular DR</p>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Shweta Dua (foundation)</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <span class="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm rounded-full">v1 Available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Service Agent -->
+            <div class="mt-6">
+                <div class="agent-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Data Service Agent (Hannibal)</h3>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">Low Complexity (1)</span>
+                            </div>
+                            <i class="fas fa-server text-primary text-lg"></i>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Generate adhoc queries out of DaaS</p>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">PM Owners:</h4>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-1 bg-primary text-white text-xs rounded">Shweta Dua (foundation)</span>
+                            </div>
+                            <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">EM Owners:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-2 py-1 bg-gray-400 text-white text-xs rounded">TBD</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <span class="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm rounded-full">v1 Available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PM/EM Collaboration Heatmap -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">PM/EM Collaboration Heatmap</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Cross-collaboration matrix showing PM owner intersections across agents. EM data will populate when assignments are made.</p>
+                </div>
+                
+                <!-- PM Collaboration Matrix -->
+                <div class="overflow-x-auto">
+                    <div class="min-w-full">
+                        <div class="grid gap-1" style="grid-template-columns: 200px repeat(16, 1fr);">
+                            <!-- Header row -->
+                            <div class="p-2 font-semibold text-xs text-gray-700 dark:text-gray-300"></div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Corey</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">John</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Anurag</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Shankari</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Apoorva G</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Peter K</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Arun T</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Philipp K</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">John T</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Corey D</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">James C</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Hyman C</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Pedro F</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Aditi D</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Peter Kl</div>
+                            <div class="p-1 text-xs text-center font-medium text-gray-600 dark:text-gray-400 rotate-45 origin-bottom-left transform translate-y-8">Shweta D</div>
+                            
+                            <!-- Experience Production Agent -->
+                            <div class="p-2 text-xs font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">Experience Production</div>
+                            <div class="w-6 h-6 bg-red-500 rounded-sm m-auto" title="Corey collaborates on Experience Production"></div>
+                            <div class="w-6 h-6 bg-red-500 rounded-sm m-auto" title="John collaborates on Experience Production"></div>
+                            <div class="w-6 h-6 bg-red-500 rounded-sm m-auto" title="Anurag collaborates on Experience Production"></div>
+                            <div class="w-6 h-6 bg-red-500 rounded-sm m-auto" title="Shankari collaborates on Experience Production"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            
+                            <!-- Experience Advisory Agent -->
+                            <div class="p-2 text-xs font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">Experience Advisory</div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-yellow-500 rounded-sm m-auto" title="Apoorva G collaborates on Experience Advisory"></div>
+                            <div class="w-6 h-6 bg-yellow-500 rounded-sm m-auto" title="Peter K collaborates on Experience Advisory"></div>
+                            <div class="w-6 h-6 bg-yellow-500 rounded-sm m-auto" title="Arun T collaborates on Experience Advisory"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            
+                            <!-- Experience Governance Agent -->
+                            <div class="p-2 text-xs font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">Experience Governance</div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-red-500 rounded-sm m-auto" title="Philipp K collaborates on Experience Governance"></div>
+                            <div class="w-6 h-6 bg-red-500 rounded-sm m-auto" title="John T collaborates on Experience Governance"></div>
+                            <div class="w-6 h-6 bg-red-500 rounded-sm m-auto" title="Corey D collaborates on Experience Governance"></div>
+                            <div class="w-6 h-6 bg-red-500 rounded-sm m-auto" title="James C collaborates on Experience Governance"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            
+                            <!-- Sites Optimization Agent -->
+                            <div class="p-2 text-xs font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">Sites Optimization</div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-yellow-500 rounded-sm m-auto" title="Hyman C collaborates on Sites Optimization"></div>
+                            <div class="w-6 h-6 bg-yellow-500 rounded-sm m-auto" title="Pedro F collaborates on Sites Optimization"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            
+                            <!-- Content Optimization Agent -->
+                            <div class="p-2 text-xs font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">Content Optimization</div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-green-500 rounded-sm m-auto" title="Apoorva Gupta collaborates on Content Optimization"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            
+                            <!-- Market Intelligence Agent -->
+                            <div class="p-2 text-xs font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">Market Intelligence</div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-green-500 rounded-sm m-auto" title="Aditi D collaborates on Market Intelligence"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            
+                            <!-- Site Advisor Agent -->
+                            <div class="p-2 text-xs font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">Site Advisor</div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-green-500 rounded-sm m-auto" title="Peter Klassen collaborates on Site Advisor"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            
+                            <!-- Internal Agents -->
+                            <div class="p-2 text-xs font-medium text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">Internal Agents (3)</div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded-sm m-auto"></div>
+                            <div class="w-6 h-6 bg-blue-500 rounded-sm m-auto" title="Shweta D manages all 3 internal agents"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Legend -->
+                <div class="mt-6 flex flex-wrap gap-4 text-xs">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-red-500 rounded-sm"></div>
+                        <span class="text-gray-600 dark:text-gray-400">High complexity collaboration (4 owners)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-yellow-500 rounded-sm"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Medium complexity collaboration (2-3 owners)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-green-500 rounded-sm"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Single owner</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-blue-500 rounded-sm"></div>
+                        <span class="text-gray-600 dark:text-gray-400">Multiple agents (internal)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-gray-200 dark:bg-gray-600 rounded-sm"></div>
+                        <span class="text-gray-600 dark:text-gray-400">No collaboration</span>
+                    </div>
+                </div>
+                
+                <!-- Collaboration Insights -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                        <h4 class="font-semibold text-red-800 dark:text-red-200 mb-2">High Collaboration</h4>
+                        <p class="text-sm text-red-600 dark:text-red-300">2 agents require coordination across 4 PM owners each</p>
+                    </div>
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+                        <h4 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Medium Collaboration</h4>
+                        <p class="text-sm text-yellow-600 dark:text-yellow-300">2 agents have 2-3 PM owner collaboration</p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Concentrated Ownership</h4>
+                        <p class="text-sm text-blue-600 dark:text-blue-300">Shweta D manages all internal agents (3)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Stats -->
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Portfolio Summary</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-primary mb-2">11</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Total Agents</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-500 mb-2">4</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Core Categories</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-500 mb-2">9</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">v1 Available</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-orange-500 mb-2">16</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Total PM Owners</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 dark:bg-gray-900 text-white py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-gray-400">AEM AI Agents Dashboard - Designed to create, protect, and maximize brand value across the human + agentic web</p>
+        </div>
+    </footer>
+</body>
+</html>
