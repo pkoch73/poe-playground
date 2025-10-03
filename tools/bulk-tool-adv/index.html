@@ -6,7 +6,7 @@
     <title>Assets Bulk Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
+     <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -297,6 +297,9 @@
                     </button>
                     <button class="pattern-template-btn px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors" data-template="remove-spaces">
                         Remove Spaces
+                    </button>
+                    <button class="pattern-template-btn px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors" data-template="append-before-extension">
+                        Add Suffix Before Extension
                     </button>
                     <button class="pattern-template-btn px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors" data-template="lowercase">
                         To Lowercase
@@ -5104,6 +5107,38 @@
                     case 'remove-spaces':
                         addPatternWithValues(' ', '', false, false, false);
                         break;
+                    case 'append-before-extension':
+                        addPatternWithValues('(\\.[^.]+)$', '_SUFFIX$1', false, false, true);
+                        // Add helper information for this template
+                        const appendPatternRow = document.querySelector('.pattern-row:last-child');
+                        if (appendPatternRow) {
+                            // Show the test area with usage instructions
+                            const testArea = appendPatternRow.querySelector('.pattern-test-area');
+                            testArea.classList.remove('hidden');
+                            testArea.querySelector('.pattern-test-result').innerHTML = `
+                                <div class="text-blue-600 dark:text-blue-400 mb-2">
+                                    <strong>📝 Append Before Extension Pattern</strong>
+                                </div>
+                                <div class="text-sm space-y-2">
+                                    <div>• <strong>How to use:</strong> Replace "_SUFFIX" with your desired text (e.g., "_MAIN", "_DRAFT", "_V2")</div>
+                                    <div>• <strong>Examples with "_MAIN":</strong></div>
+                                    <div class="ml-4 font-mono text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded border">
+                                        VCS_MF_MF5203BZALB_SB.tif → VCS_MF_MF5203BZALB_SB_MAIN.tif<br>
+                                        product_image.jpg → product_image_MAIN.jpg<br>
+                                        document.pdf → document_MAIN.pdf
+                                    </div>
+                                    <div class="text-blue-600 dark:text-blue-400">💡 <strong>Tip:</strong> Edit the "Replace With" field above to change "_SUFFIX" to your desired suffix</div>
+                                </div>
+                            `;
+                            
+                            // Focus the replace input for easy editing
+                            setTimeout(() => {
+                                const replaceInput = appendPatternRow.querySelector('.pattern-replace');
+                                replaceInput.focus();
+                                replaceInput.select();
+                            }, 100);
+                        }
+                        break;
                     case 'lowercase':
                         // This requires a more complex implementation using regex
                         addPatternWithValues('([A-Z])', function(match, p1) { return p1.toLowerCase(); }, false, false, true);
@@ -5123,6 +5158,11 @@
                 
                 updateRemoveButtonStates();
                 validatePatterns();
+                
+                // Show notification about the template
+                if (templateName === 'append-before-extension') {
+                    showNotification('Append Before Extension template applied! Edit "_SUFFIX" in the Replace With field to customize your suffix.', 'success', 8000);
+                }
             }
             
             // Add pattern with pre-filled values
