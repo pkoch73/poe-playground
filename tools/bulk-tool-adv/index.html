@@ -6,7 +6,8 @@
     <title>Assets Bulk Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-     <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -545,6 +546,75 @@
         <div id="searchConfigSection" class="tab-content mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
             <h2 class="text-xl font-semibold mb-4">Bulk Search Configuration</h2>
             
+            <!-- Asset Type Filter -->
+            <div class="mb-4">
+                <label for="searchAssetTypeFilter" class="block text-sm font-medium mb-1">Asset Type (Optional Filter)</label>
+                <select id="searchAssetTypeFilter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                    focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                    dark:bg-gray-700 dark:text-white">
+                    <option value="">All Asset Types</option>
+                    <option value="Product Imagery">Product Imagery</option>
+                    <option value="Application Imagery">Application Imagery</option>
+                    <option value="Line Art">Line Art</option>
+                    <option value="Logos">Logos</option>
+                    <option value="Video">Video</option>
+                    <option value="CAD">CAD</option>
+                    <option value="Social Media">Social Media</option>
+                    <option value="PDF/Literature">PDF/Literature</option>
+                    <option value="Documents">Documents</option>
+                    <option value="Web Imagery">Web Imagery</option>
+                    <option value="Event Imagery">Event Imagery</option>
+                    <option value="Partnership Imagery">Partnership Imagery</option>
+                </select>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Filter by vcc:assettype property. Leave empty to search all asset types.
+                </p>
+            </div>
+
+            <!-- Product Shot Filter -->
+            <div class="mb-4">
+                <label for="searchProductShotFilter" class="block text-sm font-medium mb-1">Product Shot (Optional Filter)</label>
+                <select id="searchProductShotFilter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                    focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                    dark:bg-gray-700 dark:text-white">
+                    <option value="">All Product Shots</option>
+                    <option value="Product Silo">Product Silo</option>
+                    <option value="Application Detail">Application Detail</option>
+                    <option value="Product Silo Detail">Product Silo Detail</option>
+                    <option value="Application">Application</option>
+                    <option value="Web Banner">Web Banner</option>
+                    <option value="Web Silo Backgrounds">Web Silo Backgrounds</option>
+                </select>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Filter by vcc:productshot property. Leave empty to search all product shots.
+                </p>
+            </div>
+            
+            <div class="mb-6">
+                <label for="searchMetadataProperty" class="block text-sm font-medium mb-1">SKU Metadata Property</label>
+                <div class="flex gap-2">
+                    <select id="searchMetadataProperty" 
+                        class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                        dark:bg-gray-700 dark:text-white">
+                        <option value="dc:description">dc:description (Description)</option>
+                        <option value="dc:title">dc:title (Title)</option>
+                        <option value="dc:subject">dc:subject (Keywords)</option>
+                        <option value="sku">sku (SKU Field)</option>
+                        <option value="productId">productId (Product ID)</option>
+                        <option value="partNumber">partNumber (Part Number)</option>
+                        <option value="custom">Custom Property...</option>
+                    </select>
+                </div>
+                <input type="text" id="customSearchProperty" placeholder="e.g. customField (without path prefix)" 
+                    class="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
+                    focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                    dark:bg-gray-700 dark:text-white hidden" />
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <strong>Note:</strong> "./jcr:content/metadata/" will be automatically prepended to the property name.
+                </p>
+            </div>
+            
             <div class="mb-4">
                 <label for="searchBasePath" class="block text-sm font-medium mb-1">Search Base Path (Optional)</label>
                 <input type="text" id="searchBasePath" placeholder="/content/dam/your-project" 
@@ -567,43 +637,6 @@
                 </p>
             </div>
             
-            <div class="mb-6">
-                <label for="searchMetadataProperty" class="block text-sm font-medium mb-1">Metadata Property to Search</label>
-                <div class="flex gap-2">
-                    <select id="searchMetadataProperty" 
-                        class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                        dark:bg-gray-700 dark:text-white">
-                        <option value="jcr:content/metadata/dc:description">dc:description (Description)</option>
-                        <option value="jcr:content/metadata/dc:title">dc:title (Title)</option>
-                        <option value="jcr:content/metadata/dc:subject">dc:subject (Keywords)</option>
-                        <option value="jcr:content/metadata/sku">sku (SKU Field)</option>
-                        <option value="jcr:content/metadata/productId">productId (Product ID)</option>
-                        <option value="jcr:content/metadata/partNumber">partNumber (Part Number)</option>
-                        <option value="custom">Custom Property...</option>
-                    </select>
-                    <button type="button" id="addSearchPropertyBtn" class="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-opacity-90 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </div>
-                <input type="text" id="customSearchProperty" placeholder="e.g. jcr:content/metadata/customField" 
-                    class="mt-2 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                    focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                    dark:bg-gray-700 dark:text-white hidden" />
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Specify which metadata property to search for your SKU/search terms.
-                </p>
-            </div>
-            
-            <div id="searchPropertiesList" class="mb-4 space-y-2 hidden">
-                <label class="block text-sm font-medium mb-2">Search Properties</label>
-                <div id="searchPropertiesContainer" class="space-y-2">
-                    <!-- Search properties will be added here -->
-                </div>
-            </div>
-            
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-2">Additional Search Options</label>
                 <div class="flex flex-wrap gap-3">
@@ -618,10 +651,14 @@
                 </div>
             </div>
             
-            <div class="mb-4">
+            <div class="mb-4 flex gap-3">
                 <button id="searchPreviewBtn" 
                     class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
                     Search for Assets
+                </button>
+                <button id="searchDryRunBtn" 
+                    class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-opacity-90 transition-colors">
+                    Dry Run (Preview Queries)
                 </button>
             </div>
         </div>
@@ -1819,6 +1856,7 @@
             document.getElementById('metadataPreviewBtn').addEventListener('click', previewMetadataUpdates);
             document.getElementById('deletePreviewBtn').addEventListener('click', previewDeletes);
             document.getElementById('searchPreviewBtn').addEventListener('click', performSearch);
+            document.getElementById('searchDryRunBtn').addEventListener('click', performSearchDryRun);
             document.getElementById('executeRenameBtn').addEventListener('click', executeRenames);
             document.getElementById('executeMetadataBtn').addEventListener('click', executeMetadataUpdates);
             document.getElementById('executeDeleteBtn').addEventListener('click', executeDeletes);
@@ -3788,6 +3826,249 @@
                 return results;
             }
             
+            // Perform search dry run - shows query URLs for first 5 SKUs
+            async function performSearchDryRun() {
+                if (!sheetData || sheetData.length <= 1) {
+                    showNotification('No data to process', 'error');
+                    return;
+                }
+                
+                try {
+                    // Get selected column index for SKUs
+                    const skuColumnIndex = parseInt(assetPathColumnSelect.value);
+                    
+                    // Skip header row
+                    const dataRows = sheetData.slice(1);
+                    
+                    // Get SKUs from selected column
+                    const allSkus = dataRows.map(row => {
+                        return row[skuColumnIndex] || '';
+                    }).filter(sku => sku.trim() !== '');
+                    
+                    if (allSkus.length === 0) {
+                        showNotification('No SKUs found in the selected column', 'warning');
+                        return;
+                    }
+                    
+                    // Take only first 5 SKUs for dry run
+                    const skus = allSkus.slice(0, 5);
+                    
+                    // Get search configuration
+                    const basePath = document.getElementById('searchBasePath').value.trim();
+                    const resultsLimit = parseInt(document.getElementById('searchResultsLimit').value) || 100;
+                    
+                    // Get search property configuration
+                    const searchMetadataProperty = document.getElementById('searchMetadataProperty').value;
+                    const customProperty = document.getElementById('customSearchProperty').value.trim();
+                    const searchInFilename = document.getElementById('searchInFilename').checked;
+                    const searchInTags = document.getElementById('searchInTags').checked;
+                    
+                    // Get filter configuration
+                    const assetTypeFilter = document.getElementById('searchAssetTypeFilter').value.trim();
+                    const productShotFilter = document.getElementById('searchProductShotFilter').value.trim();
+                    
+                    // Determine the actual property to search
+                    let primaryProperty = searchMetadataProperty;
+                    if (searchMetadataProperty === 'custom' && customProperty) {
+                        primaryProperty = customProperty;
+                    }
+                    
+                    // Get AEM host
+                    const aemHost = document.getElementById('aemHost').value.trim() || 'http://your-aem-instance.com';
+                    
+                    // Show dry run results section
+                    const container = document.getElementById('searchResultsContainer');
+                    
+                    // Generate dry run preview
+                    let dryRunHtml = `
+                        <div class="p-6">
+                            <div class="mb-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                                <div class="flex items-center mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 dark:text-blue-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200">🔍 Search Dry Run Preview</h3>
+                                </div>
+                                <div class="text-blue-700 dark:text-blue-300 space-y-2">
+                                    <p><strong>📊 Summary:</strong> Showing query details for first ${skus.length} of ${allSkus.length} total SKUs</p>
+                                    <p><strong>🎯 Primary search property:</strong> <code>${primaryProperty}</code></p>
+                                    <p><strong>📁 Base path:</strong> <code>${basePath || '/content/dam'}</code></p>
+                                    <p><strong>🔢 Results limit per SKU:</strong> ${resultsLimit}</p>
+                                    ${assetTypeFilter ? `<p><strong>🏷️ Asset type filter:</strong> ${assetTypeFilter}</p>` : ''}
+                                    ${productShotFilter ? `<p><strong>📸 Product shot filter:</strong> ${productShotFilter}</p>` : ''}
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-6">
+                    `;
+                    
+                    // Generate query details for each SKU
+                    skus.forEach((sku, index) => {
+                        // Build the Query Builder API URL
+                        let apiPath = '/bin/querybuilder.json';
+                        
+                        // Add query parameters for Query Builder
+                        const params = new URLSearchParams();
+                        
+                        // Set the search path
+                        params.append('path', basePath || '/content/dam');
+                        
+                        // Set asset type
+                        params.append('type', 'dam:Asset');
+                        
+                        // Add limit with proper Query Builder syntax
+                        params.append('p.limit', resultsLimit.toString());
+                        params.append('p.guessTotal', 'true');
+                        
+                        // Search in the primary metadata property
+                        if (primaryProperty) {
+                            // Auto-prepend the metadata path prefix
+                            const fullPropertyPath = `./jcr:content/metadata/${primaryProperty}`;
+                            params.append('property', fullPropertyPath);
+                            params.append('property.value', sku);
+                        }
+                        
+                        // Add Asset Type filter if specified
+                        if (assetTypeFilter) {
+                            const assetTypeProperty = './jcr:content/metadata/vcc:assettype';
+                            params.append('property_1', assetTypeProperty);
+                            params.append('property_1.value', assetTypeFilter);
+                        }
+                        
+                        // Add Product Shot filter if specified
+                        if (productShotFilter) {
+                            const productShotProperty = './jcr:content/metadata/vcc:productshot';
+                            params.append('property_2', productShotProperty);
+                            params.append('property_2.value', productShotFilter);
+                        }
+                        
+                        // Create the full URL
+                        const targetUrl = new URL(apiPath + '?' + params.toString(), aemHost).toString();
+                        
+                        // Build query breakdown for display
+                        const queryBreakdown = [];
+                        queryBreakdown.push(`<strong>Path:</strong> ${basePath || '/content/dam'}`);
+                        queryBreakdown.push(`<strong>Type:</strong> dam:Asset`);
+                        queryBreakdown.push(`<strong>Limit:</strong> ${resultsLimit}`);
+                        
+                        if (primaryProperty) {
+                            queryBreakdown.push(`<strong>Primary Search:</strong> ./jcr:content/metadata/${primaryProperty} = "${sku}"`);
+                        }
+                        
+                        if (assetTypeFilter) {
+                            queryBreakdown.push(`<strong>Asset Type Filter:</strong> ./jcr:content/metadata/vcc:assettype = "${assetTypeFilter}"`);
+                        }
+                        
+                        if (productShotFilter) {
+                            queryBreakdown.push(`<strong>Product Shot Filter:</strong> ./jcr:content/metadata/vcc:productshot = "${productShotFilter}"`);
+                        }
+                        
+                        dryRunHtml += `
+                            <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-lg font-medium">Query ${index + 1}: SKU "${sku}"</h4>
+                                    <span class="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">GET Request</span>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <!-- Query Breakdown -->
+                                    <div>
+                                        <h5 class="font-medium mb-2">🔍 Query Parameters:</h5>
+                                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded border text-sm space-y-1">
+                                            ${queryBreakdown.join('<br>')}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Full URL -->
+                                    <div>
+                                        <h5 class="font-medium mb-2">🌐 Complete API URL:</h5>
+                                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded border">
+                                            <code class="text-xs break-all font-mono text-green-600 dark:text-green-400">${targetUrl}</code>
+                                        </div>
+                                        <button onclick="copyToClipboard('${targetUrl.replace(/'/g, "\\'")}', 'URL ${index + 1}')" 
+                                                class="mt-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                                            📋 Copy URL
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- HTTP Headers -->
+                                    <div>
+                                        <h5 class="font-medium mb-2">📋 HTTP Headers:</h5>
+                                        <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded border text-sm space-y-1">
+                                            <div><strong>Method:</strong> GET</div>
+                                            <div><strong>Authorization:</strong> ${getAuthHeaders().has('Authorization') ? 
+                                                (getAuthHeaders().get('Authorization').startsWith('Bearer') ? 'Bearer [IMS_TOKEN]' : 'Basic [CREDENTIALS]') : 
+                                                'Not configured'}</div>
+                                            <div><strong>Accept:</strong> application/json</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- CORS Proxy Info -->
+                                    <div class="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded p-3">
+                                        <h5 class="font-medium mb-2 text-yellow-800 dark:text-yellow-200">🔗 CORS Proxy Information:</h5>
+                                        <div class="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                                            <div><strong>Proxy URL:</strong> https://cors-proxy.philipp-koch.workers.dev/corsproxy/</div>
+                                            <div><strong>Purpose:</strong> Handles browser CORS restrictions for AEM API calls</div>
+                                            <div><strong>Final URL:</strong> <code class="text-xs">https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=${encodeURIComponent(targetUrl)}</code></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    dryRunHtml += `
+                            </div>
+                            
+                            <div class="mt-8 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                                <h4 class="font-medium mb-2 text-green-800 dark:text-green-200">✅ Ready to Execute</h4>
+                                <div class="text-sm text-green-700 dark:text-green-300 space-y-2">
+                                    <p>• All ${skus.length} query URLs have been generated successfully</p>
+                                    <p>• Queries will search for assets in: <code>${basePath || '/content/dam'}</code></p>
+                                    <p>• Authentication: ${isAuthenticated ? '✅ Configured' : '❌ Required for real search'}</p>
+                                    <p>• When you run the actual search, all ${allSkus.length} SKUs will be processed</p>
+                                </div>
+                                <div class="mt-3 flex gap-3">
+                                    <button onclick="window.location.reload()" 
+                                            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                                        🔍 Execute Real Search
+                                    </button>
+                                    <button onclick="cancelOperation()" 
+                                            class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+                                        ← Back to Configuration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.innerHTML = dryRunHtml;
+                    
+                    // Show search results section
+                    document.getElementById('searchResultsSection').classList.remove('hidden');
+                    document.getElementById('searchConfigSection').classList.add('hidden');
+                    
+                    showNotification(`Dry run complete! Generated ${skus.length} query URLs for first ${skus.length} of ${allSkus.length} SKUs`, 'success');
+                    
+                } catch (error) {
+                    showNotification('Error generating dry run: ' + error.message, 'error');
+                    console.error(error);
+                }
+            }
+            
+            // Helper function to copy text to clipboard
+            function copyToClipboard(text, label = 'Text') {
+                navigator.clipboard.writeText(text).then(() => {
+                    showNotification(`${label} copied to clipboard`, 'success', 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    showNotification('Failed to copy to clipboard', 'error', 2000);
+                });
+            }
+            
+            // Make copyToClipboard available globally for the HTML buttons
+            window.copyToClipboard = copyToClipboard;
+
             // Perform bulk search
             async function performSearch() {
                 if (!sheetData || sheetData.length <= 1) {
@@ -3836,6 +4117,10 @@
                     const customProperty = document.getElementById('customSearchProperty').value.trim();
                     const searchInFilename = document.getElementById('searchInFilename').checked;
                     const searchInTags = document.getElementById('searchInTags').checked;
+                    
+                    // Get filter configuration
+                    const assetTypeFilter = document.getElementById('searchAssetTypeFilter').value.trim();
+                    const productShotFilter = document.getElementById('searchProductShotFilter').value.trim();
                     
                     // Determine the actual property to search
                     let primaryProperty = searchMetadataProperty;
@@ -3958,7 +4243,13 @@
                     
                     for (let i = 0; i < batches.length; i++) {
                         const batchSkus = batches[i];
-                        const batchPromises = batchSkus.map(sku => searchAssetsForSku(aemHost, sku, basePath, resultsLimit, { primaryProperty, searchInFilename, searchInTags }, headers));
+                        const batchPromises = batchSkus.map(sku => searchAssetsForSku(aemHost, sku, basePath, resultsLimit, { 
+                            primaryProperty, 
+                            searchInFilename, 
+                            searchInTags,
+                            assetTypeFilter,
+                            productShotFilter
+                        }, headers));
                         
                         // Update progress message
                         searchResultsContainer.innerHTML = `
@@ -3997,13 +4288,13 @@
                 }
             }
             
-            // Search AEM for assets matching a SKU using Query Builder API
+            // Search AEM for assets matching a SKU using Query Builder API with filters
             async function searchAssetsForSku(aemHost, sku, basePath, limit, searchOptions, headers) {
                 try {
                     // Build the Query Builder API URL
                     let apiPath = '/bin/querybuilder.json';
                     
-                    // Add query parameters for Query Builder - simplified format
+                    // Add query parameters for Query Builder - with AND logic for filters
                     const params = new URLSearchParams();
                     
                     // Set the search path
@@ -4016,10 +4307,26 @@
                     params.append('p.limit', limit.toString());
                     params.append('p.guessTotal', 'true');
                     
-                    // Search in the primary metadata property (simplified format)
+                    // Search in the primary metadata property
                     if (searchOptions.primaryProperty) {
-                        params.append('property', searchOptions.primaryProperty);
-                        params.append('property.value', sku); // No wildcards, simple exact search
+                        // Auto-prepend the metadata path prefix
+                        const fullPropertyPath = `./jcr:content/metadata/${searchOptions.primaryProperty}`;
+                        params.append('property', fullPropertyPath);
+                        params.append('property.value', sku);
+                    }
+                    
+                    // Add Asset Type filter if specified
+                    if (searchOptions.assetTypeFilter) {
+                        const assetTypeProperty = './jcr:content/metadata/vcc:assettype';
+                        params.append('property_1', assetTypeProperty);
+                        params.append('property_1.value', searchOptions.assetTypeFilter);
+                    }
+                    
+                    // Add Product Shot filter if specified
+                    if (searchOptions.productShotFilter) {
+                        const productShotProperty = './jcr:content/metadata/vcc:productshot';
+                        params.append('property_2', productShotProperty);
+                        params.append('property_2.value', searchOptions.productShotFilter);
                     }
                     
                     // Create the full URL with CORS proxy
@@ -4049,8 +4356,8 @@
                             const title = hit.title || '';
                             const excerpt = hit.excerpt || '';
                             
-                            // Since Query Builder already filtered by the property, trust all returned hits
-                            // No additional client-side filtering needed
+                            // Query Builder already filtered by all the specified properties
+                            // All returned hits match the search criteria
                             
                             // Generate thumbnail URL (standard AEM pattern)
                             const thumbnailUrl = `${aemHost}${assetPath}/_jcr_content/renditions/cq5dam.thumbnail.319.319.png`;
@@ -4344,7 +4651,7 @@
                 filterSearchResults();
             });
             
-            // Add event listeners for dropdown filters
+            // Add event listeners for dropdown filters in search results (different from search config filters)
             document.getElementById('assetTypeFilter').addEventListener('change', filterSearchResults);
             document.getElementById('productShotFilter').addEventListener('change', filterSearchResults);
             
@@ -4360,15 +4667,23 @@
                 updateSelectedCount();
             }
             
-            // Download selected assets
-            function downloadSelectedAssets() {
+            // Download selected assets as ZIP with web renditions
+            async function downloadSelectedAssets() {
                 const selectedAssets = document.querySelectorAll('.asset-checkbox:checked');
                 if (selectedAssets.length === 0) {
                     showNotification('No assets selected for download', 'warning');
                     return;
                 }
                 
-                // Create a manifest of selected assets
+                // Check if authenticated for downloading renditions
+                const aemHost = document.getElementById('aemHost').value.trim();
+                const isDemoMode = !isAuthenticated || !aemHost;
+                
+                if (isDemoMode) {
+                    showNotification('Demo mode: Downloading sample images instead of actual AEM renditions', 'info', 5000);
+                }
+                
+                // Collect asset information
                 const assets = Array.from(selectedAssets).map(checkbox => {
                     const row = checkbox.closest('.asset-row');
                     return {
@@ -4379,52 +4694,314 @@
                     };
                 });
                 
-                // Group assets by SKU for the manifest
-                const assetsByGroup = {};
-                assets.forEach(asset => {
-                    if (!assetsByGroup[asset.sku]) {
-                        assetsByGroup[asset.sku] = [];
+                // Show download progress modal
+                const progressModal = showDownloadProgressModal(assets.length);
+                
+                try {
+                    // Create ZIP file
+                    const zip = new JSZip();
+                    let successCount = 0;
+                    let failureCount = 0;
+                    const failureDetails = [];
+                    
+                    // Process assets by SKU to organize ZIP structure
+                    const assetsByGroup = {};
+                    assets.forEach(asset => {
+                        if (!assetsByGroup[asset.sku]) {
+                            assetsByGroup[asset.sku] = [];
+                        }
+                        assetsByGroup[asset.sku].push(asset);
+                    });
+                    
+                    // Download and add assets to ZIP
+                    let processedCount = 0;
+                    
+                    for (const [sku, skuAssets] of Object.entries(assetsByGroup)) {
+                        // Create SKU folder in ZIP
+                        const skuFolder = zip.folder(sanitizeFilename(sku));
+                        
+                        for (const asset of skuAssets) {
+                            try {
+                                updateDownloadProgress(progressModal, processedCount + 1, assets.length, `Downloading ${asset.name}...`);
+                                
+                                let imageBlob;
+                                
+                                if (isDemoMode) {
+                                    // Download demo image from placeholder service
+                                    imageBlob = await downloadDemoImage(asset);
+                                } else {
+                                    // Download actual web rendition from AEM
+                                    imageBlob = await downloadWebRendition(aemHost, asset);
+                                }
+                                
+                                if (imageBlob) {
+                                    // Add to ZIP with organized structure
+                                    const filename = sanitizeFilename(asset.name);
+                                    skuFolder.file(filename, imageBlob);
+                                    successCount++;
+                                } else {
+                                    throw new Error('Failed to download asset');
+                                }
+                                
+                            } catch (error) {
+                                console.error(`Failed to download ${asset.name}:`, error);
+                                failureCount++;
+                                failureDetails.push({
+                                    asset: asset.name,
+                                    sku: asset.sku,
+                                    error: error.message
+                                });
+                            }
+                            
+                            processedCount++;
+                            
+                            // Small delay to prevent overwhelming the server
+                            await new Promise(resolve => setTimeout(resolve, isDemoMode ? 100 : 300));
+                        }
                     }
-                    assetsByGroup[asset.sku].push(asset);
-                });
-                
-                // Create manifest JSON
-                const manifest = {
-                    totalCount: assets.length,
-                    timestamp: new Date().toISOString(),
-                    assets: assetsByGroup
-                };
-                
-                // Create a blob with the manifest
-                const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
-                
-                // Create a download link for the manifest
-                const downloadLink = document.createElement('a');
-                downloadLink.href = URL.createObjectURL(manifestBlob);
-                downloadLink.download = `asset-download-manifest-${new Date().toISOString().split('T')[0]}.json`;
-                downloadLink.click();
-                
-                // Show instructions for downloading the actual assets
-                const instructions = `
-                    <p class="mb-3">A manifest with ${assets.length} selected assets has been downloaded.</p>
-                    <p class="mb-3">To download the actual assets:</p>
-                    <ol class="list-decimal pl-5 mb-3 space-y-1">
-                        <li>Go to the AEM Assets admin interface</li>
-                        <li>Import the manifest JSON file to facilitate batch downloading</li>
-                        <li>Alternatively, click each of the following links to download assets directly:</li>
-                    </ol>
-                    <div class="text-xs mt-3 overflow-y-auto max-h-[200px] bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                        ${assets.slice(0, 20).map(a => `<a href="${a.url}" target="_blank" class="block mb-1 hover:underline">${a.name}</a>`).join('')}
-                        ${assets.length > 20 ? `<div class="mt-2 font-medium">... and ${assets.length - 20} more assets</div>` : ''}
+                    
+                    // Generate and download ZIP file
+                    if (successCount > 0) {
+                        updateDownloadProgress(progressModal, assets.length, assets.length, 'Creating ZIP file...');
+                        
+                        // Add summary text file to ZIP
+                        const summary = createDownloadSummary(assets.length, successCount, failureCount, failureDetails);
+                        zip.file('DOWNLOAD_SUMMARY.txt', summary);
+                        
+                        // Generate ZIP blob
+                        const zipBlob = await zip.generateAsync({
+                            type: 'blob',
+                            compression: 'DEFLATE',
+                            compressionOptions: { level: 6 }
+                        });
+                        
+                        // Download ZIP file
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = URL.createObjectURL(zipBlob);
+                        downloadLink.download = `asset-renditions-${new Date().toISOString().split('T')[0]}.zip`;
+                        downloadLink.click();
+                        
+                        // Clean up
+                        setTimeout(() => URL.revokeObjectURL(downloadLink.href), 1000);
+                        
+                        // Close progress modal
+                        closeDownloadProgressModal(progressModal);
+                        
+                        // Show success notification
+                        if (failureCount > 0) {
+                            showNotification(`ZIP created with ${successCount} assets. ${failureCount} failed - check summary in ZIP.`, 'warning', 8000);
+                        } else {
+                            showNotification(`ZIP file created successfully with ${successCount} web renditions!`, 'success', 6000);
+                        }
+                    } else {
+                        closeDownloadProgressModal(progressModal);
+                        showNotification('Failed to download any assets. Check your authentication and network connection.', 'error');
+                    }
+                    
+                } catch (error) {
+                    closeDownloadProgressModal(progressModal);
+                    showNotification('Error creating ZIP file: ' + error.message, 'error');
+                    console.error('ZIP creation error:', error);
+                }
+            }
+            
+            // Download web rendition from AEM
+            async function downloadWebRendition(aemHost, asset) {
+                try {
+                    // Build web rendition URL (prefer JPEG for better compatibility)
+                    const webRenditionPath = `${asset.path}/_jcr_content/renditions/cq5dam.web.1280.1280.jpeg`;
+                    const renditionUrl = new URL(webRenditionPath, aemHost).toString();
+                    
+                    // Use CORS proxy for authenticated download
+                    const corsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=' + encodeURIComponent(renditionUrl);
+                    
+                    // Get authentication headers
+                    const headers = getAuthHeaders();
+                    
+                    // Fetch the rendition
+                    const response = await fetch(corsProxyUrl, {
+                        method: 'GET',
+                        headers: headers
+                    });
+                    
+                    if (response.ok) {
+                        return await response.blob();
+                    } else if (response.status === 404) {
+                        // Try PNG format if JPEG not found
+                        const pngRenditionPath = `${asset.path}/_jcr_content/renditions/cq5dam.web.1280.1280.png`;
+                        const pngRenditionUrl = new URL(pngRenditionPath, aemHost).toString();
+                        const pngCorsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=' + encodeURIComponent(pngRenditionUrl);
+                        
+                        const pngResponse = await fetch(pngCorsProxyUrl, {
+                            method: 'GET',
+                            headers: headers
+                        });
+                        
+                        if (pngResponse.ok) {
+                            return await pngResponse.blob();
+                        } else {
+                            // Fall back to original asset
+                            const originalUrl = new URL(asset.path, aemHost).toString();
+                            const originalCorsProxyUrl = 'https://cors-proxy.philipp-koch.workers.dev/corsproxy/?apiurl=' + encodeURIComponent(originalUrl);
+                            
+                            const originalResponse = await fetch(originalCorsProxyUrl, {
+                                method: 'GET',
+                                headers: headers
+                            });
+                            
+                            if (originalResponse.ok) {
+                                return await originalResponse.blob();
+                            }
+                        }
+                    }
+                    
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                } catch (error) {
+                    console.error(`Download error for ${asset.name}:`, error);
+                    throw error;
+                }
+            }
+            
+            // Download demo image for demo mode
+            async function downloadDemoImage(asset) {
+                try {
+                    // Use different placeholder services for variety
+                    const services = [
+                        'https://picsum.photos/800/600',
+                        'https://picsum.photos/1024/768',
+                        'https://picsum.photos/1200/800'
+                    ];
+                    
+                    // Pick a service based on asset name hash for consistency
+                    const hash = asset.name.split('').reduce((a, b) => {
+                        a = ((a << 5) - a) + b.charCodeAt(0);
+                        return a & a;
+                    }, 0);
+                    const serviceIndex = Math.abs(hash) % services.length;
+                    const imageUrl = services[serviceIndex];
+                    
+                    const response = await fetch(imageUrl);
+                    if (response.ok) {
+                        return await response.blob();
+                    }
+                    throw new Error(`Failed to fetch demo image: ${response.statusText}`);
+                } catch (error) {
+                    console.error(`Demo image download error:`, error);
+                    throw error;
+                }
+            }
+            
+            // Show download progress modal
+            function showDownloadProgressModal(totalCount) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                modal.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 dark:text-blue-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <h3 class="text-lg font-semibold">Creating Asset ZIP</h3>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span>Progress</span>
+                                    <span><span class="progress-current">0</span> / <span class="progress-total">${totalCount}</span></span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="progress-bar bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                <span class="progress-status">Initializing download...</span>
+                            </div>
+                            
+                            <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                                <p>• Downloading web renditions (1280x1280 max)</p>
+                                <p>• Files organized by SKU in ZIP</p>
+                                <p>• Large downloads may take several minutes</p>
+                            </div>
+                        </div>
                     </div>
                 `;
                 
-                // Show custom notification with download links
-                const notification = showNotification(instructions, 'success', 0);
-                notification.classList.add('w-[500px]', 'max-w-full');
+                document.body.appendChild(modal);
+                return modal;
+            }
+            
+            // Update download progress
+            function updateDownloadProgress(modal, current, total, status) {
+                const progressBar = modal.querySelector('.progress-bar');
+                const progressCurrent = modal.querySelector('.progress-current');
+                const progressStatus = modal.querySelector('.progress-status');
                 
-                // Show success notification
-                showNotification(`Download manifest created with ${assets.length} assets`, 'success');
+                const percentage = Math.round((current / total) * 100);
+                progressBar.style.width = `${percentage}%`;
+                progressCurrent.textContent = current;
+                progressStatus.textContent = status;
+            }
+            
+            // Close download progress modal
+            function closeDownloadProgressModal(modal) {
+                if (modal && document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                }
+            }
+            
+            // Sanitize filename for ZIP
+            function sanitizeFilename(filename) {
+                return filename
+                    .replace(/[<>:"/\\|?*]/g, '_') // Replace invalid characters
+                    .replace(/\s+/g, '_') // Replace spaces with underscores
+                    .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+                    .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+            }
+            
+            // Create download summary text
+            function createDownloadSummary(totalCount, successCount, failureCount, failureDetails) {
+                const timestamp = new Date().toISOString();
+                let summary = `ASSET DOWNLOAD SUMMARY
+Generated: ${timestamp}
+
+OVERVIEW:
+- Total assets processed: ${totalCount}
+- Successfully downloaded: ${successCount}
+- Failed downloads: ${failureCount}
+- Success rate: ${((successCount / totalCount) * 100).toFixed(1)}%
+
+ZIP STRUCTURE:
+Files are organized by SKU in separate folders:
+/SKU-12345/
+  - asset1.jpg
+  - asset2.png
+/SKU-67890/
+  - asset3.jpg
+
+RENDITION DETAILS:
+- Primary format: Web rendition (cq5dam.web.1280.1280.jpeg)
+- Fallback format: Web PNG (cq5dam.web.1280.1280.png)
+- Final fallback: Original asset
+- Maximum dimensions: 1280x1280 pixels
+`;
+
+                if (failureCount > 0) {
+                    summary += `\nFAILED DOWNLOADS:\n`;
+                    failureDetails.forEach((failure, index) => {
+                        summary += `${index + 1}. ${failure.asset} (SKU: ${failure.sku})\n`;
+                        summary += `   Error: ${failure.error}\n`;
+                    });
+                    
+                    summary += `\nTROUBLESHOOTING:\n`;
+                    summary += `- Check authentication credentials\n`;
+                    summary += `- Verify asset paths exist in AEM\n`;
+                    summary += `- Ensure web renditions are generated\n`;
+                    summary += `- Check network connectivity\n`;
+                }
+                
+                return summary;
             }
             
             // Cancel operation
