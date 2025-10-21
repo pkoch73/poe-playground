@@ -3924,22 +3924,22 @@
                         if (primaryProperty) {
                             // Auto-prepend the metadata path prefix
                             const fullPropertyPath = `./jcr:content/metadata/${primaryProperty}`;
-                            params.append('property', fullPropertyPath);
-                            params.append('property.value', sku);
+                            params.append('1_property', fullPropertyPath);
+                            params.append('1_property.value', sku);
                         }
                         
                         // Add Asset Type filter if specified
                         if (assetTypeFilter) {
                             const assetTypeProperty = './jcr:content/metadata/vcc:assettype';
-                            params.append('property_1', assetTypeProperty);
-                            params.append('property_1.value', assetTypeFilter);
+                            params.append('2_property', assetTypeProperty);
+                            params.append('2_property.value', assetTypeFilter);
                         }
                         
                         // Add Product Shot filter if specified
                         if (productShotFilter) {
                             const productShotProperty = './jcr:content/metadata/vcc:productshot';
-                            params.append('property_2', productShotProperty);
-                            params.append('property_2.value', productShotFilter);
+                            params.append('3_property', productShotProperty);
+                            params.append('3_property.value', productShotFilter);
                         }
                         
                         // Create the full URL
@@ -4311,22 +4311,22 @@
                     if (searchOptions.primaryProperty) {
                         // Auto-prepend the metadata path prefix
                         const fullPropertyPath = `./jcr:content/metadata/${searchOptions.primaryProperty}`;
-                        params.append('property', fullPropertyPath);
-                        params.append('property.value', sku);
+                        params.append('1_property', fullPropertyPath);
+                        params.append('1_property.value', sku);
                     }
                     
                     // Add Asset Type filter if specified
                     if (searchOptions.assetTypeFilter) {
                         const assetTypeProperty = './jcr:content/metadata/vcc:assettype';
-                        params.append('property_1', assetTypeProperty);
-                        params.append('property_1.value', searchOptions.assetTypeFilter);
+                        params.append('2_property', assetTypeProperty);
+                        params.append('2_property.value', searchOptions.assetTypeFilter);
                     }
                     
                     // Add Product Shot filter if specified
                     if (searchOptions.productShotFilter) {
                         const productShotProperty = './jcr:content/metadata/vcc:productshot';
-                        params.append('property_2', productShotProperty);
-                        params.append('property_2.value', searchOptions.productShotFilter);
+                        params.append('3_property', productShotProperty);
+                        params.append('3_property.value', searchOptions.productShotFilter);
                     }
                     
                     // Create the full URL with CORS proxy
