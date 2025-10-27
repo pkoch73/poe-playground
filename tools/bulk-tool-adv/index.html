@@ -683,50 +683,7 @@
                 </div>
             </div>
             
-            <!-- Additional Filters -->
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="assetTypeFilter" class="block text-sm font-medium mb-1">Asset Type</label>
-                    <select id="assetTypeFilter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                        dark:bg-gray-700 dark:text-white">
-                        <option value="">All Asset Types</option>
-                        <option value="Product Imagery">Product Imagery</option>
-                        <option value="Application Imagery">Application Imagery</option>
-                        <option value="Line Art">Line Art</option>
-                        <option value="Logos">Logos</option>
-                        <option value="Video">Video</option>
-                        <option value="CAD">CAD</option>
-                        <option value="Social Media">Social Media</option>
-                        <option value="PDF/Literature">PDF/Literature</option>
-                        <option value="Documents">Documents</option>
-                        <option value="Web Imagery">Web Imagery</option>
-                        <option value="Event Imagery">Event Imagery</option>
-                        <option value="Partnership Imagery">Partnership Imagery</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="productShotFilter" class="block text-sm font-medium mb-1">Product Shot</label>
-                    <select id="productShotFilter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-base
-                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-                        dark:bg-gray-700 dark:text-white">
-                        <option value="">All Product Shots</option>
-                        <option value="Product Silo">Product Silo</option>
-                        <option value="Application Detail">Application Detail</option>
-                        <option value="Product Silo Detail">Product Silo Detail</option>
-                        <option value="Application">Application</option>
-                        <option value="Web Banner">Web Banner</option>
-                        <option value="Web Silo Backgrounds">Web Silo Backgrounds</option>
-                    </select>
-                </div>
-                
-                <div class="flex items-end">
-                    <button id="clearFiltersBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-opacity-90 transition-colors">
-                        Clear Filters
-                    </button>
-                </div>
-            </div>
+
             
             <div class="mb-4 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 p-4 rounded flex items-start">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -4044,9 +4001,8 @@
                     
                     container.innerHTML = dryRunHtml;
                     
-                    // Show search results section
+                    // Show search results section but keep search config visible
                     document.getElementById('searchResultsSection').classList.remove('hidden');
-                    document.getElementById('searchConfigSection').classList.add('hidden');
                     
                     showNotification(`Dry run complete! Generated ${skus.length} query URLs for first ${skus.length} of ${allSkus.length} SKUs`, 'success');
                     
@@ -4137,9 +4093,8 @@
                         </div>
                     `;
                     
-                    // Show search results section
+                    // Show search results section but keep search config visible
                     document.getElementById('searchResultsSection').classList.remove('hidden');
-                    document.getElementById('searchConfigSection').classList.add('hidden');
                     
                     // Check if we're in demo mode
                     if (isDemoMode) {
@@ -4643,17 +4598,7 @@
                 document.getElementById('totalResultsCount').textContent = visibleRows.length.toString();
             }
             
-            // Clear all active filters
-            document.getElementById('clearFiltersBtn').addEventListener('click', function() {
-                document.getElementById('searchResultsFilter').value = '';
-                document.getElementById('assetTypeFilter').value = '';
-                document.getElementById('productShotFilter').value = '';
-                filterSearchResults();
-            });
-            
-            // Add event listeners for dropdown filters in search results (different from search config filters)
-            document.getElementById('assetTypeFilter').addEventListener('change', filterSearchResults);
-            document.getElementById('productShotFilter').addEventListener('change', filterSearchResults);
+
             
             // Toggle select all visible assets
             function toggleSelectAllAssets() {
