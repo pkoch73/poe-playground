@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Upload Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Passion+One:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+     <script defer type="text/javascript" src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@^2/dist/rum-standalone.js"></script>
+    <style>
+        :root {
+            --coke-red: #F40009;
+            --coke-dark-red: #C40005;
+            --coke-black: #000000;
+            --coke-white: #FFFFFF;
+            --coke-light-gray: #F8F8F8;
+            --coke-gray: #E8E8E8;
+            --coke-text-gray: #666666;
+            --bg-primary: #F40009;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F8F8F8;
+            --accent-primary: #F40009;
+            --accent-secondary: #C40005;
+            --text-primary: #000000;
+            --text-secondary: #666666;
+            --text-on-red: #FFFFFF;
+            --success: #10b981;
+            --border: rgba(0, 0, 0, 0.1);
+            --shadow-red: rgba(244, 0, 9, 0.3);
+        }
+
+        .light {
+            --coke-red: #F40009;
+            --coke-dark-red: #C40005;
+            --coke-black: #000000;
+            --coke-white: #FFFFFF;
+            --coke-light-gray: #F8F8F8;
+            --coke-gray: #E8E8E8;
+            --coke-text-gray: #666666;
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F8F8F8;
+            --accent-primary: #F40009;
+            --accent-secondary: #C40005;
+            --text-primary: #000000;
+            --text-secondary: #666666;
+            --text-on-red: #FFFFFF;
+            --success: #10b981;
+            --border: rgba(0, 0, 0, 0.1);
+            --shadow-red: rgba(244, 0, 9, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s ease;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.05) 100%),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 50px,
+                    rgba(255, 255, 255, 0.03) 50px,
+                    rgba(255, 255, 255, 0.03) 100px
+                );
+            pointer-events: none;
+            z-index: 0;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.6s ease;
+            position: relative;
+            padding-bottom: 2rem;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 4px;
+            background: var(--coke-red);
+            border-radius: 2px;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-family: 'Pacifico', cursive;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 400;
+            color: var(--coke-red);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.02em;
+            text-shadow:
+                2px 2px 0px rgba(0, 0, 0, 0.1),
+                0 4px 12px rgba(244, 0, 9, 0.3);
+            position: relative;
+        }
+
+        .light h1 {
+            color: var(--coke-red);
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 3px solid var(--coke-red);
+            border-radius: 2rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.6s ease;
+            animation-fill-mode: both;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, var(--coke-red), var(--coke-dark-red));
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+
+        .card-title {
+            font-family: 'Passion One', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--coke-red);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-title::before {
+            content: '◆';
+            font-size: 1.2rem;
+            color: var(--coke-red);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            font-size: 16px;
+            font-family: 'Lexend', sans-serif;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--coke-red);
+            box-shadow: 0 0 0 3px var(--shadow-red);
+        }
+
+        .project-controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .project-controls input {
+            flex: 1;
+        }
+
+        button {
+            padding: 0.875rem 1.5rem;
+            font-size: 16px;
+            font-family: 'Lexend', sans-serif;
+            font-weight: 600;
+            border: none;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--coke-red);
+            color: white;
+            box-shadow: 0 4px 15px var(--shadow-red);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--shadow-red);
+            background: var(--coke-dark-red);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--coke-red);
+            border: 2px solid var(--coke-red);
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--coke-dark-red);
+            background: var(--coke-red);
+            color: white;
+        }
+
+        .upload-zone {
+            border: 3px dashed var(--coke-red);
+            border-radius: 1.5rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-tertiary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, var(--shadow-red) 0%, transparent 70%);
+            border-radius: 50%;
+            transition: transform 0.6s ease;
+        }
+
+        .upload-zone:hover::before {
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--coke-dark-red);
+            transform: scale(1.02);
+            border-width: 4px;
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--coke-red);
+            background: var(--shadow-red);
+            transform: scale(1.02);
+            border-style: solid;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .file-list {
+            margin-top: 1.5rem;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--coke-red);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px var(--shadow-red);
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .file-remove {
+            background: transparent;
+            color: var(--coke-red);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            border: 2px solid var(--coke-red);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .file-remove:hover {
+            background: var(--coke-red);
+            color: white;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .save-section {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .save-section button {
+            min-width: 200px;
+        }
+
+        .success-message {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: var(--success);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            animation: slideInRight 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .project-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            margin-top: 0.5rem;
+            background: var(--bg-tertiary);
+        }
+
+        .project-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .project-item:last-child {
+            border-bottom: none;
+        }
+
+        .project-item:hover {
+            background: var(--bg-secondary);
+            padding-left: 1.5rem;
+        }
+
+        .project-item.selected {
+            background: linear-gradient(90deg, var(--shadow-red), transparent);
+            border-left: 4px solid var(--coke-red);
+            font-weight: 600;
+        }
+
+        .empty-state {
+            color: var(--text-secondary);
+            font-style: italic;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 1.5rem 1rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .upload-zone {
+                padding: 2rem 1rem;
+            }
+
+            .project-controls {
+                flex-direction: column;
+            }
+
+            .metadata-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Share the Files</h1>
+            <p class="subtitle">Upload with Refreshment</p>
+        </header>
+
+        <!-- Project Selection -->
+        <div class="card">
+            <h2 class="card-title">Select Project</h2>
+            <div class="project-controls">
+                <input
+                    type="text"
+                    id="projectSearch"
+                    placeholder="Search or create new project..."
+                    autocomplete="off"
+                >
+                <button class="btn-secondary" onclick="createNewProject()">+ New</button>
+            </div>
+            <div id="projectList" class="project-list"></div>
+        </div>
+
+        <!-- File Upload -->
+        <div class="card">
+            <h2 class="card-title">Upload Files</h2>
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <h3 style="margin-bottom: 0.5rem;">Drop files here or click to browse</h3>
+                <p style="color: var(--text-secondary);">Support for all file types</p>
+                <input type="file" id="fileInput" multiple style="display: none;">
+            </div>
+            <div id="fileList" class="file-list"></div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="card">
+            <h2 class="card-title">Add Metadata</h2>
+            <div class="metadata-grid">
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <input type="text" id="category" placeholder="e.g., Design, Documents">
+                </div>
+                <div class="form-group">
+                    <label for="tags">Tags</label>
+                    <input type="text" id="tags" placeholder="Comma-separated tags">
+                </div>
+                <div class="form-group">
+                    <label for="priority">Priority</label>
+                    <select id="priority">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dueDate">Due Date</label>
+                    <input type="date" id="dueDate">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" rows="3" placeholder="Add any additional notes..."></textarea>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="save-section">
+            <button class="btn-primary" onclick="saveUpload()">Save Upload</button>
+        </div>
+    </div>
+
+    <script>
+        // Detect color scheme - default to light for Coca-Cola aesthetic
+        document.documentElement.classList.add('light');
+
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.remove('light');
+            document.documentElement.classList.add('dark');
+        }
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.remove('light');
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+            }
+        });
+
+        // Initialize data (in-memory storage)
+        let projects = [];
+        let uploads = [];
+        let selectedProject = null;
+        let uploadedFiles = [];
+
+        // Render project list
+        function renderProjects(filter = '') {
+            const projectList = document.getElementById('projectList');
+            const filtered = projects.filter(p =>
+                p.name.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                if (filter) {
+                    projectList.innerHTML = `<div class="empty-state">No projects found. Click "+ New" to create "${filter}"</div>`;
+                } else {
+                    projectList.innerHTML = '<div class="empty-state">No projects yet. Create your first one!</div>';
+                }
+                return;
+            }
+
+            projectList.innerHTML = filtered.map(project => `
+                <div class="project-item ${selectedProject?.id === project.id ? 'selected' : ''}"
+                     onclick="selectProject('${project.id}')">
+                    <strong>${project.name}</strong>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                        ${project.fileCount || 0} files
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Create new project
+        function createNewProject() {
+            const searchInput = document.getElementById('projectSearch');
+            const projectName = searchInput.value.trim();
+
+            if (!projectName) {
+                showCustomAlert('Please enter a project name');
+                return;
+            }
+
+            const existingProject = projects.find(p =>
+                p.name.toLowerCase() === projectName.toLowerCase()
+            );
+
+            if (existingProject) {
+                selectProject(existingProject.id);
+                searchInput.value = '';
+                return;
+            }
+
+            const newProject = {
+                id: Date.now().toString(),
+                name: projectName,
+                fileCount: 0,
+                createdAt: new Date().toISOString()
+            };
+
+            projects.push(newProject);
+            selectProject(newProject.id);
+            searchInput.value = '';
+            renderProjects();
+        }
+
+        // Select project
+        function selectProject(projectId) {
+            selectedProject = projects.find(p => p.id === projectId);
+            renderProjects(document.getElementById('projectSearch').value);
+        }
+
+        // Search projects
+        document.getElementById('projectSearch').addEventListener('input', (e) => {
+            renderProjects(e.target.value);
+        });
+
+        document.getElementById('projectSearch').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                createNewProject();
+            }
+        });
+
+        // File upload handling
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                uploadedFiles.push({
+                    id: Date.now() + Math.random(),
+                    file: file,
+                    name: file.name,
+                    size: file.size
+                });
+            });
+            renderFileList();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                'pdf': '📄',
+                'doc': '📝', 'docx': '📝',
+                'xls': '📊', 'xlsx': '📊',
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️',
+                'mp4': '🎬', 'mov': '🎬',
+                'mp3': '🎵',
+                'zip': '📦',
+                'txt': '📃'
+            };
+            return icons[ext] || '📎';
+        }
+
+        function renderFileList() {
+            const fileList = document.getElementById('fileList');
+            if (uploadedFiles.length === 0) {
+                fileList.innerHTML = '';
+                return;
+            }
+
+            fileList.innerHTML = uploadedFiles.map(fileObj => `
+                <div class="file-item">
+                    <div class="file-icon">${getFileIcon(fileObj.name)}</div>
+                    <div class="file-info">
+                        <div class="file-name">${fileObj.name}</div>
+                        <div class="file-size">${formatFileSize(fileObj.size)}</div>
+                    </div>
+                    <button class="file-remove" onclick="removeFile('${fileObj.id}')">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(fileId) {
+            uploadedFiles = uploadedFiles.filter(f => f.id !== fileId);
+            renderFileList();
+        }
+
+        // Save upload
+        function saveUpload() {
+            if (!selectedProject) {
+                showCustomAlert('Please select or create a project first');
+                return;
+            }
+
+            if (uploadedFiles.length === 0) {
+                showCustomAlert('Please upload at least one file');
+                return;
+            }
+
+            const metadata = {
+                category: document.getElementById('category').value,
+                tags: document.getElementById('tags').value,
+                priority: document.getElementById('priority').value,
+                dueDate: document.getElementById('dueDate').value,
+                notes: document.getElementById('notes').value
+            };
+
+            const upload = {
+                id: Date.now().toString(),
+                projectId: selectedProject.id,
+                files: uploadedFiles.map(f => ({
+                    name: f.name,
+                    size: f.size
+                })),
+                metadata: metadata,
+                uploadedAt: new Date().toISOString()
+            };
+
+            // Update project file count
+            const project = projects.find(p => p.id === selectedProject.id);
+            if (project) {
+                project.fileCount = (project.fileCount || 0) + uploadedFiles.length;
+            }
+
+            // Save to in-memory storage
+            uploads.push(upload);
+
+            // Show success message
+            showSuccessMessage(`Successfully uploaded ${uploadedFiles.length} file(s) to ${selectedProject.name}`);
+
+            // Reset form
+            uploadedFiles = [];
+            renderFileList();
+            document.getElementById('category').value = '';
+            document.getElementById('tags').value = '';
+            document.getElementById('priority').value = 'medium';
+            document.getElementById('dueDate').value = '';
+            document.getElementById('notes').value = '';
+            fileInput.value = '';
+            renderProjects();
+        }
+
+        function showSuccessMessage(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        function showCustomAlert(message) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+                animation: fadeIn 0.2s ease;
+            `;
+
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-secondary);
+                    padding: 2rem;
+                    border-radius: 1rem;
+                    max-width: 400px;
+                    margin: 1rem;
+                    border: 2px solid var(--accent-cyan);
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                ">
+                    <p style="color: var(--text-primary); margin-bottom: 1.5rem; font-size: 1.1rem;">${message}</p>
+                    <button class="btn-primary" style="width: 100%;" onclick="this.closest('div[style*=fixed]').remove()">
+                        Got it
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+        }
+
+        // Initialize
+        renderProjects();
+    </script>
+</body>
+</html>
