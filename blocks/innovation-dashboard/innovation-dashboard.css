@@ -1,0 +1,403 @@
+/* Innovation Dashboard Block Styles */
+
+/* Dashboard Title */
+main .innovation-dashboard .dashboard-title {
+  font-size: var(--heading-font-size-xl, 2.5rem);
+  font-weight: 700;
+  margin-block-end: 1.5rem;
+  color: var(--text-color);
+}
+
+/* Loading State */
+main .innovation-dashboard .loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  font-size: var(--body-font-size-m);
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+/* Error State */
+main .innovation-dashboard .error {
+  padding: 1rem;
+  background-color: rgb(239 68 68 / 10%);
+  border: 1px solid rgb(239 68 68 / 30%);
+  border-radius: 0.5rem;
+  color: #dc2626;
+}
+
+/* ==================== */
+/* METRICS SECTION      */
+/* ==================== */
+main .innovation-dashboard .metrics-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-block-end: 2rem;
+}
+
+main .innovation-dashboard .metric-card {
+  background-color: var(--background-color, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+  transition: box-shadow 0.2s ease;
+}
+
+main .innovation-dashboard .metric-card:hover {
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+}
+
+main .innovation-dashboard .metric-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 0.75rem;
+  padding-block-end: 0.5rem;
+  border-block-end: 1px solid var(--border-color, #e5e7eb);
+}
+
+main .innovation-dashboard .metric-icon {
+  font-size: 1.25rem;
+}
+
+main .innovation-dashboard .metric-title {
+  font-size: var(--body-font-size-s, 0.875rem);
+  font-weight: 600;
+  color: var(--text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+main .innovation-dashboard .metric-values {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+main .innovation-dashboard .metric-current {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-color);
+  line-height: 1.2;
+}
+
+main .innovation-dashboard .metric-target,
+main .innovation-dashboard .metric-last-week,
+main .innovation-dashboard .metric-label,
+main .innovation-dashboard .metric-percent,
+main .innovation-dashboard .metric-progress {
+  font-size: var(--body-font-size-s, 0.875rem);
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+main .innovation-dashboard .metric-trend {
+  font-size: var(--body-font-size-s, 0.875rem);
+  font-weight: 500;
+}
+
+main .innovation-dashboard .metric-trend.trend-up {
+  color: #16a34a;
+}
+
+main .innovation-dashboard .metric-trend.trend-down {
+  color: #dc2626;
+}
+
+/* Progress Bar */
+main .innovation-dashboard .progress-bar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: var(--border-color, #e5e7eb);
+  border-radius: 0.25rem;
+  overflow: hidden;
+  margin-block: 0.5rem;
+}
+
+main .innovation-dashboard .progress-fill {
+  height: 100%;
+  background-color: #5d5cde;
+  border-radius: 0.25rem;
+  transition: width 0.3s ease;
+}
+
+/* ==================== */
+/* SECTION HEADERS      */
+/* ==================== */
+main .innovation-dashboard .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-block-end: 1rem;
+}
+
+main .innovation-dashboard .section-header h2 {
+  font-size: var(--heading-font-size-m, 1.5rem);
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-color);
+}
+
+main .innovation-dashboard .section-header .count {
+  font-size: var(--body-font-size-s, 0.875rem);
+  color: var(--text-color);
+  opacity: 0.7;
+  background-color: var(--border-color, #e5e7eb);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+}
+
+main .innovation-dashboard .section-header .filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+main .innovation-dashboard .section-header select {
+  padding: 0.5rem 0.75rem;
+  font-size: var(--body-font-size-s, 0.875rem);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.375rem;
+  background-color: var(--background-color, #fff);
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+main .innovation-dashboard .section-header select:focus {
+  outline: 2px solid #5d5cde;
+  outline-offset: 2px;
+}
+
+/* ==================== */
+/* TABLES               */
+/* ==================== */
+main .innovation-dashboard .table-wrapper {
+  overflow-x: auto;
+  margin-block-end: 2rem;
+}
+
+main .innovation-dashboard table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--body-font-size-s, 0.875rem);
+}
+
+main .innovation-dashboard thead {
+  background-color: var(--background-color, #f9fafb);
+}
+
+main .innovation-dashboard th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-color);
+  border-block-end: 2px solid var(--border-color, #e5e7eb);
+  white-space: nowrap;
+}
+
+main .innovation-dashboard td {
+  padding: 0.75rem 1rem;
+  border-block-end: 1px solid var(--border-color, #e5e7eb);
+  color: var(--text-color);
+}
+
+main .innovation-dashboard tbody tr:hover {
+  background-color: rgb(93 92 222 / 5%);
+}
+
+main .innovation-dashboard .col-title,
+main .innovation-dashboard .col-opportunity {
+  font-weight: 500;
+}
+
+main .innovation-dashboard .col-description,
+main .innovation-dashboard .col-learnings {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==================== */
+/* STATUS BADGES        */
+/* ==================== */
+main .innovation-dashboard .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  white-space: nowrap;
+}
+
+main .innovation-dashboard .status-success {
+  background-color: rgb(22 163 74 / 15%);
+  color: #16a34a;
+}
+
+main .innovation-dashboard .status-wip {
+  background-color: rgb(6 182 212 / 15%);
+  color: #0891b2;
+}
+
+main .innovation-dashboard .status-no {
+  background-color: rgb(107 114 128 / 15%);
+  color: #6b7280;
+}
+
+main .innovation-dashboard .status-learn {
+  background-color: rgb(59 130 246 / 15%);
+  color: #2563eb;
+}
+
+main .innovation-dashboard .status-understand {
+  background-color: rgb(139 92 246 / 15%);
+  color: #7c3aed;
+}
+
+main .innovation-dashboard .status-hypothesis {
+  background-color: rgb(249 115 22 / 15%);
+  color: #ea580c;
+}
+
+main .innovation-dashboard .status-unknown {
+  background-color: rgb(107 114 128 / 10%);
+  color: #6b7280;
+}
+
+/* ==================== */
+/* STAGE CELLS          */
+/* ==================== */
+main .innovation-dashboard .stage-cell {
+  text-align: center;
+  font-weight: 500;
+}
+
+main .innovation-dashboard .stage-cell.stage-yes {
+  color: #16a34a;
+}
+
+main .innovation-dashboard .stage-cell.stage-wip {
+  color: #0891b2;
+  background-color: rgb(6 182 212 / 10%);
+}
+
+main .innovation-dashboard .stage-cell.stage-no {
+  color: #9ca3af;
+}
+
+/* ==================== */
+/* KNOWLEDGE ARTIFACTS  */
+/* ==================== */
+main .innovation-dashboard .knowledge-section {
+  margin-block-end: 2rem;
+}
+
+main .innovation-dashboard .artifacts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+main .innovation-dashboard .artifact-item {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: var(--background-color, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.5rem;
+  font-size: var(--body-font-size-s, 0.875rem);
+}
+
+main .innovation-dashboard .artifact-item:hover {
+  border-color: #5d5cde;
+}
+
+main .innovation-dashboard .artifact-icon {
+  font-size: 1.25rem;
+}
+
+main .innovation-dashboard .artifact-type {
+  font-weight: 500;
+  color: var(--text-color);
+  min-width: 60px;
+}
+
+main .innovation-dashboard .artifact-title {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+main .innovation-dashboard .artifact-date {
+  color: var(--text-color);
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+main .innovation-dashboard .artifact-channel {
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+main .innovation-dashboard .artifact-link {
+  color: #5d5cde;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+main .innovation-dashboard .artifact-link:hover {
+  text-decoration: underline;
+}
+
+/* ==================== */
+/* RESPONSIVE           */
+/* ==================== */
+@media (width >= 600px) {
+  main .innovation-dashboard .metrics-section {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (width >= 900px) {
+  main .innovation-dashboard .metrics-section {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  main .innovation-dashboard .col-description,
+  main .innovation-dashboard .col-learnings {
+    max-width: 300px;
+  }
+}
+
+@media (width < 600px) {
+  main .innovation-dashboard .artifact-item {
+    grid-template-columns: auto 1fr auto;
+    gap: 0.5rem;
+  }
+
+  main .innovation-dashboard .artifact-type,
+  main .innovation-dashboard .artifact-channel {
+    display: none;
+  }
+
+  main .innovation-dashboard .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  main .innovation-dashboard .section-header .filters {
+    width: 100%;
+  }
+
+  main .innovation-dashboard .section-header select {
+    flex: 1;
+  }
+}
+
