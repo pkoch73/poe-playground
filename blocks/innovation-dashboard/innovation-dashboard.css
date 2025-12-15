@@ -401,3 +401,126 @@ main .innovation-dashboard .artifact-link:hover {
   }
 }
 
+/* ==================== */
+/* CLICKABLE ROWS       */
+/* ==================== */
+main .innovation-dashboard .clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+main .innovation-dashboard .clickable-row:hover {
+  background-color: rgb(93 92 222 / 10%);
+}
+
+main .innovation-dashboard .clickable-row:focus {
+  outline: 2px solid #5d5cde;
+  outline-offset: -2px;
+}
+
+main .innovation-dashboard .clickable-row .col-opportunity {
+  color: #5d5cde;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s ease;
+}
+
+main .innovation-dashboard .clickable-row:hover .col-opportunity {
+  text-decoration-color: #5d5cde;
+}
+
+/* ==================== */
+/* EXPERIMENT MODAL     */
+/* ==================== */
+main .innovation-dashboard .experiment-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgb(0 0 0 / 50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+main .innovation-dashboard .experiment-modal {
+  background-color: var(--background-color, #fff);
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 20%);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+main .innovation-dashboard .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem;
+  border-block-end: 1px solid var(--border-color, #e5e7eb);
+}
+
+main .innovation-dashboard .modal-header h3 {
+  margin: 0;
+  font-size: var(--heading-font-size-m, 1.5rem);
+  font-weight: 600;
+  color: var(--text-color);
+  padding-inline-end: 1rem;
+}
+
+main .innovation-dashboard .modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.6;
+  padding: 0;
+  line-height: 1;
+  transition: opacity 0.15s ease;
+}
+
+main .innovation-dashboard .modal-close:hover {
+  opacity: 1;
+}
+
+main .innovation-dashboard .modal-body {
+  padding: 1.5rem;
+}
+
+main .innovation-dashboard .modal-field {
+  margin-block-end: 1.25rem;
+}
+
+main .innovation-dashboard .modal-field:last-child {
+  margin-block-end: 0;
+}
+
+main .innovation-dashboard .modal-field label {
+  display: block;
+  font-size: var(--body-font-size-s, 0.875rem);
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin-block-end: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+main .innovation-dashboard .modal-field p {
+  margin: 0;
+  font-size: var(--body-font-size-m, 1rem);
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+main .innovation-dashboard .modal-field .stage-progress {
+  font-size: var(--body-font-size-s, 0.875rem);
+  font-family: monospace;
+}
+
+main .innovation-dashboard .modal-status {
+  margin-block-start: 0.25rem;
+}
+

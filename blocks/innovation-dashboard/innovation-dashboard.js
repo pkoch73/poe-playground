@@ -198,117 +198,6 @@ function createStatusBadge(status) {
 }
 
 /**
- * Renders the experiments table with filters
- * @param {Array} experimentsData - Experiments data from sheet
- * @returns {HTMLElement} - Experiments section element
- */
-function renderExperiments(experimentsData) {
-  const section = document.createElement('div');
-  section.className = 'experiments-section';
-
-  // Header with filters
-  const header = document.createElement('div');
-  header.className = 'section-header';
-  header.innerHTML = `
-    <h2>Experiments</h2>
-    <div class="filters">
-      <select class="filter-status">
-        <option value="">All Status</option>
-        <option value="Auto Solve">Auto Solve</option>
-        <option value="WIP">WIP</option>
-        <option value="Hypothesis">Hypothesis</option>
-        <option value="Learn">Learn</option>
-        <option value="Understand">Understand</option>
-        <option value="Unknown">Unknown</option>
-      </select>
-      <select class="filter-customer">
-        <option value="">All Customers</option>
-      </select>
-    </div>
-  `;
-
-  // Populate customer filter
-  const customers = new Set();
-  experimentsData.forEach((exp) => {
-    if (exp.customers) {
-      exp.customers.split(',').forEach((c) => customers.add(c.trim()));
-    }
-  });
-  const customerSelect = header.querySelector('.filter-customer');
-  customers.forEach((customer) => {
-    const option = document.createElement('option');
-    option.value = customer;
-    option.textContent = customer;
-    customerSelect.append(option);
-  });
-
-  // Table
-  const tableWrapper = document.createElement('div');
-  tableWrapper.className = 'table-wrapper';
-
-  const table = document.createElement('table');
-  table.className = 'experiments-table';
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Description</th>
-        <th>Success Function</th>
-        <th>Usage</th>
-        <th>Customers</th>
-        <th>Status</th>
-        <th>Learnings</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  `;
-
-  const tbody = table.querySelector('tbody');
-
-  function renderRows(data) {
-    tbody.innerHTML = '';
-    data.forEach((exp) => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td class="col-title">${exp.title || ''}</td>
-        <td class="col-description">${exp.description || ''}</td>
-        <td class="col-success">${exp.successFunction || ''}</td>
-        <td class="col-usage">${exp.usageData || ''}</td>
-        <td class="col-customers">${exp.customers || ''}</td>
-        <td class="col-status"></td>
-        <td class="col-learnings">${exp.learnings || ''}</td>
-      `;
-      row.querySelector('.col-status').append(createStatusBadge(exp.status));
-      tbody.append(row);
-    });
-  }
-
-  renderRows(experimentsData);
-
-  // Filter logic
-  function applyFilters() {
-    const statusFilter = header.querySelector('.filter-status').value;
-    const customerFilter = header.querySelector('.filter-customer').value;
-
-    const filtered = experimentsData.filter((exp) => {
-      const statusMatch = !statusFilter || exp.status === statusFilter;
-      const hasCustomer = exp.customers && exp.customers.includes(customerFilter);
-      const customerMatch = !customerFilter || hasCustomer;
-      return statusMatch && customerMatch;
-    });
-
-    renderRows(filtered);
-  }
-
-  header.querySelector('.filter-status').addEventListener('change', applyFilters);
-  header.querySelector('.filter-customer').addEventListener('change', applyFilters);
-
-  tableWrapper.append(table);
-  section.append(header, tableWrapper);
-  return section;
-}
-
-/**
  * Checks if usageData field has a meaningful value
  * @param {string} usageData - The usage data value
  * @returns {boolean} - True if usage data is set
@@ -441,6 +330,78 @@ function getCompletionScore(status) {
 }
 
 /**
+ * Creates and shows a modal with experiment details
+ * @param {Object} exp - Experiment data
+ * @param {HTMLElement} section - Parent section for modal
+ */
+function showExperimentModal(exp, section) {
+  // Remove existing modal if any
+  const existingModal = section.querySelector('.experiment-modal-overlay');
+  if (existingModal) existingModal.remove();
+
+  const stages = ['Unknown', 'Learn', 'Understand', 'Hypothesis', 'Auto Solve'];
+  const stageProgress = stages.map((stage) => {
+    const status = getStageStatus(exp.status, stage.toLowerCase());
+    if (status === 'yes') return `✓ ${stage}`;
+    if (status === 'wip') return `🔵 ${stage}`;
+    return `✗ ${stage}`;
+  }).join(' → ');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'experiment-modal-overlay';
+  overlay.innerHTML = `
+    <div class="experiment-modal">
+      <div class="modal-header">
+        <h3>${exp.title || 'Experiment'}</h3>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field">
+          <label>Status</label>
+          <div class="modal-status"></div>
+        </div>
+        <div class="modal-field">
+          <label>Description</label>
+          <p>${exp.description || '-'}</p>
+        </div>
+        <div class="modal-field">
+          <label>Success Function</label>
+          <p>${exp.successFunction || '-'}</p>
+        </div>
+        <div class="modal-field">
+          <label>Usage Data</label>
+          <p>${exp.usageData || '-'}</p>
+        </div>
+        <div class="modal-field">
+          <label>Customers</label>
+          <p>${exp.customers || '-'}</p>
+        </div>
+        <div class="modal-field">
+          <label>Learnings</label>
+          <p>${exp.learnings || '-'}</p>
+        </div>
+        <div class="modal-field">
+          <label>Stage Progression</label>
+          <p class="stage-progress">${stageProgress}</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add status badge
+  overlay.querySelector('.modal-status').append(createStatusBadge(exp.status));
+
+  // Close handlers
+  const closeModal = () => overlay.remove();
+  overlay.querySelector('.modal-close').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+
+  section.append(overlay);
+}
+
+/**
  * Renders the opportunities pipeline table derived from experiments data
  * @param {Array} experimentsData - Experiments data from sheet
  * @returns {HTMLElement} - Opportunities section element
@@ -449,9 +410,44 @@ function renderOpportunities(experimentsData) {
   const section = document.createElement('div');
   section.className = 'opportunities-section';
 
+  // Header with filters
   const header = document.createElement('div');
   header.className = 'section-header';
-  header.innerHTML = '<h2>Pancake chart</h2>';
+  header.innerHTML = `
+    <h2>Pancake chart</h2>
+    <div class="filters">
+      <select class="filter-status">
+        <option value="">All Status</option>
+        <option value="Auto Solve">Auto Solve</option>
+        <option value="WIP">WIP</option>
+        <option value="Hypothesis">Hypothesis</option>
+        <option value="Learn">Learn</option>
+        <option value="Understand">Understand</option>
+        <option value="Unknown">Unknown</option>
+      </select>
+      <select class="filter-customer">
+        <option value="">All Customers</option>
+      </select>
+    </div>
+  `;
+
+  // Populate customer filter
+  const customers = new Set();
+  experimentsData.forEach((exp) => {
+    if (exp.customers) {
+      exp.customers.split(',').forEach((c) => {
+        const trimmed = c.trim();
+        if (trimmed) customers.add(trimmed);
+      });
+    }
+  });
+  const customerSelect = header.querySelector('.filter-customer');
+  [...customers].sort().forEach((customer) => {
+    const option = document.createElement('option');
+    option.value = customer;
+    option.textContent = customer;
+    customerSelect.append(option);
+  });
 
   const tableWrapper = document.createElement('div');
   tableWrapper.className = 'table-wrapper';
@@ -472,29 +468,68 @@ function renderOpportunities(experimentsData) {
     <tbody></tbody>
   `;
 
-  // Sort by completion score (most complete first)
-  const sortedExperiments = [...experimentsData].sort(
-    (a, b) => getCompletionScore(b.status) - getCompletionScore(a.status),
-  );
-
   const tbody = table.querySelector('tbody');
-  sortedExperiments.forEach((exp) => {
-    const row = document.createElement('tr');
 
-    const titleCell = document.createElement('td');
-    titleCell.className = 'col-opportunity';
-    titleCell.textContent = exp.title || '';
-    row.append(titleCell);
+  function renderRows(data) {
+    tbody.innerHTML = '';
 
-    // Derive stage completion from status
-    row.append(createStageCell(getStageStatus(exp.status, 'unknown')));
-    row.append(createStageCell(getStageStatus(exp.status, 'learn')));
-    row.append(createStageCell(getStageStatus(exp.status, 'understand')));
-    row.append(createStageCell(getStageStatus(exp.status, 'hypothesis')));
-    row.append(createStageCell(getStageStatus(exp.status, 'auto solve')));
+    // Sort by completion score (most complete first)
+    const sorted = [...data].sort(
+      (a, b) => getCompletionScore(b.status) - getCompletionScore(a.status),
+    );
 
-    tbody.append(row);
-  });
+    sorted.forEach((exp) => {
+      const row = document.createElement('tr');
+      row.className = 'clickable-row';
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+
+      const titleCell = document.createElement('td');
+      titleCell.className = 'col-opportunity';
+      titleCell.textContent = exp.title || '';
+      row.append(titleCell);
+
+      // Derive stage completion from status
+      row.append(createStageCell(getStageStatus(exp.status, 'unknown')));
+      row.append(createStageCell(getStageStatus(exp.status, 'learn')));
+      row.append(createStageCell(getStageStatus(exp.status, 'understand')));
+      row.append(createStageCell(getStageStatus(exp.status, 'hypothesis')));
+      row.append(createStageCell(getStageStatus(exp.status, 'auto solve')));
+
+      // Click handler for modal
+      row.addEventListener('click', () => showExperimentModal(exp, section));
+      row.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          showExperimentModal(exp, section);
+        }
+      });
+
+      tbody.append(row);
+    });
+  }
+
+  renderRows(experimentsData);
+
+  // Filter logic
+  function applyFilters() {
+    const statusFilter = header.querySelector('.filter-status').value;
+    const customerFilter = header.querySelector('.filter-customer').value;
+
+    const filtered = experimentsData.filter((exp) => {
+      const statusLower = (exp.status || '').toLowerCase();
+      const filterLower = statusFilter.toLowerCase();
+      const statusMatch = !statusFilter || statusLower === filterLower;
+      const hasCustomer = exp.customers && exp.customers.includes(customerFilter);
+      const customerMatch = !customerFilter || hasCustomer;
+      return statusMatch && customerMatch;
+    });
+
+    renderRows(filtered);
+  }
+
+  header.querySelector('.filter-status').addEventListener('change', applyFilters);
+  header.querySelector('.filter-customer').addEventListener('change', applyFilters);
 
   tableWrapper.append(table);
   section.append(header, tableWrapper);
@@ -596,6 +631,5 @@ export default async function decorate(block) {
   block.append(renderMetrics(metricsData, experimentsData));
   block.append(renderOpportunities(experimentsData));
   block.append(renderCustomerUse(experimentsData));
-  block.append(renderExperiments(experimentsData));
   block.append(renderKnowledgeArtifacts(artifactsData, ksMetrics));
 }
