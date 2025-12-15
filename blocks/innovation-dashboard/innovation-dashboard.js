@@ -153,7 +153,7 @@ function renderMetrics(metricsData, experimentsData) {
     <div class="progress-bar">
       <div class="progress-fill" style="width: ${ksPercent}%"></div>
     </div>
-    <div class="metric-progress">${ks.current || 0} / ${ks.target || 12}</div>
+    <div class="metric-progress">${ks.current || 0} / ${ks.target || 0}</div>
     <div class="metric-percent">${ksPercent}% of annual goal</div>
   `;
   section.append(createMetricCard('Knowledge Sharing', '📚', ksContent));
@@ -432,7 +432,7 @@ function renderOpportunities(experimentsData) {
 
   const header = document.createElement('div');
   header.className = 'section-header';
-  header.innerHTML = '<h2>Opportunities Pipeline</h2>';
+  header.innerHTML = '<h2>Pancake chart</h2>';
 
   const tableWrapper = document.createElement('div');
   tableWrapper.className = 'table-wrapper';
@@ -489,7 +489,7 @@ function renderKnowledgeArtifacts(artifactsData, ksMetrics) {
 
   const header = document.createElement('div');
   header.className = 'section-header';
-  header.innerHTML = `<h2>Knowledge Sharing Artifacts</h2><span class="count">${artifactsData.length} of ${ksMetrics.target || 12}</span>`;
+  header.innerHTML = `<h2>Knowledge Sharing Artifacts</h2><span class="count">${artifactsData.length} of ${ksMetrics.target}</span>`;
 
   const list = document.createElement('div');
   list.className = 'artifacts-list';
@@ -551,11 +551,11 @@ export default async function decorate(block) {
   } = await fetchAllSheetData(jsonPath);
 
   // Parse knowledge sharing metrics for the artifacts section
-  const ksMetrics = {};
+  const ksMetrics = { current: 0, target: 0 };
   metricsData.forEach((row) => {
     if (row.metric === 'knowledgeSharing') {
       ksMetrics.current = row.current ? parseInt(row.current, 10) : 0;
-      ksMetrics.target = row.target ? parseInt(row.target, 10) : 12;
+      ksMetrics.target = row.target ? parseInt(row.target, 10) : 0;
     }
   });
 
@@ -570,8 +570,8 @@ export default async function decorate(block) {
 
   // Render all sections
   block.append(renderMetrics(metricsData, experimentsData));
-  block.append(renderExperiments(experimentsData));
-  block.append(renderCustomerUse(experimentsData));
   block.append(renderOpportunities(experimentsData));
+  block.append(renderCustomerUse(experimentsData));
+  block.append(renderExperiments(experimentsData));
   block.append(renderKnowledgeArtifacts(artifactsData, ksMetrics));
 }
