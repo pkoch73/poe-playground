@@ -133,9 +133,9 @@ function renderMetrics(metricsData, experimentsData) {
   wiContent.className = 'metric-values';
   const wiPercent = wi.target && wi.current ? Math.round((wi.current / wi.target) * 100) : 0;
   wiContent.innerHTML = `
-    <div class="metric-target">Target: ${wi.target || '-'}</div>
+    ${wi.target ? `<div class="metric-target">Target: ${wi.target}</div>` : ''}
     <div class="metric-current">${wi.current || '-'}</div>
-    <div class="metric-percent">${wiPercent}% of annual goal</div>
+    ${wi.target ? `<div class="metric-percent">${wiPercent}% of annual goal</div>` : ''}
     <div class="metric-secondary">Last week: ${wi.lastWeek || '-'}${wi.current && wi.lastWeek ? ` <span class="metric-trend ${wi.current >= wi.lastWeek ? 'trend-up' : 'trend-down'}">${wi.current >= wi.lastWeek ? '▲' : '▼'} ${Math.abs(wi.current - wi.lastWeek)}</span>` : ''}</div>
   `;
   section.append(createMetricCard('Weekly Interactions', '📊', wiContent));
@@ -146,9 +146,9 @@ function renderMetrics(metricsData, experimentsData) {
   expContent.className = 'metric-values';
   const expPercent = exp.target && exp.current ? Math.round((exp.current / exp.target) * 100) : 0;
   expContent.innerHTML = `
-    <div class="metric-target">Target: ${exp.target || '-'}</div>
+    ${exp.target ? `<div class="metric-target">Target: ${exp.target}</div>` : ''}
     <div class="metric-current">${exp.current || '-'}</div>
-    <div class="metric-percent">${expPercent}% of annual goal</div>
+    ${exp.target ? `<div class="metric-percent">${expPercent}% of annual goal</div>` : ''}
   `;
   section.append(createMetricCard('Experiments', '🧪', expContent));
 
@@ -157,14 +157,11 @@ function renderMetrics(metricsData, experimentsData) {
     const usage = (e.usageData || '').trim().toLowerCase();
     return usage !== '' && usage !== '0';
   }).length;
-  const cuTarget = exp.target || experimentsData.length;
-  const cuPercent = cuTarget ? Math.round((customerUseCount / cuTarget) * 100) : 0;
   const cuContent = document.createElement('div');
   cuContent.className = 'metric-values';
   cuContent.innerHTML = `
-    <div class="metric-target">Target: ${cuTarget}</div>
     <div class="metric-current">${customerUseCount}</div>
-    <div class="metric-percent">${cuPercent}% of annual goal</div>
+    <div class="metric-label">experiments with usage</div>
   `;
   section.append(createMetricCard('Customer Use', '👥', cuContent));
 
@@ -174,9 +171,9 @@ function renderMetrics(metricsData, experimentsData) {
   mtpContent.className = 'metric-values';
   const mtpPercent = mtp.target && mtp.current ? Math.round((mtp.current / mtp.target) * 100) : 0;
   mtpContent.innerHTML = `
-    <div class="metric-target">Target: ${mtp.target || '-'}</div>
+    ${mtp.target ? `<div class="metric-target">Target: ${mtp.target}</div>` : ''}
     <div class="metric-current">${mtp.current || '-'}</div>
-    <div class="metric-percent">${mtpPercent}% of annual goal</div>
+    ${mtp.target ? `<div class="metric-percent">${mtpPercent}% of annual goal</div>` : ''}
   `;
   section.append(createMetricCard('Made to Product', '🚀', mtpContent));
 
@@ -186,9 +183,9 @@ function renderMetrics(metricsData, experimentsData) {
   ksContent.className = 'metric-values';
   const ksPercent = ks.target && ks.current ? Math.round((ks.current / ks.target) * 100) : 0;
   ksContent.innerHTML = `
-    <div class="metric-target">Target: ${ks.target || '-'}</div>
+    ${ks.target ? `<div class="metric-target">Target: ${ks.target}</div>` : ''}
     <div class="metric-current">${ks.current || '-'}</div>
-    <div class="metric-percent">${ksPercent}% of annual goal</div>
+    ${ks.target ? `<div class="metric-percent">${ksPercent}% of annual goal</div>` : ''}
   `;
   section.append(createMetricCard('Knowledge Sharing', '📚', ksContent));
 
