@@ -102,9 +102,11 @@ function renderMetrics(metricsData, experimentsData) {
   const wi = metrics.weeklyInteractions || {};
   const wiContent = document.createElement('div');
   wiContent.className = 'metric-values';
+  const wiPercent = wi.target && wi.current ? Math.round((wi.current / wi.target) * 100) : 0;
   wiContent.innerHTML = `
     <div class="metric-target">Target: ${wi.target || '-'}</div>
     <div class="metric-current">${wi.current || '-'}</div>
+    <div class="metric-percent">${wiPercent}% of annual goal</div>
     <div class="metric-last-week">Last week: ${wi.lastWeek || '-'}</div>
     ${wi.current && wi.lastWeek ? `<div class="metric-trend ${wi.current >= wi.lastWeek ? 'trend-up' : 'trend-down'}">
       ${wi.current >= wi.lastWeek ? '▲' : '▼'} ${wi.current - wi.lastWeek} (${(((wi.current - wi.lastWeek) / wi.lastWeek) * 100).toFixed(1)}%)
@@ -141,7 +143,12 @@ function renderMetrics(metricsData, experimentsData) {
   const mtp = metrics.madeToProduct || {};
   const mtpContent = document.createElement('div');
   mtpContent.className = 'metric-values';
-  mtpContent.innerHTML = `<div class="metric-current">${mtp.current || '-'}</div>`;
+  const mtpPercent = mtp.target && mtp.current ? Math.round((mtp.current / mtp.target) * 100) : 0;
+  mtpContent.innerHTML = `
+    <div class="metric-target">Target: ${mtp.target || '-'}</div>
+    <div class="metric-current">${mtp.current || '-'}</div>
+    <div class="metric-percent">${mtpPercent}% of annual goal</div>
+  `;
   section.append(createMetricCard('Made to Product', '🚀', mtpContent));
 
   // 5. Knowledge Sharing Card
