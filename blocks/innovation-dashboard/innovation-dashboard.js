@@ -5,22 +5,49 @@
  */
 
 /**
- * Fetches data from a specific sheet tab
- * @param {string} basePath - Base path to the JSON file
- * @param {string} sheet - Sheet name (optional, omit for first sheet)
- * @returns {Promise<Array>} - Array of data rows
+ * Fetches all sheet data from a JSON file
+ * Supports both multi-sheet format (all in one JSON) and single-sheet format (query params)
+ * @param {string} jsonPath - Path to the JSON file
+ * @returns {Promise<Object>} - Object with metrics, experiments, opportunities, artifacts arrays
  */
-async function fetchSheetData(basePath, sheet = null) {
-  const url = sheet ? `${basePath}?sheet=${sheet}` : basePath;
+async function fetchAllSheetData(jsonPath) {
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+    const response = await fetch(jsonPath);
+    if (!response.ok) throw new Error(`Failed to fetch ${jsonPath}`);
     const json = await response.json();
-    return json.data || [];
+
+    // Check if this is a multi-sheet format
+    if (json[':type'] === 'multi-sheet') {
+      // Multi-sheet: all data is in one JSON with sheet names as properties
+      return {
+        metrics: json.metrics?.data || [],
+        experiments: json.experiments?.data || [],
+        opportunities: json.opportunities?.data || [],
+        artifacts: json.knowledgeArtifacts?.data || [],
+      };
+    }
+
+    // Single-sheet format: need to fetch each sheet separately
+    const fetchSheet = async (sheet) => {
+      const url = sheet ? `${jsonPath}?sheet=${sheet}` : jsonPath;
+      const resp = await fetch(url);
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      return data.data || [];
+    };
+
+    const [metrics, experiments, opportunities, artifacts] = await Promise.all([
+      fetchSheet('shared-metrics'),
+      fetchSheet('shared-experiments'),
+      fetchSheet('shared-opportunities'),
+      fetchSheet('shared-knowledgeArtifacts'),
+    ]);
+
+    return { metrics, experiments, opportunities, artifacts };
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error(`Error fetching ${sheet || 'default'} sheet:`, error);
-    return [];
+    console.error('Error fetching sheet data:', error);
+    return { metrics: [], experiments: [], opportunities: [], artifacts: [] };
   }
 }
 
@@ -471,13 +498,13 @@ export default async function decorate(block) {
   // Show loading state
   block.innerHTML = '<div class="loading">Loading innovation data...</div>';
 
-  // Fetch all sheet data in parallel
-  const [metricsData, experimentsData, opportunitiesData, artifactsData] = await Promise.all([
-    fetchSheetData(jsonPath),
-    fetchSheetData(jsonPath, 'experiments'),
-    fetchSheetData(jsonPath, 'opportunities'),
-    fetchSheetData(jsonPath, 'knowledgeArtifacts'),
-  ]);
+  // Fetch all sheet data (handles both multi-sheet and single-sheet formats)
+  const {
+    metrics: metricsData,
+    experiments: experimentsData,
+    opportunities: opportunitiesData,
+    artifacts: artifactsData,
+  } = await fetchAllSheetData(jsonPath);
 
   // Parse knowledge sharing metrics for the artifacts section
   const ksMetrics = {};
