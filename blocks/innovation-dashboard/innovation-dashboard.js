@@ -422,6 +422,25 @@ function createStageCell(value) {
 }
 
 /**
+ * Calculates completion score based on status for sorting
+ * Higher score = more stages completed
+ * @param {string} status - Experiment status
+ * @returns {number} - Completion score
+ */
+function getCompletionScore(status) {
+  const statusLower = (status || '').toLowerCase();
+  const scores = {
+    'auto solve': 5,
+    wip: 4.5,
+    hypothesis: 4,
+    understand: 3,
+    learn: 2,
+    unknown: 1,
+  };
+  return scores[statusLower] || 0;
+}
+
+/**
  * Renders the opportunities pipeline table derived from experiments data
  * @param {Array} experimentsData - Experiments data from sheet
  * @returns {HTMLElement} - Opportunities section element
@@ -453,8 +472,13 @@ function renderOpportunities(experimentsData) {
     <tbody></tbody>
   `;
 
+  // Sort by completion score (most complete first)
+  const sortedExperiments = [...experimentsData].sort(
+    (a, b) => getCompletionScore(b.status) - getCompletionScore(a.status),
+  );
+
   const tbody = table.querySelector('tbody');
-  experimentsData.forEach((exp) => {
+  sortedExperiments.forEach((exp) => {
     const row = document.createElement('tr');
 
     const titleCell = document.createElement('td');
