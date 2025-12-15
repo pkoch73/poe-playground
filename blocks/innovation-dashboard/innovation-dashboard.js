@@ -5,6 +5,35 @@
  */
 
 /**
+ * Converts an Excel serial date number to a formatted date string
+ * Excel serial dates count days since December 30, 1899
+ * @param {number|string} serial - Excel serial date or date string
+ * @returns {string} - Formatted date string (e.g., "Apr 1, 2025")
+ */
+function formatDate(serial) {
+  if (!serial) return '';
+
+  // If it's already a date string, return it
+  if (typeof serial === 'string' && serial.includes('-')) {
+    const d = new Date(serial);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    return serial;
+  }
+
+  // Convert Excel serial to JS Date
+  const num = parseInt(serial, 10);
+  if (Number.isNaN(num)) return serial;
+
+  // Excel epoch is December 30, 1899
+  const excelEpoch = new Date(1899, 11, 30);
+  const date = new Date(excelEpoch.getTime() + num * 24 * 60 * 60 * 1000);
+
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/**
  * Fetches all sheet data from a JSON file
  * Supports both multi-sheet format (all in one JSON) and single-sheet format (query params)
  * @param {string} jsonPath - Path to the JSON file
@@ -107,10 +136,7 @@ function renderMetrics(metricsData, experimentsData) {
     <div class="metric-target">Target: ${wi.target || '-'}</div>
     <div class="metric-current">${wi.current || '-'}</div>
     <div class="metric-percent">${wiPercent}% of annual goal</div>
-    <div class="metric-last-week">Last week: ${wi.lastWeek || '-'}</div>
-    ${wi.current && wi.lastWeek ? `<div class="metric-trend ${wi.current >= wi.lastWeek ? 'trend-up' : 'trend-down'}">
-      ${wi.current >= wi.lastWeek ? '▲' : '▼'} ${wi.current - wi.lastWeek} (${(((wi.current - wi.lastWeek) / wi.lastWeek) * 100).toFixed(1)}%)
-    </div>` : ''}
+    <div class="metric-secondary">Last week: ${wi.lastWeek || '-'}${wi.current && wi.lastWeek ? ` <span class="metric-trend ${wi.current >= wi.lastWeek ? 'trend-up' : 'trend-down'}">${wi.current >= wi.lastWeek ? '▲' : '▼'} ${Math.abs(wi.current - wi.lastWeek)}</span>` : ''}</div>
   `;
   section.append(createMetricCard('Weekly Interactions', '📊', wiContent));
 
@@ -122,7 +148,7 @@ function renderMetrics(metricsData, experimentsData) {
   expContent.innerHTML = `
     <div class="metric-target">Target: ${exp.target || '-'}</div>
     <div class="metric-current">${exp.current || '-'}</div>
-    <div class="metric-percent">${expPercent}% of goal</div>
+    <div class="metric-percent">${expPercent}% of annual goal</div>
   `;
   section.append(createMetricCard('Experiments', '🧪', expContent));
 
@@ -131,11 +157,14 @@ function renderMetrics(metricsData, experimentsData) {
     const usage = (e.usageData || '').trim().toLowerCase();
     return usage !== '' && usage !== '0';
   }).length;
+  const cuTarget = exp.target || experimentsData.length;
+  const cuPercent = cuTarget ? Math.round((customerUseCount / cuTarget) * 100) : 0;
   const cuContent = document.createElement('div');
   cuContent.className = 'metric-values';
   cuContent.innerHTML = `
+    <div class="metric-target">Target: ${cuTarget}</div>
     <div class="metric-current">${customerUseCount}</div>
-    <div class="metric-label">with usage data</div>
+    <div class="metric-percent">${cuPercent}% of annual goal</div>
   `;
   section.append(createMetricCard('Customer Use', '👥', cuContent));
 
@@ -157,10 +186,8 @@ function renderMetrics(metricsData, experimentsData) {
   ksContent.className = 'metric-values';
   const ksPercent = ks.target && ks.current ? Math.round((ks.current / ks.target) * 100) : 0;
   ksContent.innerHTML = `
-    <div class="progress-bar">
-      <div class="progress-fill" style="width: ${ksPercent}%"></div>
-    </div>
-    <div class="metric-progress">${ks.current || 0} / ${ks.target || 0}</div>
+    <div class="metric-target">Target: ${ks.target || '-'}</div>
+    <div class="metric-current">${ks.current || '-'}</div>
     <div class="metric-percent">${ksPercent}% of annual goal</div>
   `;
   section.append(createMetricCard('Knowledge Sharing', '📚', ksContent));
@@ -580,7 +607,7 @@ function renderKnowledgeArtifacts(artifactsData, ksMetrics) {
       <span class="artifact-icon">${icon}</span>
       <span class="artifact-type">${artifact.type || ''}</span>
       <span class="artifact-title">${artifact.title || ''}</span>
-      <span class="artifact-date">${artifact.date || ''}</span>
+      <span class="artifact-date">${formatDate(artifact.date)}</span>
       <span class="artifact-channel">${artifact.channel || ''}</span>
       ${hasLink ? `<a href="${artifact.link}" class="artifact-link">→</a>` : ''}
     `;

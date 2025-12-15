@@ -89,7 +89,8 @@ main .innovation-dashboard .metric-target,
 main .innovation-dashboard .metric-last-week,
 main .innovation-dashboard .metric-label,
 main .innovation-dashboard .metric-percent,
-main .innovation-dashboard .metric-progress {
+main .innovation-dashboard .metric-progress,
+main .innovation-dashboard .metric-secondary {
   font-size: var(--body-font-size-s, 0.875rem);
   color: var(--text-color);
   opacity: 0.7;
