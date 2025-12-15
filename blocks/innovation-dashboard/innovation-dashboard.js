@@ -43,11 +43,15 @@ async function fetchAllSheetData(jsonPath) {
       fetchSheet('shared-knowledgeArtifacts'),
     ]);
 
-    return { metrics, experiments, opportunities, artifacts };
+    return {
+      metrics, experiments, opportunities, artifacts,
+    };
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Error fetching sheet data:', error);
-    return { metrics: [], experiments: [], opportunities: [], artifacts: [] };
+    return {
+      metrics: [], experiments: [], opportunities: [], artifacts: [],
+    };
   }
 }
 
@@ -120,13 +124,16 @@ function renderMetrics(metricsData, experimentsData) {
   `;
   section.append(createMetricCard('Experiments', '🧪', expContent));
 
-  // 3. Customer Use Card (experiments with >= 1 customer)
-  const customerUseCount = experimentsData.filter((e) => e.customers && e.customers.trim()).length;
+  // 3. Customer Use Card (experiments with usage data)
+  const customerUseCount = experimentsData.filter((e) => {
+    const usage = (e.usageData || '').trim().toLowerCase();
+    return usage !== '' && usage !== '0';
+  }).length;
   const cuContent = document.createElement('div');
   cuContent.className = 'metric-values';
   cuContent.innerHTML = `
     <div class="metric-current">${customerUseCount}</div>
-    <div class="metric-label">with ≥1 customer</div>
+    <div class="metric-label">with usage data</div>
   `;
   section.append(createMetricCard('Customer Use', '👥', cuContent));
 
@@ -302,19 +309,30 @@ function renderExperiments(experimentsData) {
 }
 
 /**
+ * Checks if usageData field has a meaningful value
+ * @param {string} usageData - The usage data value
+ * @returns {boolean} - True if usage data is set
+ */
+function hasUsageData(usageData) {
+  if (!usageData) return false;
+  const trimmed = usageData.trim().toLowerCase();
+  return trimmed !== '' && trimmed !== '0';
+}
+
+/**
  * Renders experiments with customer use section
  * @param {Array} experimentsData - Experiments data from sheet
  * @returns {HTMLElement} - Customer use section element
  */
 function renderCustomerUse(experimentsData) {
-  const withCustomers = experimentsData.filter((e) => e.customers && e.customers.trim());
+  const withUsage = experimentsData.filter((e) => hasUsageData(e.usageData));
 
   const section = document.createElement('div');
   section.className = 'customer-use-section';
 
   const header = document.createElement('div');
   header.className = 'section-header';
-  header.innerHTML = `<h2>Experiments with Customer Use (≥1)</h2><span class="count">${withCustomers.length} total</span>`;
+  header.innerHTML = `<h2>Experiments with Customer Use (≥1)</h2><span class="count">${withUsage.length} total</span>`;
 
   const tableWrapper = document.createElement('div');
   tableWrapper.className = 'table-wrapper';
@@ -334,7 +352,7 @@ function renderCustomerUse(experimentsData) {
   `;
 
   const tbody = table.querySelector('tbody');
-  withCustomers.forEach((exp) => {
+  withUsage.forEach((exp) => {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${exp.title || ''}</td>
@@ -352,8 +370,36 @@ function renderCustomerUse(experimentsData) {
 }
 
 /**
+ * Stage progression order for deriving pipeline from status
+ */
+const STAGE_ORDER = ['unknown', 'learn', 'understand', 'hypothesis', 'auto solve'];
+
+/**
+ * Derives stage completion based on current status
+ * @param {string} status - Current experiment status
+ * @param {string} stage - Stage to check
+ * @returns {string} - 'yes', 'wip', or 'no'
+ */
+function getStageStatus(status, stage) {
+  const statusLower = (status || '').toLowerCase();
+  const currentIndex = STAGE_ORDER.indexOf(statusLower);
+  const stageIndex = STAGE_ORDER.indexOf(stage);
+
+  // Handle WIP as between hypothesis and auto solve
+  if (statusLower === 'wip') {
+    if (stageIndex <= 3) return 'yes'; // hypothesis and before
+    return 'wip'; // auto solve column shows WIP
+  }
+
+  if (currentIndex === -1) return 'no'; // Unknown status
+  if (stageIndex < currentIndex) return 'yes'; // Completed stage
+  if (stageIndex === currentIndex) return 'yes'; // Current stage
+  return 'no'; // Future stage
+}
+
+/**
  * Creates a stage cell for the opportunities pipeline
- * @param {string} value - Stage value (Yes, No, WIP, etc.)
+ * @param {string} value - Stage value (yes, no, wip)
  * @returns {HTMLElement} - Cell element
  */
 function createStageCell(value) {
@@ -361,28 +407,26 @@ function createStageCell(value) {
   cell.className = 'stage-cell';
   const val = (value || '').toLowerCase();
 
-  if (val === 'yes' || val.startsWith('yes,')) {
+  if (val === 'yes') {
     cell.classList.add('stage-yes');
     cell.textContent = '✓';
   } else if (val === 'wip') {
     cell.classList.add('stage-wip');
     cell.textContent = 'WIP';
-  } else if (val === 'no') {
+  } else {
     cell.classList.add('stage-no');
     cell.textContent = '✗';
-  } else {
-    cell.textContent = value || '';
   }
 
   return cell;
 }
 
 /**
- * Renders the opportunities pipeline table
- * @param {Array} opportunitiesData - Opportunities data from sheet
+ * Renders the opportunities pipeline table derived from experiments data
+ * @param {Array} experimentsData - Experiments data from sheet
  * @returns {HTMLElement} - Opportunities section element
  */
-function renderOpportunities(opportunitiesData) {
+function renderOpportunities(experimentsData) {
   const section = document.createElement('div');
   section.className = 'opportunities-section';
 
@@ -410,19 +454,20 @@ function renderOpportunities(opportunitiesData) {
   `;
 
   const tbody = table.querySelector('tbody');
-  opportunitiesData.forEach((opp) => {
+  experimentsData.forEach((exp) => {
     const row = document.createElement('tr');
 
     const titleCell = document.createElement('td');
     titleCell.className = 'col-opportunity';
-    titleCell.textContent = opp.title || '';
+    titleCell.textContent = exp.title || '';
     row.append(titleCell);
 
-    row.append(createStageCell(opp.unknown));
-    row.append(createStageCell(opp.learn));
-    row.append(createStageCell(opp.understand));
-    row.append(createStageCell(opp.hypothesis));
-    row.append(createStageCell(opp.autoSolve));
+    // Derive stage completion from status
+    row.append(createStageCell(getStageStatus(exp.status, 'unknown')));
+    row.append(createStageCell(getStageStatus(exp.status, 'learn')));
+    row.append(createStageCell(getStageStatus(exp.status, 'understand')));
+    row.append(createStageCell(getStageStatus(exp.status, 'hypothesis')));
+    row.append(createStageCell(getStageStatus(exp.status, 'auto solve')));
 
     tbody.append(row);
   });
@@ -502,7 +547,6 @@ export default async function decorate(block) {
   const {
     metrics: metricsData,
     experiments: experimentsData,
-    opportunities: opportunitiesData,
     artifacts: artifactsData,
   } = await fetchAllSheetData(jsonPath);
 
@@ -528,6 +572,6 @@ export default async function decorate(block) {
   block.append(renderMetrics(metricsData, experimentsData));
   block.append(renderExperiments(experimentsData));
   block.append(renderCustomerUse(experimentsData));
-  block.append(renderOpportunities(opportunitiesData));
+  block.append(renderOpportunities(experimentsData));
   block.append(renderKnowledgeArtifacts(artifactsData, ksMetrics));
 }
