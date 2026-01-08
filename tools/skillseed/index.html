@@ -1,0 +1,2642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSeed - Grow Your Team's Knowledge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a5d3a;
+            --primary-light: #2d8a5e;
+            --primary-dark: #0f3d26;
+            --accent: #f5a623;
+            --accent-light: #ffc866;
+            --bg: #faf9f6;
+            --bg-card: #ffffff;
+            --bg-secondary: #f0ede6;
+            --text: #1a1a1a;
+            --text-secondary: #5a5a5a;
+            --text-muted: #8a8a8a;
+            --border: #e0ddd5;
+            --success: #34a853;
+            --warning: #fbbc04;
+            --error: #ea4335;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+            --radius: 16px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark {
+            --primary: #3cb371;
+            --primary-light: #5fd38d;
+            --primary-dark: #2d8a5e;
+            --accent: #ffc866;
+            --accent-light: #ffe0a3;
+            --bg: #121212;
+            --bg-card: #1e1e1e;
+            --bg-secondary: #2a2a2a;
+            --text: #f5f5f5;
+            --text-secondary: #b0b0b0;
+            --text-muted: #707070;
+            --border: #3a3a3a;
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .serif {
+            font-family: 'Source Serif 4', serif;
+        }
+
+        /* Utility Classes */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            color: var(--primary-dark);
+        }
+
+        .btn-accent:hover {
+            background: var(--accent-light);
+            transform: translateY(-2px);
+        }
+
+        .btn-sm {
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .btn-icon {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* ===== HOMEPAGE ===== */
+        #homepage {
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 16px 0;
+            background: rgba(250, 249, 246, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .dark .navbar {
+            background: rgba(18, 18, 18, 0.9);
+        }
+
+        .navbar-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 160px 0 100px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 80%;
+            height: 150%;
+            background: radial-gradient(circle, rgba(45, 138, 94, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: clamp(40px, 6vw, 64px);
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-text p {
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            max-width: 500px;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .hero-visual {
+            position: relative;
+        }
+
+        .seed-animation {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .seed-tree {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .tree-svg {
+            width: 80%;
+            height: 90%;
+        }
+
+        .floating-ideas {
+            position: absolute;
+            inset: 0;
+        }
+
+        .floating-idea {
+            position: absolute;
+            background: var(--bg-card);
+            padding: 12px 18px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            font-size: 14px;
+            font-weight: 500;
+            animation: float 4s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .floating-idea:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
+        .floating-idea:nth-child(2) { top: 25%; right: 0%; animation-delay: 0.5s; }
+        .floating-idea:nth-child(3) { top: 50%; left: 0%; animation-delay: 1s; }
+        .floating-idea:nth-child(4) { top: 65%; right: 5%; animation-delay: 1.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 0;
+            background: var(--bg-secondary);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            padding: 40px 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+        }
+
+        /* Pricing Section */
+        .pricing {
+            padding: 100px 0;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card.featured {
+            border: 3px solid var(--primary);
+        }
+
+        .pricing-card.featured::before {
+            content: 'POPULAR';
+            position: absolute;
+            top: 20px;
+            right: -35px;
+            background: var(--accent);
+            color: var(--primary-dark);
+            padding: 6px 40px;
+            font-size: 12px;
+            font-weight: 700;
+            transform: rotate(45deg);
+        }
+
+        .pricing-tier {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .pricing-price {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .pricing-price span {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .pricing-desc {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        .pricing-features li i {
+            color: var(--success);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 60px 0 30px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-text {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* ===== DASHBOARD ===== */
+        #dashboard {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+        }
+
+        .nav-section {
+            margin-bottom: 32px;
+        }
+
+        .nav-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-left: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            cursor: pointer;
+            margin-bottom: 4px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-secondary);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item .badge {
+            margin-left: auto;
+            background: var(--accent);
+            color: var(--primary-dark);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-secondary);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            min-height: 100vh;
+            transition: var(--transition);
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* Top Bar */
+        .topbar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--text);
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-secondary);
+            padding: 10px 16px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+        }
+
+        .search-box input {
+            border: none;
+            background: none;
+            outline: none;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            color: var(--text);
+            width: 200px;
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 30px;
+        }
+
+        /* Dashboard Home */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .stat-icon.green { background: rgba(45, 138, 94, 0.15); color: var(--primary); }
+        .stat-icon.amber { background: rgba(245, 166, 35, 0.15); color: var(--accent); }
+        .stat-icon.blue { background: rgba(66, 133, 244, 0.15); color: #4285f4; }
+        .stat-icon.purple { background: rgba(156, 39, 176, 0.15); color: #9c27b0; }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 20px;
+        }
+
+        .stat-change.up {
+            background: rgba(52, 168, 83, 0.15);
+            color: var(--success);
+        }
+
+        /* Daily Skill Card */
+        .daily-skill-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            padding: 30px;
+            border-radius: var(--radius);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .daily-skill-card::before {
+            content: '🌱';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 80px;
+            opacity: 0.2;
+        }
+
+        .skill-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .daily-skill-card h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .daily-skill-card p {
+            font-size: 16px;
+            opacity: 0.9;
+            max-width: 80%;
+            margin-bottom: 20px;
+        }
+
+        .streak-counter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .streak-counter i {
+            color: var(--accent);
+        }
+
+        /* Notes Section */
+        .section-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .section-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-card-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-card-body {
+            padding: 24px;
+        }
+
+        /* Note Editor */
+        .note-editor {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .note-textarea {
+            width: 100%;
+            min-height: 150px;
+            border: none;
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            font-family: 'Source Serif 4', serif;
+            font-size: 16px;
+            color: var(--text);
+            resize: vertical;
+            outline: none;
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .note-textarea:focus {
+            border-color: var(--primary);
+        }
+
+        .note-editor-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .detected-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .idea-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .idea-tag.insight { background: rgba(66, 133, 244, 0.15); color: #4285f4; }
+        .idea-tag.action { background: rgba(52, 168, 83, 0.15); color: var(--success); }
+        .idea-tag.question { background: rgba(156, 39, 176, 0.15); color: #9c27b0; }
+        .idea-tag.goal { background: rgba(245, 166, 35, 0.15); color: #e67e00; }
+        .idea-tag.howto { background: rgba(0, 150, 136, 0.15); color: #009688; }
+
+        /* Notes List */
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .note-item {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+        }
+
+        .note-item:hover {
+            border-left-color: var(--primary);
+        }
+
+        .note-item-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+
+        .note-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .note-author {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .note-author-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .note-author-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .note-date {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .note-action-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .note-action-btn:hover {
+            background: var(--bg-card);
+            color: var(--primary);
+        }
+
+        .note-content {
+            font-family: 'Source Serif 4', serif;
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.7;
+        }
+
+        .note-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .share-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .toggle-switch.active::after {
+            left: 22px;
+        }
+
+        /* Team Garden (Aggregated) */
+        .garden-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .filter-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-pill {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-pill:hover, .filter-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Team Settings */
+        .team-members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .team-member-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 24px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .team-member-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .member-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 auto 16px;
+        }
+
+        .member-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .member-role {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .member-stats {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        .member-stat {
+            text-align: center;
+        }
+
+        .member-stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .member-stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Slack Integration Mock */
+        .slack-preview {
+            background: #1a1d21;
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .slack-header {
+            background: #350d36;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slack-channel {
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .slack-messages {
+            padding: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .slack-message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .slack-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .slack-msg-content {
+            flex: 1;
+        }
+
+        .slack-msg-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .slack-msg-author {
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .slack-msg-time {
+            color: #616061;
+            font-size: 12px;
+        }
+
+        .slack-msg-text {
+            color: #d1d2d3;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .slack-msg-embed {
+            margin-top: 8px;
+            border-left: 4px solid var(--primary);
+            padding-left: 12px;
+        }
+
+        .slack-msg-embed-title {
+            color: #1d9bd1;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .slack-msg-embed-text {
+            color: #ababad;
+            font-size: 14px;
+        }
+
+        /* Paywall Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .modal-header h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .modal-header p {
+            opacity: 0.9;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .upgrade-features {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .upgrade-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .upgrade-features li:last-child {
+            border-bottom: none;
+        }
+
+        .upgrade-features i {
+            color: var(--success);
+            font-size: 18px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        /* Export/Import */
+        .data-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Mobile Navigation */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 8px 16px;
+            z-index: 100;
+        }
+
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .mobile-nav-item i {
+            font-size: 20px;
+        }
+
+        .mobile-nav-item.active {
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .mobile-nav {
+                display: block;
+            }
+
+            .content-area {
+                padding-bottom: 100px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-text p {
+                margin: 0 auto 32px;
+            }
+
+            .hero-cta {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                order: -1;
+            }
+
+            .seed-animation {
+                max-width: 300px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .topbar {
+                padding: 12px 16px;
+            }
+
+            .search-box {
+                display: none;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .daily-skill-card::before {
+                font-size: 50px;
+                right: 10px;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Progress bar for paywall */
+        .progress-container {
+            margin-top: 16px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .add-member-card {
+            border: 2px dashed var(--border);
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .add-member-card:hover {
+            border-color: var(--primary);
+            background: var(--bg-secondary);
+        }
+
+        .add-member-card i {
+            font-size: 32px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .add-member-card span {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== HOMEPAGE ===== -->
+    <div id="homepage">
+        <nav class="navbar">
+            <div class="container navbar-content">
+                <a href="#" class="logo" onclick="showHomepage(); return false;">
+                    <div class="logo-icon"><i class="fas fa-seedling"></i></div>
+                    SkillSeed
+                </a>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="#" onclick="showDashboard(); return false;">Dashboard</a>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleTheme()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="showDashboard()">
+                        Start Growing <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <div class="container hero-content">
+                <div class="hero-text">
+                    <h1>Grow Your Team's Knowledge Garden</h1>
+                    <p class="serif">Smart notetaking with AI-powered idea detection. Capture insights, share learnings, and watch your team's collective wisdom flourish.</p>
+                    <div class="hero-cta">
+                        <button class="btn btn-primary" onclick="showDashboard()">
+                            <i class="fas fa-seedling"></i> Start Growing Free
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fas fa-play"></i> Watch Demo
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="seed-animation">
+                        <div class="seed-tree">
+                            <svg class="tree-svg" viewBox="0 0 200 200" fill="none">
+                                <path d="M100 200 L100 120" stroke="var(--primary)" stroke-width="8" stroke-linecap="round"/>
+                                <path d="M100 120 L70 90" stroke="var(--primary)" stroke-width="6" stroke-linecap="round"/>
+                                <path d="M100 120 L130 85" stroke="var(--primary)" stroke-width="6" stroke-linecap="round"/>
+                                <path d="M100 100 L85 70" stroke="var(--primary)" stroke-width="4" stroke-linecap="round"/>
+                                <path d="M100 100 L115 65" stroke="var(--primary)" stroke-width="4" stroke-linecap="round"/>
+                                <circle cx="70" cy="80" r="25" fill="var(--primary)" opacity="0.8"/>
+                                <circle cx="130" cy="75" r="28" fill="var(--primary-light)" opacity="0.8"/>
+                                <circle cx="100" cy="55" r="30" fill="var(--primary)" opacity="0.9"/>
+                                <circle cx="85" cy="65" r="20" fill="var(--primary-light)" opacity="0.7"/>
+                                <circle cx="115" cy="60" r="22" fill="var(--primary)" opacity="0.75"/>
+                            </svg>
+                        </div>
+                        <div class="floating-ideas">
+                            <div class="floating-idea">💡 Insight</div>
+                            <div class="floating-idea">✅ Action</div>
+                            <div class="floating-idea">❓ Question</div>
+                            <div class="floating-idea">🎯 Goal</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Cultivate Ideas, Harvest Wisdom</h2>
+                    <p>Everything your team needs to capture, organize, and share knowledge effectively.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-lightbulb"></i></div>
+                        <h3>AI Idea Detection</h3>
+                        <p>Our intelligent system automatically spots insights, action items, questions, and goals in your notes.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-calendar-day"></i></div>
+                        <h3>Daily Learning Skills</h3>
+                        <p>Build consistent learning habits with daily prompts and track your growth streak.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-users"></i></div>
+                        <h3>Team Knowledge Garden</h3>
+                        <p>Share learnings across your team and cultivate a collective wisdom repository.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fab fa-slack"></i></div>
+                        <h3>Slack Integration</h3>
+                        <p>Automatically post shared learnings to your team's Slack channels.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-lock"></i></div>
+                        <h3>Personal & Shared Modes</h3>
+                        <p>Keep notes private or share them with your team—you're in control.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                        <h3>Mobile-First Design</h3>
+                        <p>Capture ideas on the go with a responsive, touch-friendly interface.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pricing" id="pricing">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Simple, Transparent Pricing</h2>
+                    <p>Start free and upgrade as your team's knowledge garden grows.</p>
+                </div>
+                <div class="pricing-grid">
+                    <div class="pricing-card">
+                        <div class="pricing-tier">Seedling</div>
+                        <div class="pricing-price">Free <span>forever</span></div>
+                        <p class="pricing-desc">Perfect for individuals and small teams getting started.</p>
+                        <ul class="pricing-features">
+                            <li><i class="fas fa-check"></i> Up to 3 team members</li>
+                            <li><i class="fas fa-check"></i> 10 shared learnings/month</li>
+                            <li><i class="fas fa-check"></i> AI idea detection</li>
+                            <li><i class="fas fa-check"></i> Daily learning prompts</li>
+                            <li><i class="fas fa-check"></i> Export data</li>
+                        </ul>
+                        <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="showDashboard()">Get Started</button>
+                    </div>
+                    <div class="pricing-card featured">
+                        <div class="pricing-tier">Growth</div>
+                        <div class="pricing-price">$12 <span>/user/month</span></div>
+                        <p class="pricing-desc">For teams ready to accelerate their knowledge sharing.</p>
+                        <ul class="pricing-features">
+                            <li><i class="fas fa-check"></i> Unlimited team members</li>
+                            <li><i class="fas fa-check"></i> Unlimited shared learnings</li>
+                            <li><i class="fas fa-check"></i> Slack integration</li>
+                            <li><i class="fas fa-check"></i> Advanced analytics</li>
+                            <li><i class="fas fa-check"></i> Priority support</li>
+                            <li><i class="fas fa-check"></i> Custom branding</li>
+                        </ul>
+                        <button class="btn btn-primary" style="width: 100%; justify-content: center;">Upgrade Now</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="container footer-content">
+                <a href="#" class="logo" onclick="showHomepage(); return false;">
+                    <div class="logo-icon"><i class="fas fa-seedling"></i></div>
+                    SkillSeed
+                </a>
+                <p class="footer-text">© 2025 SkillSeed. Grow your team's potential.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="dashboard" class="hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="#" class="logo" onclick="showHomepage(); return false;">
+                    <div class="logo-icon"><i class="fas fa-seedling"></i></div>
+                    SkillSeed
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <div class="nav-item active" data-view="home" onclick="switchView('home')">
+                        <i class="fas fa-home"></i> Dashboard
+                    </div>
+                    <div class="nav-item" data-view="notes" onclick="switchView('notes')">
+                        <i class="fas fa-edit"></i> New Note
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Knowledge</div>
+                    <div class="nav-item" data-view="personal" onclick="switchView('personal')">
+                        <i class="fas fa-leaf"></i> My Seeds
+                        <span class="badge" id="personal-count">0</span>
+                    </div>
+                    <div class="nav-item" data-view="garden" onclick="switchView('garden')">
+                        <i class="fas fa-tree"></i> Team Garden
+                        <span class="badge" id="garden-count">0</span>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Settings</div>
+                    <div class="nav-item" data-view="team" onclick="switchView('team')">
+                        <i class="fas fa-users"></i> Team
+                    </div>
+                    <div class="nav-item" data-view="slack" onclick="switchView('slack')">
+                        <i class="fab fa-slack"></i> Slack
+                    </div>
+                    <div class="nav-item" data-view="data" onclick="switchView('data')">
+                        <i class="fas fa-database"></i> Data
+                    </div>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">Y</div>
+                    <div class="user-details">
+                        <div class="user-name">You</div>
+                        <div class="user-role">Team Admin</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <i class="fas fa-search" style="color: var(--text-muted);"></i>
+                        <input type="text" placeholder="Search notes..." id="searchInput" oninput="handleSearch()">
+                    </div>
+                    <button class="btn btn-icon btn-secondary" onclick="toggleTheme()">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Dashboard Home View -->
+                <div id="view-home">
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div class="stat-icon green"><i class="fas fa-leaf"></i></div>
+                                <span class="stat-change up">+3 today</span>
+                            </div>
+                            <div class="stat-value" id="stat-seeds">0</div>
+                            <div class="stat-label">My Seeds</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div class="stat-icon amber"><i class="fas fa-share-alt"></i></div>
+                            </div>
+                            <div class="stat-value" id="stat-shared">0</div>
+                            <div class="stat-label">Shared to Garden</div>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="paywall-progress" style="width: 0%"></div>
+                                </div>
+                                <div class="progress-label">
+                                    <span id="paywall-current">0</span>
+                                    <span>10 free limit</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                            </div>
+                            <div class="stat-value" id="stat-team">3</div>
+                            <div class="stat-label">Team Members</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div class="stat-icon purple"><i class="fas fa-lightbulb"></i></div>
+                            </div>
+                            <div class="stat-value" id="stat-ideas">0</div>
+                            <div class="stat-label">Ideas Detected</div>
+                        </div>
+                    </div>
+
+                    <div class="daily-skill-card">
+                        <div class="skill-badge"><i class="fas fa-sparkles"></i> Daily Skill</div>
+                        <h3 id="daily-skill-title">Today's Learning Challenge</h3>
+                        <p id="daily-skill-prompt" class="serif">Reflect on one thing you learned yesterday. What surprised you about it?</p>
+                        <div class="streak-counter">
+                            <i class="fas fa-fire"></i>
+                            <span><span id="streak-count">3</span> day streak! Keep growing!</span>
+                        </div>
+                    </div>
+
+                    <div class="section-card" style="margin-top: 24px;">
+                        <div class="section-card-header">
+                            <h3 class="section-card-title"><i class="fas fa-clock"></i> Recent Activity</h3>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="notes-list" id="recent-notes">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Note View -->
+                <div id="view-notes" class="hidden">
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <h3 class="section-card-title"><i class="fas fa-plus-circle"></i> Plant a New Seed</h3>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="note-editor">
+                                <textarea class="note-textarea" id="noteInput" placeholder="What did you learn today? Start typing and I'll detect ideas, actions, and insights..." oninput="detectIdeas()"></textarea>
+                                <div class="note-editor-actions">
+                                    <div class="detected-tags" id="detectedTags">
+                                        <!-- Tags appear here -->
+                                    </div>
+                                    <div style="display: flex; gap: 12px; align-items: center;">
+                                        <div class="share-toggle">
+                                            <span>Share to Garden</span>
+                                            <div class="toggle-switch" id="shareToggle" onclick="toggleShare()"></div>
+                                        </div>
+                                        <button class="btn btn-primary btn-sm" onclick="saveNote()">
+                                            <i class="fas fa-seedling"></i> Plant Seed
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Seeds View -->
+                <div id="view-personal" class="hidden">
+                    <div class="garden-header">
+                        <div class="filter-pills">
+                            <button class="filter-pill active" onclick="filterNotes('all', this)">All</button>
+                            <button class="filter-pill" onclick="filterNotes('insight', this)">💡 Insights</button>
+                            <button class="filter-pill" onclick="filterNotes('action', this)">✅ Actions</button>
+                            <button class="filter-pill" onclick="filterNotes('question', this)">❓ Questions</button>
+                            <button class="filter-pill" onclick="filterNotes('goal', this)">🎯 Goals</button>
+                        </div>
+                    </div>
+                    <div class="notes-list" id="personal-notes">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Team Garden View -->
+                <div id="view-garden" class="hidden">
+                    <div class="garden-header">
+                        <div class="filter-pills">
+                            <button class="filter-pill active" onclick="filterGarden('all', this)">All</button>
+                            <button class="filter-pill" onclick="filterGarden('insight', this)">💡 Insights</button>
+                            <button class="filter-pill" onclick="filterGarden('action', this)">✅ Actions</button>
+                            <button class="filter-pill" onclick="filterGarden('question', this)">❓ Questions</button>
+                        </div>
+                    </div>
+                    <div class="notes-list" id="garden-notes">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Team View -->
+                <div id="view-team" class="hidden">
+                    <div class="team-members-grid" id="team-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Slack View -->
+                <div id="view-slack" class="hidden">
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <h3 class="section-card-title"><i class="fab fa-slack"></i> Slack Integration</h3>
+                            <span style="background: rgba(52, 168, 83, 0.15); color: var(--success); padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                                <i class="fas fa-check-circle"></i> Connected
+                            </span>
+                        </div>
+                        <div class="section-card-body">
+                            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                                When team members share learnings to the garden, they automatically get posted to your Slack channel.
+                            </p>
+                            <div class="slack-preview">
+                                <div class="slack-header">
+                                    <i class="fab fa-slack" style="color: white; font-size: 20px;"></i>
+                                    <span class="slack-channel"># team-learnings</span>
+                                </div>
+                                <div class="slack-messages" id="slack-messages">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data View -->
+                <div id="view-data" class="hidden">
+                    <div class="section-card">
+                        <div class="section-card-header">
+                            <h3 class="section-card-title"><i class="fas fa-database"></i> Data Management</h3>
+                        </div>
+                        <div class="section-card-body">
+                            <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                                Export your data to save it locally, or import a previous backup to restore your seeds.
+                            </p>
+                            <div class="data-actions">
+                                <button class="btn btn-primary" onclick="exportData()">
+                                    <i class="fas fa-download"></i> Export Data
+                                </button>
+                                <label class="btn btn-secondary" style="cursor: pointer;">
+                                    <i class="fas fa-upload"></i> Import Data
+                                    <input type="file" accept=".json" onchange="importData(event)" style="display: none;">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Mobile Navigation -->
+        <nav class="mobile-nav">
+            <div class="mobile-nav-items">
+                <div class="mobile-nav-item active" data-view="home" onclick="switchView('home')">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </div>
+                <div class="mobile-nav-item" data-view="notes" onclick="switchView('notes')">
+                    <i class="fas fa-plus"></i>
+                    <span>New</span>
+                </div>
+                <div class="mobile-nav-item" data-view="personal" onclick="switchView('personal')">
+                    <i class="fas fa-leaf"></i>
+                    <span>Seeds</span>
+                </div>
+                <div class="mobile-nav-item" data-view="garden" onclick="switchView('garden')">
+                    <i class="fas fa-tree"></i>
+                    <span>Garden</span>
+                </div>
+                <div class="mobile-nav-item" data-view="team" onclick="switchView('team')">
+                    <i class="fas fa-users"></i>
+                    <span>Team</span>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Paywall Modal -->
+    <div id="paywallModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <div style="font-size: 48px; margin-bottom: 16px;">🌳</div>
+                <h2>Your Garden is Flourishing!</h2>
+                <p>You've reached the free tier limit of 10 shared learnings.</p>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">Upgrade to SkillSeed Growth to unlock:</p>
+                <ul class="upgrade-features">
+                    <li><i class="fas fa-check-circle"></i> Unlimited shared learnings</li>
+                    <li><i class="fas fa-check-circle"></i> Unlimited team members</li>
+                    <li><i class="fas fa-check-circle"></i> Advanced Slack integration</li>
+                    <li><i class="fas fa-check-circle"></i> Custom branding options</li>
+                    <li><i class="fas fa-check-circle"></i> Priority support</li>
+                </ul>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closePaywall()">Maybe Later</button>
+                    <button class="btn btn-primary" onclick="closePaywall()">
+                        <i class="fas fa-rocket"></i> Upgrade Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== DATA STORE =====
+        let appData = {
+            notes: [],
+            streak: 3,
+            teamMembers: [
+                { id: 1, name: 'You', initials: 'Y', role: 'Team Admin', seeds: 0, shared: 0 },
+                { id: 2, name: 'Alex Rivera', initials: 'AR', role: 'Developer', seeds: 12, shared: 5 },
+                { id: 3, name: 'Jordan Chen', initials: 'JC', role: 'Designer', seeds: 8, shared: 4 }
+            ],
+            dailySkills: [
+                { title: "Today's Learning Challenge", prompt: "Reflect on one thing you learned yesterday. What surprised you about it?" },
+                { title: "Knowledge Connection", prompt: "How does something you learned recently connect to a skill you already have?" },
+                { title: "Teaching Moment", prompt: "Explain a concept you know well as if teaching it to a beginner." },
+                { title: "Curiosity Spark", prompt: "What's one question you've been curious about? Explore it briefly." },
+                { title: "Mistake Mastery", prompt: "Describe a recent mistake and what you learned from it." }
+            ],
+            currentFilter: 'all',
+            shareToGarden: false,
+            paywallLimit: 10
+        };
+
+        // Sample data
+        const sampleNotes = [
+            {
+                id: 1,
+                content: "TIL that CSS container queries can be used for responsive design without relying on viewport width. This is game-changing for component-based architectures!",
+                author: 'Alex Rivera',
+                authorInitials: 'AR',
+                date: new Date(Date.now() - 3600000),
+                tags: ['insight', 'howto'],
+                shared: true
+            },
+            {
+                id: 2,
+                content: "Question: How do we best handle state management when migrating from Redux to React Context + useReducer?",
+                author: 'Jordan Chen',
+                authorInitials: 'JC',
+                date: new Date(Date.now() - 7200000),
+                tags: ['question'],
+                shared: true
+            },
+            {
+                id: 3,
+                content: "Action item: Set up weekly knowledge sharing sessions for the team. Start with 15-minute lightning talks.",
+                author: 'Alex Rivera',
+                authorInitials: 'AR',
+                date: new Date(Date.now() - 86400000),
+                tags: ['action', 'goal'],
+                shared: true
+            },
+            {
+                id: 4,
+                content: "Discovered that pairing accessibility audits with design reviews catches 80% more issues early. We should make this standard practice.",
+                author: 'Jordan Chen',
+                authorInitials: 'JC',
+                date: new Date(Date.now() - 172800000),
+                tags: ['insight', 'action'],
+                shared: true
+            },
+            {
+                id: 5,
+                content: "Goal for Q2: Achieve 95% test coverage on critical user paths. Break this down into weekly milestones.",
+                author: 'Alex Rivera',
+                authorInitials: 'AR',
+                date: new Date(Date.now() - 259200000),
+                tags: ['goal'],
+                shared: true
+            }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            appData.notes = [...sampleNotes];
+            updateUI();
+            setRandomDailySkill();
+        });
+
+        // ===== THEME =====
+        function initTheme() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+                updateThemeIcon();
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                updateThemeIcon();
+            });
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const icon = document.getElementById('themeIcon');
+            if (icon) {
+                icon.className = document.documentElement.classList.contains('dark') ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+
+        // ===== NAVIGATION =====
+        function showHomepage() {
+            document.getElementById('homepage').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('homepage').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            switchView('home');
+        }
+
+        function switchView(viewName) {
+            // Hide all views
+            document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('hidden'));
+            // Show selected view
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+            // Update nav items
+            document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.view === viewName);
+            });
+
+            // Update page title
+            const titles = {
+                home: 'Dashboard',
+                notes: 'New Note',
+                personal: 'My Seeds',
+                garden: 'Team Garden',
+                team: 'Team Settings',
+                slack: 'Slack Integration',
+                data: 'Data Management'
+            };
+            document.getElementById('pageTitle').textContent = titles[viewName] || 'Dashboard';
+
+            // Close sidebar on mobile
+            document.getElementById('sidebar').classList.remove('open');
+
+            // Refresh view content
+            if (viewName === 'personal') renderPersonalNotes();
+            if (viewName === 'garden') renderGardenNotes();
+            if (viewName === 'team') renderTeamMembers();
+            if (viewName === 'slack') renderSlackMessages();
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // ===== DAILY SKILL =====
+        function setRandomDailySkill() {
+            const skill = appData.dailySkills[Math.floor(Math.random() * appData.dailySkills.length)];
+            document.getElementById('daily-skill-title').textContent = skill.title;
+            document.getElementById('daily-skill-prompt').textContent = skill.prompt;
+            document.getElementById('streak-count').textContent = appData.streak;
+        }
+
+        // ===== IDEA DETECTION =====
+        const ideaPatterns = {
+            insight: [/\b(TIL|learned|discovered|realized|insight|interesting|surprising|found out)\b/i, /\b(understand|clarity|aha|eureka)\b/i],
+            action: [/\b(action|todo|should|need to|must|will|going to|implement|set up|create)\b/i, /\b(task|deadline|complete|finish)\b/i],
+            question: [/\?$/, /\b(how|why|what|when|where|who|which|question|wondering|curious)\b/i],
+            goal: [/\b(goal|objective|target|aim|milestone|achieve|accomplish|Q[1-4])\b/i, /\b(KPI|metric|measure|success)\b/i],
+            howto: [/\b(how to|step|process|method|technique|approach|way to|tutorial)\b/i, /\b(guide|instruction|tip|trick)\b/i]
+        };
+
+        const tagEmojis = {
+            insight: '💡',
+            action: '✅',
+            question: '❓',
+            goal: '🎯',
+            howto: '🔧'
+        };
+
+        function detectIdeas() {
+            const text = document.getElementById('noteInput').value;
+            const tagsContainer = document.getElementById('detectedTags');
+            const detectedTags = new Set();
+
+            for (const [tag, patterns] of Object.entries(ideaPatterns)) {
+                for (const pattern of patterns) {
+                    if (pattern.test(text)) {
+                        detectedTags.add(tag);
+                        break;
+                    }
+                }
+            }
+
+            tagsContainer.innerHTML = Array.from(detectedTags).map(tag =>
+                `<span class="idea-tag ${tag}">${tagEmojis[tag]} ${tag.charAt(0).toUpperCase() + tag.slice(1)}</span>`
+            ).join('');
+        }
+
+        function getDetectedTags(text) {
+            const detectedTags = [];
+            for (const [tag, patterns] of Object.entries(ideaPatterns)) {
+                for (const pattern of patterns) {
+                    if (pattern.test(text)) {
+                        detectedTags.push(tag);
+                        break;
+                    }
+                }
+            }
+            return detectedTags.length ? detectedTags : ['insight'];
+        }
+
+        // ===== NOTES MANAGEMENT =====
+        function toggleShare() {
+            appData.shareToGarden = !appData.shareToGarden;
+            document.getElementById('shareToggle').classList.toggle('active', appData.shareToGarden);
+        }
+
+        function saveNote() {
+            const content = document.getElementById('noteInput').value.trim();
+            if (!content) return;
+
+            // Check paywall
+            const sharedCount = appData.notes.filter(n => n.shared && n.author === 'You').length;
+            if (appData.shareToGarden && sharedCount >= appData.paywallLimit) {
+                showPaywall();
+                return;
+            }
+
+            const newNote = {
+                id: Date.now(),
+                content,
+                author: 'You',
+                authorInitials: 'Y',
+                date: new Date(),
+                tags: getDetectedTags(content),
+                shared: appData.shareToGarden
+            };
+
+            appData.notes.unshift(newNote);
+
+            // Update user stats
+            appData.teamMembers[0].seeds++;
+            if (appData.shareToGarden) {
+                appData.teamMembers[0].shared++;
+                appData.streak++;
+            }
+
+            // Clear input
+            document.getElementById('noteInput').value = '';
+            document.getElementById('detectedTags').innerHTML = '';
+            appData.shareToGarden = false;
+            document.getElementById('shareToggle').classList.remove('active');
+
+            updateUI();
+            showToast('Seed planted successfully! 🌱');
+        }
+
+        function deleteNote(noteId) {
+            showConfirmDialog('Are you sure you want to delete this note?', () => {
+                appData.notes = appData.notes.filter(n => n.id !== noteId);
+                updateUI();
+                showToast('Note deleted');
+            });
+        }
+
+        function toggleNoteShare(noteId) {
+            const note = appData.notes.find(n => n.id === noteId);
+            if (!note) return;
+
+            // Check paywall when trying to share
+            if (!note.shared) {
+                const sharedCount = appData.notes.filter(n => n.shared && n.author === 'You').length;
+                if (sharedCount >= appData.paywallLimit) {
+                    showPaywall();
+                    return;
+                }
+            }
+
+            note.shared = !note.shared;
+            if (note.shared) {
+                appData.teamMembers[0].shared++;
+            } else {
+                appData.teamMembers[0].shared--;
+            }
+            updateUI();
+        }
+
+        // ===== RENDER FUNCTIONS =====
+        function updateUI() {
+            updateStats();
+            renderRecentNotes();
+            updateBadges();
+        }
+
+        function updateStats() {
+            const myNotes = appData.notes.filter(n => n.author === 'You');
+            const sharedNotes = myNotes.filter(n => n.shared);
+            const totalIdeas = appData.notes.reduce((acc, n) => acc + n.tags.length, 0);
+
+            document.getElementById('stat-seeds').textContent = myNotes.length;
+            document.getElementById('stat-shared').textContent = sharedNotes.length;
+            document.getElementById('stat-team').textContent = appData.teamMembers.length;
+            document.getElementById('stat-ideas').textContent = totalIdeas;
+
+            // Update paywall progress
+            const progress = Math.min((sharedNotes.length / appData.paywallLimit) * 100, 100);
+            document.getElementById('paywall-progress').style.width = `${progress}%`;
+            document.getElementById('paywall-current').textContent = `${sharedNotes.length}`;
+            document.getElementById('streak-count').textContent = appData.streak;
+        }
+
+        function updateBadges() {
+            const myNotes = appData.notes.filter(n => n.author === 'You');
+            const gardenNotes = appData.notes.filter(n => n.shared);
+            document.getElementById('personal-count').textContent = myNotes.length;
+            document.getElementById('garden-count').textContent = gardenNotes.length;
+        }
+
+        function renderRecentNotes() {
+            const container = document.getElementById('recent-notes');
+            const recent = appData.notes.slice(0, 3);
+
+            if (recent.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 40px;">No notes yet. Plant your first seed! 🌱</p>';
+                return;
+            }
+
+            container.innerHTML = recent.map(note => renderNoteItem(note)).join('');
+        }
+
+        function renderPersonalNotes() {
+            const container = document.getElementById('personal-notes');
+            let notes = appData.notes.filter(n => n.author === 'You');
+
+            if (appData.currentFilter !== 'all') {
+                notes = notes.filter(n => n.tags.includes(appData.currentFilter));
+            }
+
+            if (notes.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 40px;">No notes found. Start capturing your learnings!</p>';
+                return;
+            }
+
+            container.innerHTML = notes.map(note => renderNoteItem(note, true)).join('');
+        }
+
+        function renderGardenNotes() {
+            const container = document.getElementById('garden-notes');
+            let notes = appData.notes.filter(n => n.shared);
+
+            if (appData.currentFilter !== 'all') {
+                notes = notes.filter(n => n.tags.includes(appData.currentFilter));
+            }
+
+            if (notes.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 40px;">The garden is empty. Share some seeds!</p>';
+                return;
+            }
+
+            container.innerHTML = notes.map(note => renderNoteItem(note)).join('');
+        }
+
+        function renderNoteItem(note, showShareToggle = false) {
+            const timeAgo = getTimeAgo(note.date);
+            const tagsHtml = note.tags.map(tag =>
+                `<span class="idea-tag ${tag}">${tagEmojis[tag]} ${tag.charAt(0).toUpperCase() + tag.slice(1)}</span>`
+            ).join('');
+
+            const shareToggleHtml = showShareToggle ? `
+                <div class="share-toggle" style="margin-top: 12px;">
+                    <span>Shared to Garden</span>
+                    <div class="toggle-switch ${note.shared ? 'active' : ''}" onclick="toggleNoteShare(${note.id})"></div>
+                </div>
+            ` : '';
+
+            return `
+                <div class="note-item">
+                    <div class="note-item-header">
+                        <div class="note-meta">
+                            <div class="note-author">
+                                <div class="note-author-avatar">${note.authorInitials}</div>
+                                <span class="note-author-name">${note.author}</span>
+                            </div>
+                            <span class="note-date">${timeAgo}</span>
+                        </div>
+                        ${note.author === 'You' ? `
+                            <div class="note-actions">
+                                <button class="note-action-btn" onclick="deleteNote(${note.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <p class="note-content">${escapeHtml(note.content)}</p>
+                    <div class="note-tags">${tagsHtml}</div>
+                    ${shareToggleHtml}
+                </div>
+            `;
+        }
+
+        function renderTeamMembers() {
+            const container = document.getElementById('team-grid');
+            const membersHtml = appData.teamMembers.map(member => `
+                <div class="team-member-card">
+                    <div class="member-avatar">${member.initials}</div>
+                    <div class="member-name">${member.name}</div>
+                    <div class="member-role">${member.role}</div>
+                    <div class="member-stats">
+                        <div class="member-stat">
+                            <div class="member-stat-value">${member.seeds}</div>
+                            <div class="member-stat-label">Seeds</div>
+                        </div>
+                        <div class="member-stat">
+                            <div class="member-stat-value">${member.shared}</div>
+                            <div class="member-stat-label">Shared</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = membersHtml + `
+                <div class="team-member-card add-member-card" onclick="showAddMemberDialog()">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Team Member</span>
+                </div>
+            `;
+        }
+
+        function renderSlackMessages() {
+            const container = document.getElementById('slack-messages');
+            const sharedNotes = appData.notes.filter(n => n.shared).slice(0, 5);
+
+            if (sharedNotes.length === 0) {
+                container.innerHTML = '<p style="color: #ababad; text-align: center; padding: 20px;">No shared learnings to display</p>';
+                return;
+            }
+
+            container.innerHTML = sharedNotes.map(note => `
+                <div class="slack-message">
+                    <div class="slack-avatar">${note.authorInitials}</div>
+                    <div class="slack-msg-content">
+                        <div class="slack-msg-header">
+                            <span class="slack-msg-author">${note.author}</span>
+                            <span class="slack-msg-time">${formatSlackTime(note.date)}</span>
+                        </div>
+                        <div class="slack-msg-text">New learning shared in SkillSeed 🌱</div>
+                        <div class="slack-msg-embed">
+                            <div class="slack-msg-embed-title">${note.tags.map(t => tagEmojis[t]).join(' ')} ${note.tags[0].charAt(0).toUpperCase() + note.tags[0].slice(1)}</div>
+                            <div class="slack-msg-embed-text">${escapeHtml(note.content.substring(0, 150))}${note.content.length > 150 ? '...' : ''}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===== FILTERS =====
+        function filterNotes(filter, btn) {
+            appData.currentFilter = filter;
+            document.querySelectorAll('#view-personal .filter-pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            renderPersonalNotes();
+        }
+
+        function filterGarden(filter, btn) {
+            appData.currentFilter = filter;
+            document.querySelectorAll('#view-garden .filter-pill').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            renderGardenNotes();
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            // Simple search - filter visible notes
+            document.querySelectorAll('.note-item').forEach(item => {
+                const content = item.querySelector('.note-content').textContent.toLowerCase();
+                item.style.display = content.includes(query) ? 'block' : 'none';
+            });
+        }
+
+        // ===== PAYWALL =====
+        function showPaywall() {
+            document.getElementById('paywallModal').classList.remove('hidden');
+        }
+
+        function closePaywall() {
+            document.getElementById('paywallModal').classList.add('hidden');
+        }
+
+        // ===== DATA EXPORT/IMPORT =====
+        function exportData() {
+            const dataStr = JSON.stringify(appData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `skillseed-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Data exported successfully!');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    appData = { ...appData, ...imported };
+                    // Convert date strings back to Date objects
+                    appData.notes = appData.notes.map(n => ({
+                        ...n,
+                        date: new Date(n.date)
+                    }));
+                    updateUI();
+                    showToast('Data imported successfully!');
+                } catch (err) {
+                    showToast('Failed to import data. Invalid file format.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ===== DIALOGS (Custom - no alert/confirm) =====
+        function showConfirmDialog(message, onConfirm) {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 400px;">
+                    <div class="modal-body">
+                        <p style="margin-bottom: 24px; font-size: 16px;">${message}</p>
+                        <div class="modal-actions">
+                            <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                            <button class="btn btn-primary" id="confirmBtn">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.querySelector('#confirmBtn').onclick = () => {
+                modal.remove();
+                onConfirm();
+            };
+        }
+
+        function showAddMemberDialog() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 400px;">
+                    <div class="modal-header" style="padding: 24px;">
+                        <h2 style="font-size: 20px;">Add Team Member</h2>
+                    </div>
+                    <div class="modal-body">
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">Name</label>
+                            <input type="text" id="memberName" placeholder="Enter name" style="width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-family: 'Outfit', sans-serif; font-size: 16px; background: var(--bg-secondary); color: var(--text);">
+                        </div>
+                        <div style="margin-bottom: 24px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">Role</label>
+                            <input type="text" id="memberRole" placeholder="e.g., Developer, Designer" style="width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-family: 'Outfit', sans-serif; font-size: 16px; background: var(--bg-secondary); color: var(--text);">
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                            <button class="btn btn-primary" onclick="addMember()">Add Member</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.querySelector('#memberName').focus();
+        }
+
+        function addMember() {
+            const name = document.getElementById('memberName').value.trim();
+            const role = document.getElementById('memberRole').value.trim() || 'Team Member';
+
+            if (!name) {
+                showToast('Please enter a name');
+                return;
+            }
+
+            const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+            appData.teamMembers.push({
+                id: Date.now(),
+                name,
+                initials,
+                role,
+                seeds: 0,
+                shared: 0
+            });
+
+            document.querySelector('.modal-overlay').remove();
+            renderTeamMembers();
+            updateStats();
+            showToast(`${name} added to the team!`);
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--text);
+                color: var(--bg);
+                padding: 14px 24px;
+                border-radius: 50px;
+                font-weight: 500;
+                z-index: 3000;
+                animation: slideUp 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // ===== UTILITIES =====
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+            const intervals = [
+                { label: 'year', seconds: 31536000 },
+                { label: 'month', seconds: 2592000 },
+                { label: 'day', seconds: 86400 },
+                { label: 'hour', seconds: 3600 },
+                { label: 'minute', seconds: 60 }
+            ];
+
+            for (const interval of intervals) {
+                const count = Math.floor(seconds / interval.seconds);
+                if (count >= 1) {
+                    return `${count} ${interval.label}${count > 1 ? 's' : ''} ago`;
+                }
+            }
+            return 'Just now';
+        }
+
+        function formatSlackTime(date) {
+            return new Date(date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
+
