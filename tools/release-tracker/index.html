@@ -1937,11 +1937,11 @@
                                                     ${item.daysToDeadline !== null ? item.daysToDeadline + 'd' : 'No date'}
                                                 </span>
                                             </div>
-                                            <div style="display: flex; justify-content: space-between;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
                                                 <span style="color: var(--text-muted);">3-day delay impact:</span>
-                                                <span style="color: ${item.impact.criticalCount > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">
-                                                    ${item.impact.criticalCount > 0 ? `<strong>${item.impact.criticalCount} critical</strong>` : '0 critical'}${item.impact.atRiskCount > 0 ? `, ${item.impact.atRiskCount} at-risk` : ''}
-                                                </span>
+                                                <button class="impact-details-btn" data-task-id="${escapeHtml(item.task.id)}" style="background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; color: ${item.impact.criticalCount > 0 ? 'var(--danger)' : 'var(--text-secondary)'}; text-decoration: underline; font-size: inherit;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='none'">
+                                                    ${item.impact.criticalCount > 0 ? `<strong>${item.impact.criticalCount} critical</strong>` : '0 critical'}${item.impact.atRiskCount > 0 ? `, ${item.impact.atRiskCount} at-risk` : ''} →
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -1962,7 +1962,10 @@
 
             // Add click handlers to risk radar items
             content.querySelectorAll('.risk-radar-item').forEach(item => {
-                item.addEventListener('click', () => {
+                item.addEventListener('click', (e) => {
+                    // Don't trigger if clicking on the impact details button
+                    if (e.target.closest('.impact-details-btn')) return;
+
                     const taskId = item.getAttribute('data-task-id');
                     const task = projectData.find(t => t.id === taskId);
                     if (task) {
@@ -1970,6 +1973,257 @@
                     }
                 });
             });
+
+            // Add click handlers to impact details buttons
+            content.querySelectorAll('.impact-details-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const taskId = btn.getAttribute('data-task-id');
+                    showImpactDetailsPopup(taskId, 3); // 3-day delay
+                });
+            });
+        }
+
+        function showImpactDetailsPopup(taskId, delayDays) {
+            const taskMap = new Map(projectData.map(t => [t.id, t]));
+            const sourceTask = taskMap.get(taskId);
+            if (!sourceTask) return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Build reverse dependency map
+            const reverseDeps = new Map();
+            projectData.forEach(task => {
+                task.dependencies.forEach(depId => {
+                    if (!reverseDeps.has(depId)) {
+                        reverseDeps.set(depId, []);
+                    }
+                    reverseDeps.get(depId).push(task.id);
+                });
+            });
+
+            // Find all affected tasks with their impact details
+            const affectedTasks = [];
+            const visited = new Set([taskId]);
+
+            function findAffectedTasks(currentId, delay) {
+                const dependents = reverseDeps.get(currentId) || [];
+                dependents.forEach(depId => {
+                    if (visited.has(depId)) return;
+                    visited.add(depId);
+
+                    const depTask = taskMap.get(depId);
+                    if (!depTask) return;
+
+                    let severity = 'ok';
+                    let originalWindow = 0;
+                    let newWindow = 0;
+                    let compressionPct = 0;
+
+                    if (depTask.anticipatedEnd) {
+                        originalWindow = Math.ceil((depTask.anticipatedEnd - today) / (1000 * 60 * 60 * 24));
+                        newWindow = originalWindow - delay;
+                        compressionPct = originalWindow > 0 ? Math.round((delay / originalWindow) * 100) : 100;
+
+                        if (originalWindow <= 0 || newWindow <= 0 || compressionPct >= 50) {
+                            severity = 'critical';
+                        } else if (compressionPct >= 25 || newWindow <= 5) {
+                            severity = 'at-risk';
+                        }
+                    }
+
+                    affectedTasks.push({
+                        task: depTask,
+                        severity,
+                        originalWindow,
+                        newWindow,
+                        compressionPct
+                    });
+
+                    findAffectedTasks(depId, delay);
+                });
+            }
+
+            findAffectedTasks(taskId, delayDays);
+
+            // Sort by severity
+            const severityOrder = { 'critical': 0, 'at-risk': 1, 'ok': 2 };
+            affectedTasks.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+            // Remove any existing popup
+            const existingPopup = document.getElementById('impact-popup');
+            if (existingPopup) existingPopup.remove();
+            const existingOverlay = document.getElementById('impact-popup-overlay');
+            if (existingOverlay) existingOverlay.remove();
+
+            const popup = document.createElement('div');
+            popup.id = 'impact-popup';
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 20px;
+                z-index: 1000;
+                max-width: 550px;
+                width: 95%;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            `;
+
+            const criticalTasks = affectedTasks.filter(t => t.severity === 'critical');
+            const atRiskTasks = affectedTasks.filter(t => t.severity === 'at-risk');
+            const okTasks = affectedTasks.filter(t => t.severity === 'ok');
+
+            popup.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                    <div>
+                        <h3 class="font-bold text-lg" style="color: var(--text-primary);">📊 ${delayDays}-Day Delay Impact Analysis</h3>
+                        <p class="text-sm mt-1" style="color: var(--text-muted);">
+                            If <span class="mono font-medium" style="color: var(--accent);">${escapeHtml(taskId)}</span> is delayed by ${delayDays} days:
+                        </p>
+                    </div>
+                    <button class="close-impact-popup" style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-muted); padding: 0 4px;">&times;</button>
+                </div>
+
+                <!-- Summary -->
+                <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 80px; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; text-align: center;">
+                        <div class="text-2xl font-bold" style="color: var(--danger);">${criticalTasks.length}</div>
+                        <div class="text-xs" style="color: var(--text-muted);">Critical</div>
+                    </div>
+                    <div style="flex: 1; min-width: 80px; padding: 12px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; text-align: center;">
+                        <div class="text-2xl font-bold" style="color: var(--warning);">${atRiskTasks.length}</div>
+                        <div class="text-xs" style="color: var(--text-muted);">At Risk</div>
+                    </div>
+                    <div style="flex: 1; min-width: 80px; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; text-align: center;">
+                        <div class="text-2xl font-bold" style="color: var(--success);">${okTasks.length}</div>
+                        <div class="text-xs" style="color: var(--text-muted);">OK</div>
+                    </div>
+                </div>
+
+                <!-- Critical Tasks -->
+                ${criticalTasks.length > 0 ? `
+                    <div class="mb-4">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--danger);">🔴 Critical - Would miss deadline or lose 50%+ time</h4>
+                        <div class="space-y-2">
+                            ${criticalTasks.map(item => `
+                                <div class="p-2 impact-task-item" data-task-id="${escapeHtml(item.task.id)}" style="background: rgba(239, 68, 68, 0.08); border-radius: 6px; border-left: 3px solid var(--danger); cursor: pointer;" onmouseover="this.style.transform='translateX(2px)'" onmouseout="this.style.transform='none'">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                        <div>
+                                            <span class="mono font-medium">${escapeHtml(item.task.id)}</span>
+                                            <span class="text-xs" style="color: var(--text-muted);"> - ${escapeHtml(truncate(item.task.description, 35))}</span>
+                                        </div>
+                                        <span class="text-xs mono" style="color: var(--danger);">
+                                            ${item.newWindow <= 0 ? 'No time left!' : `${item.originalWindow}d → ${item.newWindow}d (−${item.compressionPct}%)`}
+                                        </span>
+                                    </div>
+                                    ${item.task.owner ? `<div class="text-xs mt-1" style="color: var(--text-muted);">👤 ${escapeHtml(item.task.owner)}</div>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- At Risk Tasks -->
+                ${atRiskTasks.length > 0 ? `
+                    <div class="mb-4">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--warning);">🟠 At Risk - Tight buffer remaining</h4>
+                        <div class="space-y-2">
+                            ${atRiskTasks.map(item => `
+                                <div class="p-2 impact-task-item" data-task-id="${escapeHtml(item.task.id)}" style="background: rgba(245, 158, 11, 0.08); border-radius: 6px; border-left: 3px solid var(--warning); cursor: pointer;" onmouseover="this.style.transform='translateX(2px)'" onmouseout="this.style.transform='none'">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                        <div>
+                                            <span class="mono font-medium">${escapeHtml(item.task.id)}</span>
+                                            <span class="text-xs" style="color: var(--text-muted);"> - ${escapeHtml(truncate(item.task.description, 35))}</span>
+                                        </div>
+                                        <span class="text-xs mono" style="color: var(--warning);">
+                                            ${item.originalWindow}d → ${item.newWindow}d (−${item.compressionPct}%)
+                                        </span>
+                                    </div>
+                                    ${item.task.owner ? `<div class="text-xs mt-1" style="color: var(--text-muted);">👤 ${escapeHtml(item.task.owner)}</div>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- OK Tasks (collapsed by default if many) -->
+                ${okTasks.length > 0 ? `
+                    <div>
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--success);">🟢 OK - Sufficient buffer (${okTasks.length} tasks)</h4>
+                        ${okTasks.length <= 5 ? `
+                            <div class="space-y-1">
+                                ${okTasks.map(item => `
+                                    <div class="p-2 impact-task-item" data-task-id="${escapeHtml(item.task.id)}" style="background: var(--bg-tertiary); border-radius: 4px; cursor: pointer; font-size: 12px;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='var(--bg-tertiary)'">
+                                        <span class="mono">${escapeHtml(item.task.id)}</span>
+                                        <span style="color: var(--text-muted);"> - ${escapeHtml(truncate(item.task.description, 40))}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <p class="text-xs" style="color: var(--text-muted);">These tasks have sufficient time buffer and won't be critically affected.</p>
+                        `}
+                    </div>
+                ` : ''}
+
+                ${affectedTasks.length === 0 ? `
+                    <div class="p-4 text-center" style="background: rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                        <p style="color: var(--success);">✅ No downstream tasks would be affected by this delay.</p>
+                    </div>
+                ` : ''}
+            `;
+
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'impact-popup-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            `;
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(popup);
+
+            // Close handlers
+            const closePopup = () => {
+                popup.remove();
+                overlay.remove();
+            };
+
+            popup.querySelector('.close-impact-popup').addEventListener('click', closePopup);
+            overlay.addEventListener('click', closePopup);
+
+            // Add click handlers to task items in the popup
+            popup.querySelectorAll('.impact-task-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const tid = item.getAttribute('data-task-id');
+                    const task = projectData.find(t => t.id === tid);
+                    if (task) {
+                        closePopup();
+                        showTaskPopup(task);
+                    }
+                });
+            });
+
+            // Close on Escape key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closePopup();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
         }
 
         // Generalized task popup (used by both Gantt and Risk Radar)
