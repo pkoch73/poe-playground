@@ -286,6 +286,56 @@
                 <div id="issues-list" class="space-y-3"></div>
             </div>
 
+            <!-- Risk Radar Panel -->
+            <div id="risk-radar-panel" class="mb-8 hidden fade-in stagger-2">
+                <div class="card p-6" style="border-left: 4px solid var(--warning);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                        <div>
+                            <h2 class="text-xl font-bold" style="color: var(--warning);">🎯 Risk Radar - Vulnerability Analysis</h2>
+                            <p class="text-sm mt-1" style="color: var(--text-secondary);">
+                                Automatically identifies high-risk areas. Click any task for details.
+                            </p>
+                        </div>
+                        <button onclick="toggleRiskRadarHelp()" class="px-3 py-1 rounded text-sm" style="background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border);">
+                            ❓ How it works
+                        </button>
+                    </div>
+                    <!-- Help Panel (hidden by default) -->
+                    <div id="risk-radar-help" class="hidden mb-4 p-4" style="background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
+                        <h4 class="font-bold mb-3" style="color: var(--text-primary);">📊 How Risk Radar Works</h4>
+                        <div class="space-y-3 text-sm" style="color: var(--text-secondary);">
+                            <div>
+                                <p class="font-medium" style="color: var(--text-primary);">What it does:</p>
+                                <p>Automatically simulates a 3-day delay on each incomplete task to identify which tasks would cause the most damage if they slip.</p>
+                            </div>
+                            <div>
+                                <p class="font-medium" style="color: var(--text-primary);">Risk Score Calculation:</p>
+                                <ul class="mt-1 ml-4 space-y-1" style="list-style: disc;">
+                                    <li><strong>Downstream Impact:</strong> +2 points per task that depends on this one (directly or indirectly)</li>
+                                    <li><strong>Critical Impacts:</strong> +10 points for each task that would miss deadline or lose 50%+ time</li>
+                                    <li><strong>At-Risk Impacts:</strong> +5 points for each task that would have tight buffer</li>
+                                    <li><strong>Time Buffer:</strong> +50 if overdue, +30 if ≤7 days, +15 if ≤14 days to deadline</li>
+                                    <li><strong>Status:</strong> +40 if blocked, +10 if new (not started)</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <p class="font-medium" style="color: var(--text-primary);">Severity Levels:</p>
+                                <ul class="mt-1 ml-4 space-y-1">
+                                    <li>🔴 <strong>High Risk (≥50):</strong> Critical bottlenecks - delay here causes widespread damage</li>
+                                    <li>🟠 <strong>Medium Risk (20-49):</strong> Significant impact - monitor closely</li>
+                                    <li>🟢 <strong>Low Risk (&lt;20):</strong> Limited downstream impact</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <p class="font-medium" style="color: var(--text-primary);">How to use:</p>
+                                <p>Focus attention on high-risk tasks first. Use the What-If Simulator in Gantt View to explore specific delay scenarios in more detail.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="risk-radar-content"></div>
+                </div>
+            </div>
+
             <!-- Tabs -->
             <div class="flex gap-2 mb-6 flex-wrap fade-in stagger-2">
                 <button class="tab-btn active" data-tab="graph">Dependency Graph</button>
@@ -312,6 +362,38 @@
 
             <!-- Gantt Tab -->
             <div id="tab-gantt" class="card p-4 hidden fade-in">
+                <!-- Delay Simulator Panel -->
+                <div id="delay-simulator" class="mb-4 p-4" style="background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleSimulator()">
+                        <h3 class="font-bold" style="color: var(--accent);">🔮 What-If Delay Simulator</h3>
+                        <span id="simulator-toggle" style="color: var(--text-muted); font-size: 20px;">▼</span>
+                    </div>
+                    <div id="simulator-content" class="mt-4">
+                        <div class="grid md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2" style="color: var(--text-secondary);">Select Task to Delay</label>
+                                <select id="simulator-task" class="w-full px-3 py-2 rounded-lg text-base" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border);">
+                                    <option value="">Choose a task...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2" style="color: var(--text-secondary);">Delay (days)</label>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="range" id="simulator-days-slider" min="1" max="30" value="5" style="flex: 1;" oninput="document.getElementById('simulator-days').value = this.value">
+                                    <input type="number" id="simulator-days" min="1" max="90" value="5" class="px-3 py-2 rounded-lg text-base mono" style="width: 70px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border);" oninput="document.getElementById('simulator-days-slider').value = Math.min(30, this.value)">
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: flex-end;">
+                                <button onclick="runDelaySimulation()" class="w-full px-4 py-2 rounded-lg font-medium" style="background: var(--accent); color: white;">
+                                    ▶️ Simulate Impact
+                                </button>
+                            </div>
+                        </div>
+                        <div id="simulator-results" class="hidden">
+                            <!-- Results will be rendered here -->
+                        </div>
+                    </div>
+                </div>
                 <div id="gantt-container" style="overflow-x: auto;"></div>
             </div>
 
@@ -771,6 +853,12 @@
 
             // Populate milestone selector
             populateMilestoneSelector();
+
+            // Populate simulator task dropdown
+            populateSimulatorTasks();
+
+            // Run automatic risk analysis
+            analyzeRiskAreas();
         }
 
         function populateMilestoneSelector() {
@@ -1617,9 +1705,280 @@
         }
 
         function showGanttPopup(task, event) {
+            // Use the shared task popup function
+            showTaskPopup(task);
+        }
+
+        // Delay Simulator Functions
+        function toggleSimulator() {
+            const content = document.getElementById('simulator-content');
+            const toggle = document.getElementById('simulator-toggle');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+
+        function toggleRiskRadarHelp() {
+            const help = document.getElementById('risk-radar-help');
+            help.classList.toggle('hidden');
+        }
+
+        function populateSimulatorTasks() {
+            const select = document.getElementById('simulator-task');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">Choose a task...</option>';
+
+            // Only show tasks that have dates and are not done
+            projectData
+                .filter(t => t.anticipatedEnd && t.status !== 'done')
+                .forEach(task => {
+                    const option = document.createElement('option');
+                    option.value = task.id;
+                    option.textContent = `${task.id}: ${truncate(task.description, 40)}`;
+                    select.appendChild(option);
+                });
+        }
+
+        function analyzeRiskAreas() {
+            const panel = document.getElementById('risk-radar-panel');
+            const content = document.getElementById('risk-radar-content');
+
+            // Only analyze incomplete tasks with dates
+            const incompleteTasks = projectData.filter(t =>
+                t.status !== 'done' && t.status !== 'postmvp'
+            );
+
+            if (incompleteTasks.length === 0) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            const taskMap = new Map(projectData.map(t => [t.id, t]));
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Build reverse dependency map (task -> tasks that depend on it)
+            const reverseDeps = new Map();
+            projectData.forEach(task => {
+                task.dependencies.forEach(depId => {
+                    if (!reverseDeps.has(depId)) {
+                        reverseDeps.set(depId, []);
+                    }
+                    reverseDeps.get(depId).push(task.id);
+                });
+            });
+
+            // Count all downstream dependents (recursive)
+            function countDownstream(taskId, visited = new Set()) {
+                if (visited.has(taskId)) return 0;
+                visited.add(taskId);
+
+                const directDeps = reverseDeps.get(taskId) || [];
+                let count = directDeps.length;
+                directDeps.forEach(depId => {
+                    count += countDownstream(depId, visited);
+                });
+                return count;
+            }
+
+            // Simulate delay and count critical impacts
+            function simulateDelayImpact(taskId, delayDays) {
+                const visited = new Set([taskId]);
+                let criticalCount = 0;
+                let atRiskCount = 0;
+                let totalAffected = 0;
+
+                function propagate(currentId) {
+                    const dependents = reverseDeps.get(currentId) || [];
+                    dependents.forEach(depId => {
+                        if (visited.has(depId)) return;
+                        visited.add(depId);
+                        totalAffected++;
+
+                        const depTask = taskMap.get(depId);
+                        if (depTask && depTask.anticipatedEnd) {
+                            const daysToDeadline = Math.ceil((depTask.anticipatedEnd - today) / (1000 * 60 * 60 * 24));
+                            const newWindow = daysToDeadline - delayDays;
+                            const compressionPct = daysToDeadline > 0 ? Math.round((delayDays / daysToDeadline) * 100) : 100;
+
+                            if (newWindow <= 0 || compressionPct >= 50) {
+                                criticalCount++;
+                            } else if (compressionPct >= 25 || newWindow <= 5) {
+                                atRiskCount++;
+                            }
+                        }
+                        propagate(depId);
+                    });
+                }
+
+                propagate(taskId);
+                return { criticalCount, atRiskCount, totalAffected };
+            }
+
+            // Analyze each incomplete task
+            const riskAnalysis = incompleteTasks.map(task => {
+                const downstreamCount = countDownstream(task.id);
+                const daysToDeadline = task.anticipatedEnd
+                    ? Math.ceil((task.anticipatedEnd - today) / (1000 * 60 * 60 * 24))
+                    : null;
+
+                // Simulate a 3-day delay
+                const impact = simulateDelayImpact(task.id, 3);
+
+                // Calculate risk score (higher = more risky)
+                // Factors: downstream impact, time buffer, current status
+                let riskScore = 0;
+                riskScore += impact.criticalCount * 10;
+                riskScore += impact.atRiskCount * 5;
+                riskScore += downstreamCount * 2;
+
+                if (daysToDeadline !== null) {
+                    if (daysToDeadline <= 0) riskScore += 50; // Already overdue
+                    else if (daysToDeadline <= 7) riskScore += 30; // Very tight
+                    else if (daysToDeadline <= 14) riskScore += 15; // Tight
+                }
+
+                if (task.status === 'blocked') riskScore += 40;
+                else if (task.status === 'new') riskScore += 10;
+
+                return {
+                    task,
+                    downstreamCount,
+                    daysToDeadline,
+                    impact,
+                    riskScore
+                };
+            });
+
+            // Sort by risk score (highest first) and take top risks
+            riskAnalysis.sort((a, b) => b.riskScore - a.riskScore);
+            const topRisks = riskAnalysis.filter(r => r.riskScore > 0).slice(0, 8);
+
+            if (topRisks.length === 0) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            panel.classList.remove('hidden');
+
+            // Calculate summary stats
+            const highRiskCount = topRisks.filter(r => r.riskScore >= 50).length;
+            const mediumRiskCount = topRisks.filter(r => r.riskScore >= 20 && r.riskScore < 50).length;
+
+            content.innerHTML = `
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div class="p-4" style="background: rgba(239, 68, 68, 0.1); border-radius: 8px; text-align: center;">
+                        <div class="text-3xl font-bold" style="color: var(--danger);">${highRiskCount}</div>
+                        <div class="text-sm" style="color: var(--text-secondary);">High Risk Tasks</div>
+                    </div>
+                    <div class="p-4" style="background: rgba(245, 158, 11, 0.1); border-radius: 8px; text-align: center;">
+                        <div class="text-3xl font-bold" style="color: var(--warning);">${mediumRiskCount}</div>
+                        <div class="text-sm" style="color: var(--text-secondary);">Medium Risk Tasks</div>
+                    </div>
+                    <div class="p-4" style="background: rgba(99, 102, 241, 0.1); border-radius: 8px; text-align: center;">
+                        <div class="text-3xl font-bold" style="color: var(--accent);">${incompleteTasks.length}</div>
+                        <div class="text-sm" style="color: var(--text-secondary);">Total Incomplete</div>
+                    </div>
+                </div>
+
+                <h3 class="font-bold mb-3" style="color: var(--text-primary);">🔥 Top Risk Areas</h3>
+                <p class="text-xs mb-4" style="color: var(--text-muted);">
+                    Showing impact of a simulated 3-day delay for each task
+                </p>
+
+                <div class="space-y-3">
+                    ${topRisks.map((item, index) => {
+                        const riskLevel = item.riskScore >= 50 ? 'high' : item.riskScore >= 20 ? 'medium' : 'low';
+                        const riskColor = riskLevel === 'high' ? 'var(--danger)' : riskLevel === 'medium' ? 'var(--warning)' : 'var(--success)';
+                        const riskIcon = riskLevel === 'high' ? '🔴' : riskLevel === 'medium' ? '🟠' : '🟢';
+                        const bgStyle = riskLevel === 'high' ? 'background: rgba(239, 68, 68, 0.08);' :
+                                       riskLevel === 'medium' ? 'background: rgba(245, 158, 11, 0.08);' : '';
+
+                        // Risk bar width (max 100px)
+                        const maxScore = topRisks[0]?.riskScore || 100;
+                        const barWidth = Math.round((item.riskScore / maxScore) * 100);
+
+                        return `
+                            <div class="p-4 risk-radar-item" data-task-id="${escapeHtml(item.task.id)}" style="border-radius: 8px; border-left: 4px solid ${riskColor}; ${bgStyle} background-color: var(--bg-secondary); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='none'">
+                                <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px; flex-wrap: wrap;">
+                                    <div style="flex: 1; min-width: 200px;">
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                            <span style="font-size: 16px;">${riskIcon}</span>
+                                            <span class="mono font-bold">${escapeHtml(item.task.id)}</span>
+                                            <span class="px-2 py-0.5 rounded text-xs font-medium status-${item.task.status}">${item.task.status.toUpperCase()}</span>
+                                            <span class="text-xs" style="color: var(--text-muted);">← click for details</span>
+                                        </div>
+                                        <p class="text-sm mt-1" style="color: var(--text-primary);">${escapeHtml(truncate(item.task.description, 50))}</p>
+                                        ${item.task.owner ? `<p class="text-xs mt-1" style="color: var(--text-muted);">👤 ${escapeHtml(item.task.owner)}</p>` : ''}
+                                    </div>
+                                    <div style="flex-shrink: 0; min-width: 180px;">
+                                        <!-- Risk Score Bar -->
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                            <span class="text-xs" style="color: var(--text-muted); width: 70px;">Risk Score:</span>
+                                            <div style="flex: 1; height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
+                                                <div style="width: ${barWidth}%; height: 100%; background: ${riskColor};"></div>
+                                            </div>
+                                            <span class="text-xs mono font-bold" style="color: ${riskColor};">${item.riskScore}</span>
+                                        </div>
+                                        <!-- Stats -->
+                                        <div class="text-xs space-y-1">
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <span style="color: var(--text-muted);">Downstream tasks:</span>
+                                                <span class="mono font-medium">${item.downstreamCount}</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <span style="color: var(--text-muted);">Days to deadline:</span>
+                                                <span class="mono font-medium" style="color: ${item.daysToDeadline !== null && item.daysToDeadline <= 7 ? 'var(--danger)' : 'inherit'};">
+                                                    ${item.daysToDeadline !== null ? item.daysToDeadline + 'd' : 'No date'}
+                                                </span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <span style="color: var(--text-muted);">3-day delay impact:</span>
+                                                <span style="color: ${item.impact.criticalCount > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">
+                                                    ${item.impact.criticalCount > 0 ? `<strong>${item.impact.criticalCount} critical</strong>` : '0 critical'}${item.impact.atRiskCount > 0 ? `, ${item.impact.atRiskCount} at-risk` : ''}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <div class="mt-4 p-3" style="background: var(--bg-tertiary); border-radius: 6px;">
+                    <p class="text-xs" style="color: var(--text-muted);">
+                        <strong>How to read:</strong> Risk score combines: downstream impact (tasks that would be affected),
+                        time buffer (days until deadline), and current status. Higher score = task delay would cause more damage.
+                        Use the What-If Simulator in Gantt View to explore specific delay scenarios.
+                    </p>
+                </div>
+            `;
+
+            // Add click handlers to risk radar items
+            content.querySelectorAll('.risk-radar-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const taskId = item.getAttribute('data-task-id');
+                    const task = projectData.find(t => t.id === taskId);
+                    if (task) {
+                        showTaskPopup(task);
+                    }
+                });
+            });
+        }
+
+        // Generalized task popup (used by both Gantt and Risk Radar)
+        function showTaskPopup(task) {
             // Remove any existing popup
-            const existingPopup = document.getElementById('gantt-popup');
+            const existingPopup = document.getElementById('task-popup');
             if (existingPopup) existingPopup.remove();
+            const existingOverlay = document.getElementById('task-popup-overlay');
+            if (existingOverlay) existingOverlay.remove();
 
             // Find task issues
             const taskIssues = issues.find(i => i.task.id === task.id);
@@ -1652,7 +2011,7 @@
             }
 
             const popup = document.createElement('div');
-            popup.id = 'gantt-popup';
+            popup.id = 'task-popup';
             popup.style.cssText = `
                 position: fixed;
                 top: 50%;
@@ -1665,6 +2024,8 @@
                 z-index: 1000;
                 max-width: 450px;
                 width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
                 box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             `;
 
@@ -1674,38 +2035,44 @@
                         <span class="mono font-bold text-lg" style="color: var(--accent);">${escapeHtml(task.id)}</span>
                         <span class="px-2 py-1 rounded text-xs font-medium ml-2 status-${task.status}">${task.status.toUpperCase()}</span>
                     </div>
-                    <button id="close-gantt-popup" style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-muted); padding: 0 4px;">&times;</button>
+                    <button class="close-task-popup" style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-muted); padding: 0 4px;">&times;</button>
                 </div>
                 <h3 class="font-semibold mb-3" style="color: var(--text-primary);">${escapeHtml(task.description)}</h3>
 
                 <div class="space-y-2 text-sm">
                     ${task.owner ? `
                         <div style="display: flex; gap: 8px;">
-                            <span style="color: var(--text-muted); min-width: 80px;">👤 Owner:</span>
+                            <span style="color: var(--text-muted); min-width: 100px;">👤 Owner:</span>
                             <span style="color: var(--text-primary); font-weight: 500;">${escapeHtml(task.owner)}</span>
+                        </div>
+                    ` : ''}
+                    ${task.performedBy ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 100px;">🔧 Performed by:</span>
+                            <span style="color: var(--text-primary);">${escapeHtml(task.performedBy)}</span>
                         </div>
                     ` : ''}
                     ${task.startDate ? `
                         <div style="display: flex; gap: 8px;">
-                            <span style="color: var(--text-muted); min-width: 80px;">📅 Start:</span>
+                            <span style="color: var(--text-muted); min-width: 100px;">📅 Start:</span>
                             <span class="mono" style="color: var(--text-primary);">${formatDate(task.startDate)}</span>
                         </div>
                     ` : ''}
                     ${task.anticipatedEnd ? `
                         <div style="display: flex; gap: 8px;">
-                            <span style="color: var(--text-muted); min-width: 80px;">🎯 Due:</span>
+                            <span style="color: var(--text-muted); min-width: 100px;">🎯 Due:</span>
                             <span class="mono" style="color: var(--text-primary);">${formatDate(task.anticipatedEnd)}</span>
                         </div>
                     ` : ''}
                     ${task.actualEnd ? `
                         <div style="display: flex; gap: 8px;">
-                            <span style="color: var(--text-muted); min-width: 80px;">✅ Completed:</span>
+                            <span style="color: var(--text-muted); min-width: 100px;">✅ Completed:</span>
                             <span class="mono" style="color: var(--success);">${formatDate(task.actualEnd)}</span>
                         </div>
                     ` : ''}
                     ${task.dependencies.length > 0 ? `
                         <div style="display: flex; gap: 8px;">
-                            <span style="color: var(--text-muted); min-width: 80px;">🔗 Depends on:</span>
+                            <span style="color: var(--text-muted); min-width: 100px;">🔗 Depends on:</span>
                             <span class="mono" style="color: var(--text-primary);">${escapeHtml(task.dependencies.join(', '))}</span>
                         </div>
                     ` : ''}
@@ -1722,7 +2089,7 @@
 
             // Create overlay
             const overlay = document.createElement('div');
-            overlay.id = 'gantt-popup-overlay';
+            overlay.id = 'task-popup-overlay';
             overlay.style.cssText = `
                 position: fixed;
                 top: 0;
@@ -1742,7 +2109,7 @@
                 overlay.remove();
             };
 
-            document.getElementById('close-gantt-popup').addEventListener('click', closePopup);
+            popup.querySelector('.close-task-popup').addEventListener('click', closePopup);
             overlay.addEventListener('click', closePopup);
 
             // Close on Escape key
@@ -1753,6 +2120,267 @@
                 }
             };
             document.addEventListener('keydown', escHandler);
+        }
+
+        function runDelaySimulation() {
+            const taskId = document.getElementById('simulator-task').value;
+            const delayDays = parseInt(document.getElementById('simulator-days').value) || 0;
+
+            if (!taskId) {
+                showCustomAlert('Please select a task to simulate delay');
+                return;
+            }
+
+            if (delayDays < 1) {
+                showCustomAlert('Please enter a valid number of delay days');
+                return;
+            }
+
+            const taskMap = new Map(projectData.map(t => [t.id, t]));
+            const sourceTask = taskMap.get(taskId);
+
+            if (!sourceTask) {
+                showCustomAlert('Task not found');
+                return;
+            }
+
+            // Find all tasks that depend on this task (directly or indirectly)
+            const affectedTasks = [];
+            const visited = new Set();
+
+            // Build reverse dependency map (task -> tasks that depend on it)
+            const reverseDeps = new Map();
+            projectData.forEach(task => {
+                task.dependencies.forEach(depId => {
+                    if (!reverseDeps.has(depId)) {
+                        reverseDeps.set(depId, []);
+                    }
+                    reverseDeps.get(depId).push(task.id);
+                });
+            });
+
+            // BFS to find all affected tasks
+            function findAffectedTasks(startTaskId, inheritedDelay) {
+                const queue = [{ taskId: startTaskId, delay: inheritedDelay, depth: 0 }];
+
+                while (queue.length > 0) {
+                    const { taskId: currentId, delay, depth } = queue.shift();
+
+                    const dependents = reverseDeps.get(currentId) || [];
+                    dependents.forEach(depTaskId => {
+                        if (visited.has(depTaskId)) return;
+                        visited.add(depTaskId);
+
+                        const depTask = taskMap.get(depTaskId);
+                        if (!depTask) return;
+
+                        // Calculate new projected end date
+                        const originalEnd = depTask.anticipatedEnd;
+                        let projectedEnd = null;
+                        let taskDelay = delay;
+
+                        if (originalEnd) {
+                            projectedEnd = new Date(originalEnd);
+                            projectedEnd.setDate(projectedEnd.getDate() + delay);
+                        }
+
+                        // Calculate window compression - how much working time is lost
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        let severity = 'ok';
+                        let severityText = 'OK';
+                        let originalWindow = 0;
+                        let newWindow = 0;
+                        let compressionPct = 0;
+
+                        if (originalEnd) {
+                            // Original window = days from today to deadline
+                            originalWindow = Math.ceil((originalEnd - today) / (1000 * 60 * 60 * 24));
+                            // New window = original window minus the delay absorbed
+                            newWindow = originalWindow - delay;
+                            // Compression percentage
+                            compressionPct = originalWindow > 0 ? Math.round((delay / originalWindow) * 100) : 100;
+
+                            if (originalWindow <= 0) {
+                                // Task is already overdue
+                                severity = 'critical';
+                                severityText = `Already overdue! +${delay}d makes it worse`;
+                            } else if (newWindow <= 0) {
+                                // Would completely miss deadline
+                                severity = 'critical';
+                                severityText = `No time left! (was ${originalWindow}d)`;
+                            } else if (compressionPct >= 50) {
+                                // Losing 50%+ of available time is critical
+                                severity = 'critical';
+                                severityText = `${originalWindow}d → ${newWindow}d (−${compressionPct}%)`;
+                            } else if (compressionPct >= 25 || newWindow <= 5) {
+                                // Losing 25-50% or very tight window
+                                severity = 'at-risk';
+                                severityText = `${originalWindow}d → ${newWindow}d (−${compressionPct}%)`;
+                            } else {
+                                severity = 'ok';
+                                severityText = `${originalWindow}d → ${newWindow}d (−${compressionPct}%)`;
+                            }
+                        }
+
+                        affectedTasks.push({
+                            task: depTask,
+                            delay: taskDelay,
+                            depth: depth + 1,
+                            originalEnd: originalEnd,
+                            projectedEnd: projectedEnd,
+                            severity: severity,
+                            severityText: severityText,
+                            originalWindow: originalWindow,
+                            newWindow: newWindow,
+                            compressionPct: compressionPct
+                        });
+
+                        // Continue propagation
+                        queue.push({ taskId: depTaskId, delay: taskDelay, depth: depth + 1 });
+                    });
+                }
+            }
+
+            visited.add(taskId);
+            findAffectedTasks(taskId, delayDays);
+
+            // Sort by severity then depth
+            const severityOrder = { 'critical': 0, 'at-risk': 1, 'ok': 2 };
+            affectedTasks.sort((a, b) => {
+                if (severityOrder[a.severity] !== severityOrder[b.severity]) {
+                    return severityOrder[a.severity] - severityOrder[b.severity];
+                }
+                return a.depth - b.depth;
+            });
+
+            // Calculate summary stats
+            const criticalCount = affectedTasks.filter(t => t.severity === 'critical').length;
+            const atRiskCount = affectedTasks.filter(t => t.severity === 'at-risk').length;
+            const okCount = affectedTasks.filter(t => t.severity === 'ok').length;
+
+            // Render results
+            const resultsContainer = document.getElementById('simulator-results');
+            resultsContainer.classList.remove('hidden');
+
+            if (affectedTasks.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="p-4" style="background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid var(--success);">
+                        <p class="font-bold" style="color: var(--success);">✅ No Impact</p>
+                        <p class="text-sm mt-1" style="color: var(--text-secondary);">
+                            No other tasks depend on <strong>${escapeHtml(taskId)}</strong>.
+                            Delaying this task by ${delayDays} days would not affect other tasks.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build severity summary
+            let summaryClass = 'var(--success)';
+            let summaryIcon = '✅';
+            let summaryText = 'Low Impact';
+
+            if (criticalCount > 0) {
+                summaryClass = 'var(--danger)';
+                summaryIcon = '🚨';
+                summaryText = 'Critical Impact';
+            } else if (atRiskCount > 0) {
+                summaryClass = 'var(--warning)';
+                summaryIcon = '⚠️';
+                summaryText = 'Moderate Impact';
+            }
+
+            // Calculate new source task end date
+            const sourceNewEnd = new Date(sourceTask.anticipatedEnd);
+            sourceNewEnd.setDate(sourceNewEnd.getDate() + delayDays);
+
+            resultsContainer.innerHTML = `
+                <div class="p-4 mb-4" style="background: var(--bg-secondary); border-radius: 8px; border-left: 4px solid ${summaryClass};">
+                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h4 class="font-bold text-lg" style="color: ${summaryClass};">${summaryIcon} ${summaryText}</h4>
+                            <p class="text-sm mt-1" style="color: var(--text-secondary);">
+                                Simulating: <strong class="mono">${escapeHtml(taskId)}</strong> delayed by <strong>+${delayDays} days</strong>
+                            </p>
+                            <p class="text-xs mt-1 mono" style="color: var(--text-muted);">
+                                ${formatDate(sourceTask.anticipatedEnd)} → ${formatDate(sourceNewEnd)}
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 16px; text-align: center;">
+                            <div>
+                                <div class="text-2xl font-bold" style="color: var(--danger);">${criticalCount}</div>
+                                <div class="text-xs" style="color: var(--text-muted);">Critical</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold" style="color: var(--warning);">${atRiskCount}</div>
+                                <div class="text-xs" style="color: var(--text-muted);">At Risk</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold" style="color: var(--success);">${okCount}</div>
+                                <div class="text-xs" style="color: var(--text-muted);">OK</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-2" style="max-height: 400px; overflow-y: auto;">
+                    <p class="text-sm font-medium mb-2" style="color: var(--text-secondary);">📋 Affected Tasks (${affectedTasks.length}) - Time Window Impact</p>
+                    ${affectedTasks.map(item => {
+                        const severityColor = item.severity === 'critical' ? 'var(--danger)' :
+                                              item.severity === 'at-risk' ? 'var(--warning)' : 'var(--success)';
+                        const severityIcon = item.severity === 'critical' ? '🔴' :
+                                             item.severity === 'at-risk' ? '🟠' : '🟢';
+                        const bgStyle = item.severity === 'critical' ? 'background: rgba(239, 68, 68, 0.08);' :
+                                        item.severity === 'at-risk' ? 'background: rgba(245, 158, 11, 0.08);' : '';
+
+                        // Calculate bar widths for visual representation
+                        const maxBarWidth = 120;
+                        const originalBarWidth = Math.min(maxBarWidth, Math.max(20, item.originalWindow * 4));
+                        const newBarWidth = item.newWindow > 0 ? Math.min(maxBarWidth, Math.max(10, item.newWindow * 4)) : 0;
+                        const lostWidth = originalBarWidth - newBarWidth;
+
+                        return `
+                            <div class="p-3" style="border-radius: 6px; border-left: 3px solid ${severityColor}; ${bgStyle} background-color: var(--bg-secondary);">
+                                <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px; flex-wrap: wrap;">
+                                    <div style="flex: 1; min-width: 180px;">
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                            <span class="mono font-medium">${escapeHtml(item.task.id)}</span>
+                                            <span class="px-2 py-0.5 rounded text-xs font-medium status-${item.task.status}">${item.task.status.toUpperCase()}</span>
+                                        </div>
+                                        <p class="text-sm mt-1" style="color: var(--text-secondary);">${escapeHtml(truncate(item.task.description, 45))}</p>
+                                        ${item.task.owner ? `<p class="text-xs mt-1" style="color: var(--text-muted);">👤 ${escapeHtml(item.task.owner)}</p>` : ''}
+                                    </div>
+                                    <div style="flex-shrink: 0; min-width: 200px;">
+                                        <!-- Time window visualization -->
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                            <span class="text-xs" style="color: var(--text-muted); width: 45px;">Before:</span>
+                                            <div style="width: ${originalBarWidth}px; height: 12px; background: var(--text-muted); border-radius: 2px; opacity: 0.4;"></div>
+                                            <span class="text-xs mono" style="color: var(--text-muted);">${item.originalWindow}d</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span class="text-xs" style="color: var(--text-muted); width: 45px;">After:</span>
+                                            <div style="display: flex; height: 12px;">
+                                                ${item.newWindow > 0 ? `<div style="width: ${newBarWidth}px; height: 12px; background: ${severityColor}; border-radius: 2px 0 0 2px;"></div>` : ''}
+                                                <div style="width: ${lostWidth}px; height: 12px; background: repeating-linear-gradient(45deg, ${severityColor}, ${severityColor} 2px, transparent 2px, transparent 4px); opacity: 0.5; border-radius: ${item.newWindow <= 0 ? '2px' : '0 2px 2px 0'};"></div>
+                                            </div>
+                                            <span class="text-xs mono font-bold" style="color: ${severityColor};">${item.newWindow > 0 ? item.newWindow + 'd' : '0d!'}</span>
+                                        </div>
+                                        <!-- Compression indicator -->
+                                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                                            <span>${severityIcon}</span>
+                                            <span class="text-xs font-medium" style="color: ${severityColor};">
+                                                ${item.compressionPct > 0 ? `−${item.compressionPct}% time` : 'No change'}
+                                                ${item.newWindow <= 0 ? ' · Would miss deadline!' : ''}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
         }
 
         function renderTable() {
