@@ -69,6 +69,7 @@
         .status-new { background: var(--info); color: white; }
         .status-blocked { background: var(--danger); color: white; }
         .status-postmvp { background: var(--text-muted); color: white; }
+        .status-cancelled { background: #9ca3af; color: white; opacity: 0.7; }
 
         .issue-card {
             background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
@@ -84,6 +85,7 @@
         .node-new { fill: var(--info); }
         .node-blocked { fill: var(--danger); }
         .node-postmvp { fill: var(--text-muted); }
+        .node-cancelled { fill: #9ca3af; opacity: 0.5; }
         .node-issue {
             stroke: var(--danger);
             stroke-width: 4px;
@@ -399,6 +401,7 @@
                     <div class="legend-item"><div class="legend-dot" style="background: var(--info);"></div><span class="text-sm">New</span></div>
                     <div class="legend-item"><div class="legend-dot" style="background: var(--danger);"></div><span class="text-sm">Blocked</span></div>
                     <div class="legend-item"><div class="legend-dot" style="background: var(--text-muted);"></div><span class="text-sm">Post-MVP</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #9ca3af; opacity: 0.7;"></div><span class="text-sm">Cancelled</span></div>
                     <div class="legend-item"><div class="legend-dot" style="border: 3px solid var(--danger); background: transparent;"></div><span class="text-sm">Has Issue</span></div>
                 </div>
             </div>
@@ -654,6 +657,7 @@
             if (s === 'new') return 'new';
             if (s === 'blocked') return 'blocked';
             if (s.includes('post') || s.includes('mvp')) return 'postmvp';
+            if (s === 'cancelled' || s === 'canceled' || s === 'cancel') return 'cancelled';
             return 'unknown';
         }
 
@@ -1645,7 +1649,8 @@
                     'wip': 'var(--warning)',
                     'new': 'var(--info)',
                     'blocked': 'var(--danger)',
-                    'postmvp': 'var(--text-muted)'
+                    'postmvp': 'var(--text-muted)',
+                    'cancelled': '#9ca3af'
                 }[task.status] || 'var(--text-muted)';
 
                 const issueStyle = task.hasIssue ? 'stroke: var(--danger); stroke-width: 2;' : '';
@@ -1667,7 +1672,8 @@
                     'wip': 'var(--warning)',
                     'new': 'var(--info)',
                     'blocked': 'var(--danger)',
-                    'postmvp': 'var(--text-muted)'
+                    'postmvp': 'var(--text-muted)',
+                    'cancelled': '#9ca3af'
                 }[task.status] || 'var(--text-muted)';
 
                 taskLabels += `
@@ -1802,7 +1808,7 @@
 
             // Only analyze incomplete tasks with dates
             const incompleteTasks = projectData.filter(t =>
-                t.status !== 'done' && t.status !== 'postmvp'
+                t.status !== 'done' && t.status !== 'postmvp' && t.status !== 'cancelled'
             );
 
             if (incompleteTasks.length === 0) {
@@ -1966,7 +1972,7 @@
                                             <span class="text-xs" style="color: var(--text-muted);">← click for details</span>
                                         </div>
                                         <p class="text-sm mt-1" style="color: var(--text-primary);">${escapeHtml(truncate(item.task.description, 50))}</p>
-                                        ${item.task.owner ? `<p class="text-xs mt-1" style="color: var(--text-muted);">���� ${escapeHtml(item.task.owner)}</p>` : ''}
+                                        ${item.task.owner ? `<p class="text-xs mt-1" style="color: var(--text-muted);">👤 ${escapeHtml(item.task.owner)}</p>` : ''}
                                     </div>
                                     <div style="flex-shrink: 0; min-width: 180px;">
                                         <!-- Risk Score Bar -->
@@ -2808,13 +2814,13 @@
             const completionPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
             const overdueTasks = projectData.filter(t => {
-                if (t.status === 'done' || t.status === 'postmvp') return false;
+                if (t.status === 'done' || t.status === 'postmvp' || t.status === 'cancelled') return false;
                 if (!t.anticipatedEnd) return false;
                 return t.anticipatedEnd < today;
             }).sort((a, b) => a.anticipatedEnd - b.anticipatedEnd);
 
             const tasksDueThisWeek = projectData.filter(t => {
-                if (t.status === 'done' || t.status === 'postmvp') return false;
+                if (t.status === 'done' || t.status === 'postmvp' || t.status === 'cancelled') return false;
                 if (!t.anticipatedEnd) return false;
                 return t.anticipatedEnd >= today && t.anticipatedEnd <= weekFromNow;
             }).sort((a, b) => a.anticipatedEnd - b.anticipatedEnd);
@@ -3101,14 +3107,14 @@
 
             // Tasks due this week
             const tasksDueThisWeek = projectData.filter(t => {
-                if (t.status === 'done' || t.status === 'postmvp') return false;
+                if (t.status === 'done' || t.status === 'postmvp' || t.status === 'cancelled') return false;
                 if (!t.anticipatedEnd) return false;
                 return t.anticipatedEnd >= today && t.anticipatedEnd <= weekFromNow;
             }).sort((a, b) => a.anticipatedEnd - b.anticipatedEnd);
 
             // Overdue tasks
             const overdueTasks = projectData.filter(t => {
-                if (t.status === 'done' || t.status === 'postmvp') return false;
+                if (t.status === 'done' || t.status === 'postmvp' || t.status === 'cancelled') return false;
                 if (!t.anticipatedEnd) return false;
                 return t.anticipatedEnd < today;
             }).sort((a, b) => a.anticipatedEnd - b.anticipatedEnd);
@@ -3304,7 +3310,7 @@
 
             // Analyze incomplete tasks
             const riskData = projectData
-                .filter(t => t.status !== 'done' && t.status !== 'postmvp')
+                .filter(t => t.status !== 'done' && t.status !== 'postmvp' && t.status !== 'cancelled')
                 .map(task => {
                     const downstream = countDownstream(task.id);
 
