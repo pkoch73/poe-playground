@@ -162,6 +162,9 @@
 
         .gantt-bar:hover { filter: brightness(1.1); transform: scaleY(1.1); }
 
+        .gantt-bar-svg { transition: all 0.2s; cursor: pointer; }
+        .gantt-bar-svg:hover { filter: brightness(1.15); }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -1367,15 +1370,27 @@
                 return;
             }
 
-            // Find date range
-            let minDate = new Date();
-            let maxDate = new Date();
+            // Find date range - initialize to first task's dates
+            let minDate = null;
+            let maxDate = null;
 
             tasksWithDates.forEach(t => {
-                if (t.startDate && t.startDate < minDate) minDate = t.startDate;
-                if (t.anticipatedEnd && t.anticipatedEnd > maxDate) maxDate = t.anticipatedEnd;
-                if (t.startDate && t.startDate > maxDate) maxDate = t.startDate;
+                const taskStart = t.startDate || t.anticipatedEnd;
+                const taskEnd = t.anticipatedEnd || t.startDate;
+
+                if (taskStart) {
+                    if (!minDate || taskStart < minDate) minDate = new Date(taskStart);
+                    if (!maxDate || taskStart > maxDate) maxDate = new Date(taskStart);
+                }
+                if (taskEnd) {
+                    if (!minDate || taskEnd < minDate) minDate = new Date(taskEnd);
+                    if (!maxDate || taskEnd > maxDate) maxDate = new Date(taskEnd);
+                }
             });
+
+            // Fallback to today if no dates found
+            if (!minDate) minDate = new Date();
+            if (!maxDate) maxDate = new Date();
 
             // Extend range a bit
             minDate = new Date(minDate);
@@ -1388,6 +1403,82 @@
             const chartWidth = totalDays * dayWidth;
             const rowHeight = 36;
             const leftMargin = 200;
+
+            // Create task index map for dependency lines
+            const taskIndexMap = new Map();
+            tasksWithDates.forEach((task, i) => {
+                taskIndexMap.set(task.id, i);
+            });
+
+            // Calculate bar positions for dependency lines
+            const barPositions = new Map();
+            tasksWithDates.forEach((task, i) => {
+                const start = task.startDate || task.anticipatedEnd;
+                const end = task.anticipatedEnd || task.startDate;
+                const startDay = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
+                const endDay = Math.ceil((end - minDate) / (1000 * 60 * 60 * 24));
+                const barWidth = Math.max(dayWidth, (endDay - startDay + 1) * dayWidth);
+
+                barPositions.set(task.id, {
+                    rowIndex: i,
+                    startX: startDay * dayWidth,
+                    endX: startDay * dayWidth + barWidth,
+                    centerY: i * rowHeight + rowHeight / 2
+                });
+            });
+
+            // Generate dependency lines (SVG paths)
+            let dependencyLines = '';
+            const svgHeight = tasksWithDates.length * rowHeight;
+
+            tasksWithDates.forEach(task => {
+                const targetPos = barPositions.get(task.id);
+                if (!targetPos) return;
+
+                task.dependencies.forEach(depId => {
+                    const sourcePos = barPositions.get(depId);
+                    if (!sourcePos) return;
+
+                    // Check if this is an issue dependency
+                    const hasIssue = issues.some(i =>
+                        i.task.id === task.id &&
+                        i.issues.some(is => is.depId === depId && is.type === 'overdue')
+                    );
+
+                    const lineColor = hasIssue ? 'var(--danger)' : 'var(--text-muted)';
+                    const lineWidth = hasIssue ? 2 : 1;
+                    const dashArray = hasIssue ? '4,2' : 'none';
+
+                    // Draw path from end of source to start of target
+                    const startX = sourcePos.endX;
+                    const startY = sourcePos.centerY;
+                    const endX = targetPos.startX;
+                    const endY = targetPos.centerY;
+
+                    // Create a curved path
+                    const midX = (startX + endX) / 2;
+
+                    if (startX < endX) {
+                        // Normal case: dependency ends before task starts
+                        dependencyLines += `
+                            <path d="M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}"
+                                  fill="none" stroke="${lineColor}" stroke-width="${lineWidth}"
+                                  stroke-dasharray="${dashArray}" opacity="0.7"
+                                  marker-end="url(#gantt-arrow${hasIssue ? '-issue' : ''})"/>
+                        `;
+                    } else {
+                        // Overlap case: need to route around
+                        const offsetY = 15;
+                        const routeY = Math.min(startY, endY) - offsetY;
+                        dependencyLines += `
+                            <path d="M ${startX} ${startY} L ${startX + 10} ${startY} L ${startX + 10} ${routeY} L ${endX - 10} ${routeY} L ${endX - 10} ${endY} L ${endX} ${endY}"
+                                  fill="none" stroke="${lineColor}" stroke-width="${lineWidth}"
+                                  stroke-dasharray="${dashArray}" opacity="0.7"
+                                  marker-end="url(#gantt-arrow${hasIssue ? '-issue' : ''})"/>
+                        `;
+                    }
+                });
+            });
 
             // Generate week headers
             let weekHeaders = '';
@@ -1403,15 +1494,11 @@
                 weekHeaders += `<div style="position: absolute; left: ${left}px; width: ${weekWidth}px; text-align: center; border-left: 1px solid var(--border); font-size: 11px; color: var(--text-muted); padding: 4px 0;">${formatDate(weekStart)}</div>`;
             }
 
-            // Generate task rows
-            let taskRows = '';
+            // Generate task rows with bars
+            let taskBars = '';
             tasksWithDates.forEach((task, i) => {
-                const start = task.startDate || task.anticipatedEnd;
-                const end = task.anticipatedEnd || task.startDate;
-
-                const startDay = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
-                const endDay = Math.ceil((end - minDate) / (1000 * 60 * 60 * 24));
-                const barWidth = Math.max(dayWidth, (endDay - startDay + 1) * dayWidth);
+                const pos = barPositions.get(task.id);
+                const barWidth = pos.endX - pos.startX;
 
                 const statusColor = {
                     'done': 'var(--success)',
@@ -1421,31 +1508,242 @@
                     'postmvp': 'var(--text-muted)'
                 }[task.status] || 'var(--text-muted)';
 
-                const issueStyle = task.hasIssue ? 'border: 2px solid var(--danger); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);' : '';
+                const issueStyle = task.hasIssue ? 'stroke: var(--danger); stroke-width: 2;' : '';
+                const yPos = i * rowHeight + 6;
 
-                taskRows += `
+                taskBars += `
+                    <rect x="${pos.startX}" y="${yPos}" width="${barWidth}" height="24" rx="4"
+                          fill="${statusColor}" style="${issueStyle}" class="gantt-bar-svg"
+                          data-task-id="${escapeHtml(task.id)}">
+                    </rect>
+                `;
+            });
+
+            // Generate task labels (left side)
+            let taskLabels = '';
+            tasksWithDates.forEach((task, i) => {
+                taskLabels += `
                     <div style="display: flex; align-items: center; height: ${rowHeight}px; border-bottom: 1px solid var(--border);">
                         <div style="width: ${leftMargin}px; flex-shrink: 0; padding: 0 8px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" class="mono" title="${escapeHtml(task.id)}: ${escapeHtml(task.description)}">
                             ${task.hasIssue ? '⚠️ ' : ''}${escapeHtml(task.id)}
-                        </div>
-                        <div style="position: relative; flex-grow: 1; height: 100%; min-width: ${chartWidth}px;">
-                            <div class="gantt-bar" style="position: absolute; left: ${startDay * dayWidth}px; width: ${barWidth}px; top: 6px; background: ${statusColor}; ${issueStyle}" title="${escapeHtml(task.description)}"></div>
+                            ${task.dependencies.length > 0 ? `<span style="color: var(--text-muted); font-size: 10px;"> (←${task.dependencies.length})</span>` : ''}
                         </div>
                     </div>
                 `;
             });
 
             container.innerHTML = `
-                <div style="display: flex; font-size: 13px;">
-                    <div style="width: ${leftMargin}px; flex-shrink: 0; font-weight: 600; padding: 8px; border-bottom: 2px solid var(--border);">Task</div>
-                    <div style="position: relative; height: 30px; min-width: ${chartWidth}px; border-bottom: 2px solid var(--border);">
-                        ${weekHeaders}
+                <div style="display: flex; position: relative;">
+                    <!-- Fixed task column -->
+                    <div style="width: ${leftMargin}px; flex-shrink: 0; position: sticky; left: 0; z-index: 10; background: var(--bg-secondary);">
+                        <div style="font-weight: 600; padding: 8px; border-bottom: 2px solid var(--border); font-size: 13px; height: 38px; display: flex; align-items: center;">Task</div>
+                        <div style="max-height: 500px; overflow-y: auto; overflow-x: hidden;" id="gantt-task-scroll">
+                            ${taskLabels}
+                        </div>
+                    </div>
+                    <!-- Scrollable chart area -->
+                    <div style="flex: 1; overflow-x: auto; overflow-y: hidden;">
+                        <div style="min-width: ${chartWidth}px;">
+                            <div style="position: relative; height: 38px; border-bottom: 2px solid var(--border);">
+                                ${weekHeaders}
+                            </div>
+                            <div style="max-height: 500px; overflow-y: auto; position: relative;" id="gantt-chart-scroll">
+                                <div style="position: relative; height: ${svgHeight}px;">
+                                    <svg width="${chartWidth}" height="${svgHeight}" style="position: absolute; top: 0; left: 0;">
+                                        <defs>
+                                            <marker id="gantt-arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                                                <path d="M0,-4L10,0L0,4" fill="var(--text-muted)"/>
+                                            </marker>
+                                            <marker id="gantt-arrow-issue" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                                                <path d="M0,-4L10,0L0,4" fill="var(--danger)"/>
+                                            </marker>
+                                        </defs>
+                                        <!-- Row backgrounds -->
+                                        ${tasksWithDates.map((task, i) => `
+                                            <rect x="0" y="${i * rowHeight}" width="${chartWidth}" height="${rowHeight}" fill="transparent" stroke="var(--border)" stroke-width="0.5" style="stroke-dasharray: 0 ${chartWidth} ${rowHeight} 0;"/>
+                                            <line x1="0" y1="${(i + 1) * rowHeight}" x2="${chartWidth}" y2="${(i + 1) * rowHeight}" stroke="var(--border)" stroke-width="0.5"/>
+                                        `).join('')}
+                                        <!-- Dependency lines (drawn first, behind bars) -->
+                                        <g class="dependency-lines">
+                                            ${dependencyLines}
+                                        </g>
+                                        <!-- Task bars -->
+                                        <g class="task-bars">
+                                            ${taskBars}
+                                        </g>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div style="max-height: 500px; overflow-y: auto;">
-                    ${taskRows}
+                <div style="margin-top: 8px; padding: 8px; font-size: 11px; color: var(--text-muted);">
+                    <span style="margin-right: 16px;">📊 Dependencies: <span style="border-bottom: 1px dashed var(--text-muted);">gray lines</span></span>
+                    <span>⚠️ Issue dependencies: <span style="border-bottom: 2px dashed var(--danger); color: var(--danger);">red dashed lines</span></span>
                 </div>
             `;
+
+            // Sync vertical scrolling between task list and chart
+            const taskScroll = document.getElementById('gantt-task-scroll');
+            const chartScroll = document.getElementById('gantt-chart-scroll');
+            if (taskScroll && chartScroll) {
+                taskScroll.addEventListener('scroll', () => {
+                    chartScroll.scrollTop = taskScroll.scrollTop;
+                });
+                chartScroll.addEventListener('scroll', () => {
+                    taskScroll.scrollTop = chartScroll.scrollTop;
+                });
+            }
+
+            // Add click handlers to Gantt bars
+            container.querySelectorAll('.gantt-bar-svg').forEach(bar => {
+                bar.addEventListener('click', (e) => {
+                    const taskId = bar.getAttribute('data-task-id');
+                    const task = projectData.find(t => t.id === taskId);
+                    if (task) {
+                        showGanttPopup(task, e);
+                    }
+                });
+            });
+        }
+
+        function showGanttPopup(task, event) {
+            // Remove any existing popup
+            const existingPopup = document.getElementById('gantt-popup');
+            if (existingPopup) existingPopup.remove();
+
+            // Find task issues
+            const taskIssues = issues.find(i => i.task.id === task.id);
+            let issueHtml = '';
+            if (taskIssues && taskIssues.issues.length > 0) {
+                issueHtml = `
+                    <div class="mt-3 p-3" style="background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 3px solid var(--danger);">
+                        <p class="font-semibold text-sm" style="color: var(--danger);">⚠️ Issues:</p>
+                        <ul class="mt-1 text-sm space-y-1" style="color: var(--danger);">
+                            ${taskIssues.issues.map(i => `<li>• ${escapeHtml(i.message)}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Date moved info
+            let dateMovedHtml = '';
+            if (task.dateWasMoved) {
+                const isPushed = task.dateMovedDays > 0;
+                dateMovedHtml = `
+                    <div class="mt-2 p-2" style="background: ${isPushed ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; border-radius: 6px;">
+                        <span style="color: ${isPushed ? 'var(--danger)' : 'var(--success)'};">
+                            ${isPushed ? '⏩' : '⏪'} Date moved ${isPushed ? '+' : ''}${task.dateMovedDays} days
+                        </span>
+                        <div class="text-xs mt-1" style="color: var(--text-muted);">
+                            Original: <span style="text-decoration: line-through;">${formatDate(task.originalAnticipatedEnd)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const popup = document.createElement('div');
+            popup.id = 'gantt-popup';
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 20px;
+                z-index: 1000;
+                max-width: 450px;
+                width: 90%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            `;
+
+            popup.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                    <div>
+                        <span class="mono font-bold text-lg" style="color: var(--accent);">${escapeHtml(task.id)}</span>
+                        <span class="px-2 py-1 rounded text-xs font-medium ml-2 status-${task.status}">${task.status.toUpperCase()}</span>
+                    </div>
+                    <button id="close-gantt-popup" style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-muted); padding: 0 4px;">&times;</button>
+                </div>
+                <h3 class="font-semibold mb-3" style="color: var(--text-primary);">${escapeHtml(task.description)}</h3>
+
+                <div class="space-y-2 text-sm">
+                    ${task.owner ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">👤 Owner:</span>
+                            <span style="color: var(--text-primary); font-weight: 500;">${escapeHtml(task.owner)}</span>
+                        </div>
+                    ` : ''}
+                    ${task.startDate ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">📅 Start:</span>
+                            <span class="mono" style="color: var(--text-primary);">${formatDate(task.startDate)}</span>
+                        </div>
+                    ` : ''}
+                    ${task.anticipatedEnd ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">🎯 Due:</span>
+                            <span class="mono" style="color: var(--text-primary);">${formatDate(task.anticipatedEnd)}</span>
+                        </div>
+                    ` : ''}
+                    ${task.actualEnd ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">✅ Completed:</span>
+                            <span class="mono" style="color: var(--success);">${formatDate(task.actualEnd)}</span>
+                        </div>
+                    ` : ''}
+                    ${task.dependencies.length > 0 ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">🔗 Depends on:</span>
+                            <span class="mono" style="color: var(--text-primary);">${escapeHtml(task.dependencies.join(', '))}</span>
+                        </div>
+                    ` : ''}
+                    ${task.comments ? `
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                            <span style="color: var(--text-muted);">💬 Comments:</span>
+                            <p style="color: var(--text-secondary); margin-top: 4px;">${escapeHtml(task.comments)}</p>
+                        </div>
+                    ` : ''}
+                </div>
+                ${dateMovedHtml}
+                ${issueHtml}
+            `;
+
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'gantt-popup-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            `;
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(popup);
+
+            // Close handlers
+            const closePopup = () => {
+                popup.remove();
+                overlay.remove();
+            };
+
+            document.getElementById('close-gantt-popup').addEventListener('click', closePopup);
+            overlay.addEventListener('click', closePopup);
+
+            // Close on Escape key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closePopup();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
         }
 
         function renderTable() {
