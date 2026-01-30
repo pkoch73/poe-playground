@@ -236,24 +236,30 @@
 
         <!-- Results Section -->
         <section id="results-section" class="max-w-7xl mx-auto hidden">
-            <!-- Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 fade-in stagger-1">
-                <div class="card p-4 text-center">
-                    <p class="text-3xl font-bold" style="color: var(--accent);" id="stat-total">0</p>
-                    <p class="text-sm" style="color: var(--text-secondary);">Total Tasks</p>
+            <!-- Stats + Summary Button -->
+            <div class="flex flex-wrap items-start gap-4 mb-8 fade-in stagger-1">
+                <div class="flex-grow grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="card p-4 text-center">
+                        <p class="text-3xl font-bold" style="color: var(--accent);" id="stat-total">0</p>
+                        <p class="text-sm" style="color: var(--text-secondary);">Total Tasks</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-3xl font-bold" style="color: var(--success);" id="stat-done">0</p>
+                        <p class="text-sm" style="color: var(--text-secondary);">Completed</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-3xl font-bold" style="color: var(--warning);" id="stat-wip">0</p>
+                        <p class="text-sm" style="color: var(--text-secondary);">In Progress</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-3xl font-bold" style="color: var(--danger);" id="stat-issues">0</p>
+                        <p class="text-sm" style="color: var(--text-secondary);">Issues</p>
+                    </div>
                 </div>
-                <div class="card p-4 text-center">
-                    <p class="text-3xl font-bold" style="color: var(--success);" id="stat-done">0</p>
-                    <p class="text-sm" style="color: var(--text-secondary);">Completed</p>
-                </div>
-                <div class="card p-4 text-center">
-                    <p class="text-3xl font-bold" style="color: var(--warning);" id="stat-wip">0</p>
-                    <p class="text-sm" style="color: var(--text-secondary);">In Progress</p>
-                </div>
-                <div class="card p-4 text-center">
-                    <p class="text-3xl font-bold" style="color: var(--danger);" id="stat-issues">0</p>
-                    <p class="text-sm" style="color: var(--text-secondary);">Issues</p>
-                </div>
+                <button onclick="showSummaryModal()" class="card p-4 text-center cursor-pointer transition-all hover:scale-105" style="border: 2px dashed var(--accent); min-width: 120px;" title="Generate shareable summary for email, Slack, or print">
+                    <p class="text-2xl mb-1">📋</p>
+                    <p class="text-sm font-medium" style="color: var(--accent);">Generate Summary</p>
+                </button>
             </div>
 
             <!-- Go-Live Milestone Validator -->
@@ -2734,6 +2740,476 @@
                 </div>
             `;
             document.body.appendChild(modal);
+        }
+
+        // === Summary Generation Functions ===
+
+        function generateSummaryContent() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const weekFromNow = new Date(today);
+            weekFromNow.setDate(weekFromNow.getDate() + 7);
+
+            // Basic stats
+            const totalTasks = projectData.length;
+            const completedTasks = projectData.filter(t => t.status === 'done').length;
+            const wipTasks = projectData.filter(t => t.status === 'wip').length;
+            const blockedTasks = projectData.filter(t => t.status === 'blocked').length;
+            const newTasks = projectData.filter(t => t.status === 'new').length;
+            const issueCount = issues.reduce((sum, i) => sum + i.issues.length, 0);
+            const completionPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            // Tasks due this week
+            const tasksDueThisWeek = projectData.filter(t => {
+                if (t.status === 'done' || t.status === 'postmvp') return false;
+                if (!t.anticipatedEnd) return false;
+                return t.anticipatedEnd >= today && t.anticipatedEnd <= weekFromNow;
+            }).sort((a, b) => a.anticipatedEnd - b.anticipatedEnd);
+
+            // Overdue tasks
+            const overdueTasks = projectData.filter(t => {
+                if (t.status === 'done' || t.status === 'postmvp') return false;
+                if (!t.anticipatedEnd) return false;
+                return t.anticipatedEnd < today;
+            }).sort((a, b) => a.anticipatedEnd - b.anticipatedEnd);
+
+            // Tasks with date slippage
+            const slippedTasks = projectData.filter(t => t.dateWasMoved && t.dateMovedDays > 0)
+                .sort((a, b) => b.dateMovedDays - a.dateMovedDays);
+
+            // Get risk radar data (top risks)
+            const topRisks = getTopRiskTasks(5);
+
+            // Critical dependency issues
+            const criticalIssues = issues.filter(i =>
+                i.issues.some(iss => iss.type === 'incomplete_dependency_past_due')
+            );
+
+            // Build Markdown summary
+            let md = '';
+
+            // Header
+            const sheetName = document.getElementById('sheet-select').value || 'Project';
+            md += `# 📊 Project Status Summary\n\n`;
+            md += `**${sheetName}** | Generated: ${today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}\n\n`;
+
+            // Executive Summary
+            md += `## 📈 Executive Summary\n\n`;
+            md += `| Metric | Value |\n`;
+            md += `|--------|-------|\n`;
+            md += `| Progress | **${completionPct}%** (${completedTasks}/${totalTasks} tasks) |\n`;
+            md += `| In Progress | ${wipTasks} tasks |\n`;
+            md += `| Blocked | ${blockedTasks} tasks |\n`;
+            md += `| Not Started | ${newTasks} tasks |\n`;
+            md += `| Issues Found | ${issueCount} |\n\n`;
+
+            // Critical Alerts (if any)
+            if (overdueTasks.length > 0 || blockedTasks > 0 || criticalIssues.length > 0) {
+                md += `## 🚨 Critical Alerts\n\n`;
+
+                if (overdueTasks.length > 0) {
+                    md += `### ⏰ Overdue Tasks (${overdueTasks.length})\n`;
+                    overdueTasks.slice(0, 5).forEach(t => {
+                        const daysOverdue = Math.ceil((today - t.anticipatedEnd) / (1000 * 60 * 60 * 24));
+                        md += `- **${t.id}**: ${t.description.substring(0, 60)}${t.description.length > 60 ? '...' : ''} *(${daysOverdue}d overdue)*${t.owner ? ` — ${t.owner}` : ''}\n`;
+                    });
+                    if (overdueTasks.length > 5) {
+                        md += `- *...and ${overdueTasks.length - 5} more overdue tasks*\n`;
+                    }
+                    md += '\n';
+                }
+
+                if (blockedTasks > 0) {
+                    const blocked = projectData.filter(t => t.status === 'blocked');
+                    md += `### 🛑 Blocked Tasks (${blockedTasks})\n`;
+                    blocked.slice(0, 5).forEach(t => {
+                        md += `- **${t.id}**: ${t.description.substring(0, 60)}${t.description.length > 60 ? '...' : ''}${t.owner ? ` — ${t.owner}` : ''}\n`;
+                    });
+                    if (blocked.length > 5) {
+                        md += `- *...and ${blocked.length - 5} more blocked tasks*\n`;
+                    }
+                    md += '\n';
+                }
+
+                if (criticalIssues.length > 0) {
+                    md += `### ⚠️ Dependency Issues (${criticalIssues.length})\n`;
+                    criticalIssues.slice(0, 5).forEach(item => {
+                        md += `- **${item.task.id}** depends on incomplete tasks past due date\n`;
+                    });
+                    if (criticalIssues.length > 5) {
+                        md += `- *...and ${criticalIssues.length - 5} more dependency issues*\n`;
+                    }
+                    md += '\n';
+                }
+            }
+
+            // This Week's Focus
+            if (tasksDueThisWeek.length > 0) {
+                md += `## 📅 This Week's Focus (Due by ${weekFromNow.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })})\n\n`;
+                tasksDueThisWeek.slice(0, 10).forEach(t => {
+                    const statusIcon = t.status === 'wip' ? '🔄' : t.status === 'new' ? '🆕' : t.status === 'blocked' ? '🛑' : '📋';
+                    const dueStr = formatDate(t.anticipatedEnd);
+                    md += `- ${statusIcon} **${t.id}**: ${t.description.substring(0, 50)}${t.description.length > 50 ? '...' : ''} *(due ${dueStr})*${t.owner ? ` — ${t.owner}` : ''}\n`;
+                });
+                if (tasksDueThisWeek.length > 10) {
+                    md += `- *...and ${tasksDueThisWeek.length - 10} more tasks due this week*\n`;
+                }
+                md += '\n';
+            }
+
+            // Schedule Slippage
+            if (slippedTasks.length > 0) {
+                md += `## ⏩ Schedule Slippage\n\n`;
+                md += `${slippedTasks.length} task(s) have been pushed back from their original dates:\n\n`;
+                slippedTasks.slice(0, 5).forEach(t => {
+                    md += `- **${t.id}**: +${t.dateMovedDays} days (now due ${formatDate(t.anticipatedEnd)})\n`;
+                });
+                if (slippedTasks.length > 5) {
+                    md += `- *...and ${slippedTasks.length - 5} more tasks with date changes*\n`;
+                }
+                md += '\n';
+            }
+
+            // Top Risk Areas
+            if (topRisks.length > 0) {
+                md += `## 🎯 Top Risk Areas\n\n`;
+                md += `Tasks with highest downstream impact if delayed:\n\n`;
+                topRisks.forEach((r, i) => {
+                    md += `${i + 1}. **${r.task.id}** (Risk Score: ${r.riskScore}) — ${r.task.description.substring(0, 40)}${r.task.description.length > 40 ? '...' : ''}\n`;
+                    md += `   - ${r.downstreamCount} downstream tasks, ${r.criticalCount} critical if 3-day delay\n`;
+                });
+                md += '\n';
+            }
+
+            // Action Items
+            md += `## ✅ Recommended Actions\n\n`;
+
+            if (overdueTasks.length > 0) {
+                md += `1. **Address ${overdueTasks.length} overdue task(s)** - Prioritize completing or re-scheduling\n`;
+            }
+            if (blockedTasks > 0) {
+                md += `${overdueTasks.length > 0 ? '2' : '1'}. **Unblock ${blockedTasks} blocked task(s)** - Identify and remove blockers\n`;
+            }
+            if (topRisks.length > 0) {
+                const num = (overdueTasks.length > 0 ? 1 : 0) + (blockedTasks > 0 ? 1 : 0) + 1;
+                md += `${num}. **Monitor high-risk tasks** - Keep close watch on: ${topRisks.slice(0, 3).map(r => r.task.id).join(', ')}\n`;
+            }
+            if (tasksDueThisWeek.length > 0) {
+                const num = (overdueTasks.length > 0 ? 1 : 0) + (blockedTasks > 0 ? 1 : 0) + (topRisks.length > 0 ? 1 : 0) + 1;
+                md += `${num}. **Focus on this week's ${tasksDueThisWeek.length} deliverables**\n`;
+            }
+
+            if (overdueTasks.length === 0 && blockedTasks === 0 && topRisks.length === 0 && tasksDueThisWeek.length === 0) {
+                md += `- Project appears on track! Continue monitoring progress.\n`;
+            }
+
+            md += '\n---\n*Generated by Project Plan Analyzer*\n';
+
+            return md;
+        }
+
+        function getTopRiskTasks(limit) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const taskMap = new Map(projectData.map(t => [t.id, t]));
+
+            // Build reverse dependency map
+            const reverseDeps = new Map();
+            projectData.forEach(task => {
+                task.dependencies.forEach(depId => {
+                    if (!reverseDeps.has(depId)) {
+                        reverseDeps.set(depId, []);
+                    }
+                    reverseDeps.get(depId).push(task.id);
+                });
+            });
+
+            // Find all downstream tasks
+            function countDownstream(taskId) {
+                const visited = new Set([taskId]);
+                const queue = [taskId];
+                let count = 0;
+                let criticalCount = 0;
+                let atRiskCount = 0;
+
+                while (queue.length > 0) {
+                    const currentId = queue.shift();
+                    const dependents = reverseDeps.get(currentId) || [];
+
+                    dependents.forEach(depId => {
+                        if (visited.has(depId)) return;
+                        visited.add(depId);
+                        count++;
+
+                        const depTask = taskMap.get(depId);
+                        if (depTask && depTask.anticipatedEnd) {
+                            const daysToDeadline = Math.ceil((depTask.anticipatedEnd - today) / (1000 * 60 * 60 * 24));
+                            const newWindow = daysToDeadline - 3; // 3-day delay simulation
+                            const compressionPct = daysToDeadline > 0 ? Math.round((3 / daysToDeadline) * 100) : 100;
+
+                            if (daysToDeadline <= 0 || newWindow <= 0 || compressionPct >= 50) {
+                                criticalCount++;
+                            } else if (compressionPct >= 25 || newWindow <= 5) {
+                                atRiskCount++;
+                            }
+                        }
+
+                        queue.push(depId);
+                    });
+                }
+
+                return { count, criticalCount, atRiskCount };
+            }
+
+            // Analyze incomplete tasks
+            const riskData = projectData
+                .filter(t => t.status !== 'done' && t.status !== 'postmvp')
+                .map(task => {
+                    const downstream = countDownstream(task.id);
+
+                    let riskScore = 0;
+                    riskScore += downstream.criticalCount * 10;
+                    riskScore += downstream.atRiskCount * 5;
+                    riskScore += downstream.count * 2;
+
+                    if (task.anticipatedEnd) {
+                        const daysToDeadline = Math.ceil((task.anticipatedEnd - today) / (1000 * 60 * 60 * 24));
+                        if (daysToDeadline <= 0) riskScore += 50;
+                        else if (daysToDeadline <= 7) riskScore += 30;
+                        else if (daysToDeadline <= 14) riskScore += 15;
+                    }
+
+                    if (task.status === 'blocked') riskScore += 40;
+                    else if (task.status === 'new') riskScore += 10;
+
+                    return {
+                        task,
+                        riskScore,
+                        downstreamCount: downstream.count,
+                        criticalCount: downstream.criticalCount,
+                        atRiskCount: downstream.atRiskCount
+                    };
+                })
+                .filter(r => r.riskScore > 0)
+                .sort((a, b) => b.riskScore - a.riskScore);
+
+            return riskData.slice(0, limit);
+        }
+
+        function showSummaryModal() {
+            const summaryContent = generateSummaryContent();
+
+            // Remove any existing modal
+            const existingModal = document.getElementById('summary-modal');
+            if (existingModal) existingModal.remove();
+            const existingOverlay = document.getElementById('summary-modal-overlay');
+            if (existingOverlay) existingOverlay.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'summary-modal-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 999;
+            `;
+
+            const modal = document.createElement('div');
+            modal.id = 'summary-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 24px;
+                z-index: 1000;
+                max-width: 700px;
+                width: 95%;
+                max-height: 85vh;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            `;
+
+            modal.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <h2 class="text-xl font-bold" style="color: var(--accent);">📋 Project Summary</h2>
+                        <p class="text-sm mt-1" style="color: var(--text-muted);">Markdown format — ready to copy, paste, or print</p>
+                    </div>
+                    <button id="close-summary-modal" style="background: none; border: none; cursor: pointer; font-size: 24px; color: var(--text-muted); padding: 0 8px;">&times;</button>
+                </div>
+
+                <div style="flex: 1; overflow-y: auto; margin-bottom: 16px;">
+                    <textarea id="summary-textarea" readonly style="
+                        width: 100%;
+                        min-height: 400px;
+                        padding: 16px;
+                        font-family: 'JetBrains Mono', monospace;
+                        font-size: 13px;
+                        line-height: 1.6;
+                        background: var(--bg-tertiary);
+                        color: var(--text-primary);
+                        border: 1px solid var(--border);
+                        border-radius: 8px;
+                        resize: vertical;
+                    ">${escapeHtml(summaryContent)}</textarea>
+                </div>
+
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button id="copy-summary-btn" class="px-5 py-2 rounded-lg font-medium" style="background: var(--accent); color: white; flex: 1; min-width: 150px;">
+                        📋 Copy to Clipboard
+                    </button>
+                    <button id="print-summary-btn" class="px-5 py-2 rounded-lg font-medium" style="background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); flex: 1; min-width: 150px;">
+                        🖨️ Print Summary
+                    </button>
+                </div>
+
+                <p id="copy-feedback" class="text-sm mt-3 text-center hidden" style="color: var(--success);">✅ Copied to clipboard!</p>
+            `;
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(modal);
+
+            // Event handlers
+            const closeModal = () => {
+                modal.remove();
+                overlay.remove();
+            };
+
+            modal.querySelector('#close-summary-modal').addEventListener('click', closeModal);
+            overlay.addEventListener('click', closeModal);
+
+            // Copy to clipboard
+            modal.querySelector('#copy-summary-btn').addEventListener('click', async () => {
+                const textarea = modal.querySelector('#summary-textarea');
+                const feedback = modal.querySelector('#copy-feedback');
+
+                try {
+                    await navigator.clipboard.writeText(textarea.value);
+                    feedback.classList.remove('hidden');
+                    setTimeout(() => feedback.classList.add('hidden'), 2000);
+                } catch (err) {
+                    // Fallback for older browsers
+                    textarea.select();
+                    document.execCommand('copy');
+                    feedback.classList.remove('hidden');
+                    setTimeout(() => feedback.classList.add('hidden'), 2000);
+                }
+            });
+
+            // Print summary
+            modal.querySelector('#print-summary-btn').addEventListener('click', () => {
+                const textarea = modal.querySelector('#summary-textarea');
+                const printWindow = window.open('', '_blank');
+
+                // Convert markdown to simple HTML for printing
+                const htmlContent = convertMarkdownToHtml(textarea.value);
+
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Project Summary</title>
+                        <style>
+                            body {
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                max-width: 800px;
+                                margin: 0 auto;
+                                padding: 40px 20px;
+                                line-height: 1.6;
+                                color: #1a1a1a;
+                            }
+                            h1 { font-size: 24px; margin-bottom: 8px; }
+                            h2 { font-size: 18px; margin-top: 24px; margin-bottom: 12px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+                            h3 { font-size: 15px; margin-top: 16px; margin-bottom: 8px; }
+                            table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+                            th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+                            th { background: #f5f5f5; }
+                            ul { margin: 8px 0; padding-left: 24px; }
+                            li { margin: 4px 0; }
+                            strong { font-weight: 600; }
+                            em { font-style: italic; color: #666; }
+                            hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+                            @media print {
+                                body { padding: 20px; }
+                            }
+                        </style>
+                    </head>
+                    <body>${htmlContent}</body>
+                    </html>
+                `);
+                printWindow.document.close();
+                printWindow.focus();
+
+                // Trigger print after content loads
+                setTimeout(() => {
+                    printWindow.print();
+                }, 250);
+            });
+
+            // Close on Escape key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+        }
+
+        function convertMarkdownToHtml(markdown) {
+            // Simple markdown to HTML conversion for printing
+            let html = markdown;
+
+            // Headers
+            html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+            html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+            // Bold
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // Italic
+            html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+            // Horizontal rule
+            html = html.replace(/^---$/gm, '<hr>');
+
+            // Tables
+            const tableRegex = /\|(.+)\|\n\|[-| ]+\|\n((?:\|.+\|\n?)+)/g;
+            html = html.replace(tableRegex, (match, headerRow, bodyRows) => {
+                const headers = headerRow.split('|').filter(h => h.trim()).map(h => `<th>${h.trim()}</th>`).join('');
+                const rows = bodyRows.trim().split('\n').map(row => {
+                    const cells = row.split('|').filter(c => c.trim()).map(c => `<td>${c.trim()}</td>`).join('');
+                    return `<tr>${cells}</tr>`;
+                }).join('');
+                return `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+            });
+
+            // List items
+            html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+            html = html.replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>');
+
+            // Wrap consecutive <li> in <ul>
+            html = html.replace(/((?:<li>.+<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+            // Paragraphs (lines that aren't already wrapped)
+            html = html.split('\n').map(line => {
+                if (line.trim() && !line.startsWith('<')) {
+                    return `<p>${line}</p>`;
+                }
+                return line;
+            }).join('\n');
+
+            return html;
         }
 
         // Resize handler
