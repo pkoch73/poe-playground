@@ -1845,7 +1845,1875 @@
             document.body.appendChild(modal);
         }
 
+        // Resize handle<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Plan Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+        }
+
+        .dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border: #334155;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            background: var(--bg-secondary);
+            transition: all 0.3s;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .status-done { background: var(--success); color: white; }
+        .status-wip { background: var(--warning); color: white; }
+        .status-new { background: var(--info); color: white; }
+        .status-blocked { background: var(--danger); color: white; }
+        .status-postmvp { background: var(--text-muted); color: white; }
+
+        .issue-card {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+            border-left: 4px solid var(--danger);
+        }
+
+        .dark .issue-card {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+        }
+
+        .node-done { fill: var(--success); }
+        .node-wip { fill: var(--warning); }
+        .node-new { fill: var(--info); }
+        .node-blocked { fill: var(--danger); }
+        .node-postmvp { fill: var(--text-muted); }
+        .node-issue {
+            stroke: var(--danger);
+            stroke-width: 4px;
+            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6));
+            animation: pulseIssue 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseIssue {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)); }
+            50% { filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.9)); }
+        }
+
+        .link { stroke: var(--text-muted); stroke-opacity: 0.6; fill: none; }
+        .link-issue { stroke: var(--danger); stroke-opacity: 0.8; stroke-dasharray: 5,5; }
+
+        .feasibility-go {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+            border: 2px solid var(--success);
+            border-radius: 12px;
+        }
+
+        .feasibility-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+            border: 2px solid var(--warning);
+            border-radius: 12px;
+        }
+
+        .feasibility-blocked {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+            border: 2px solid var(--danger);
+            border-radius: 12px;
+        }
+
+        .dep-chain-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            border-left: 3px solid var(--border);
+        }
+
+        .dep-chain-item.done { border-left-color: var(--success); }
+        .dep-chain-item.wip { border-left-color: var(--warning); }
+        .dep-chain-item.blocked { border-left-color: var(--danger); }
+        .dep-chain-item.new { border-left-color: var(--info); }
+
+        .tooltip {
+            position: absolute;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            max-width: 300px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            background: transparent;
+        }
+
+        .tab-btn:hover { background: var(--bg-tertiary); }
+        .tab-btn.active { background: var(--accent); color: white; }
+
+        .gantt-bar {
+            height: 24px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .gantt-bar:hover { filter: brightness(1.1); transform: scaleY(1.1); }
+
+        .gantt-bar-svg { transition: all 0.2s; cursor: pointer; }
+        .gantt-bar-svg:hover { filter: brightness(1.15); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+
+        input[type="file"] { font-size: 16px; }
+
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        #graph-container { overflow: hidden; }
+
+        svg text { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen p-4 md:p-8">
+        <!-- Header -->
+        <header class="max-w-7xl mx-auto mb-8 fade-in">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2" style="color: var(--accent);">
+                📊 Project Plan Analyzer
+            </h1>
+            <p style="color: var(--text-secondary);">Upload your Excel file to visualize dependencies and identify issues</p>
+        </header>
+
+        <!-- Upload Section -->
+        <section id="upload-section" class="max-w-7xl mx-auto mb-8 fade-in stagger-1">
+            <div class="upload-zone rounded-xl p-8 md:p-12 text-center cursor-pointer" id="drop-zone">
+                <input type="file" id="file-input" accept=".xlsx,.xls" class="hidden">
+                <div class="mb-4">
+                    <svg class="w-16 h-16 mx-auto" style="color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                </div>
+                <p class="text-lg font-medium mb-2" style="color: var(--text-primary);">Drop your Excel file here</p>
+                <p class="mb-4" style="color: var(--text-secondary);">or click to browse</p>
+                <p class="text-sm mono" style="color: var(--text-muted);">Supports .xlsx and .xls files</p>
+            </div>
+            <div id="file-info" class="mt-4 hidden">
+                <div class="card p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">📄</span>
+                        <div>
+                            <p class="font-medium" id="file-name">filename.xlsx</p>
+                            <p class="text-sm" style="color: var(--text-muted);" id="file-size">0 KB</p>
+                        </div>
+                    </div>
+                    <button id="clear-file" class="px-4 py-2 rounded-lg text-sm font-medium" style="background: var(--bg-tertiary); color: var(--text-secondary);">
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sheet Selector -->
+        <section id="sheet-section" class="max-w-7xl mx-auto mb-8 hidden fade-in">
+            <div class="card p-4">
+                <label class="block text-sm font-medium mb-2" style="color: var(--text-secondary);">Select Sheet</label>
+                <select id="sheet-select" class="w-full md:w-auto px-4 py-2 rounded-lg text-base" style="background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border);">
+                </select>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section" class="max-w-7xl mx-auto hidden">
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 fade-in stagger-1">
+                <div class="card p-4 text-center">
+                    <p class="text-3xl font-bold" style="color: var(--accent);" id="stat-total">0</p>
+                    <p class="text-sm" style="color: var(--text-secondary);">Total Tasks</p>
+                </div>
+                <div class="card p-4 text-center">
+                    <p class="text-3xl font-bold" style="color: var(--success);" id="stat-done">0</p>
+                    <p class="text-sm" style="color: var(--text-secondary);">Completed</p>
+                </div>
+                <div class="card p-4 text-center">
+                    <p class="text-3xl font-bold" style="color: var(--warning);" id="stat-wip">0</p>
+                    <p class="text-sm" style="color: var(--text-secondary);">In Progress</p>
+                </div>
+                <div class="card p-4 text-center">
+                    <p class="text-3xl font-bold" style="color: var(--danger);" id="stat-issues">0</p>
+                    <p class="text-sm" style="color: var(--text-secondary);">Issues</p>
+                </div>
+            </div>
+
+            <!-- Go-Live Milestone Validator -->
+            <div class="card p-4 mb-6 fade-in stagger-1">
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="flex-grow" style="max-width: 300px;">
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text-secondary);">
+                            🎯 Go-Live Milestone Task #
+                        </label>
+                        <div class="flex gap-2">
+                            <select id="milestone-select" class="flex-grow px-4 py-2 rounded-lg text-base" style="background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border);">
+                                <option value="">Select milestone...</option>
+                            </select>
+                            <button id="validate-btn" class="px-4 py-2 rounded-lg font-medium" style="background: var(--accent); color: white;">
+                                Validate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feasibility Panel -->
+            <div id="feasibility-panel" class="mb-8 hidden fade-in">
+                <div id="feasibility-content"></div>
+            </div>
+
+            <!-- Issues Panel -->
+            <div id="issues-panel" class="mb-8 hidden fade-in stagger-2">
+                <h2 class="text-xl font-bold mb-4" style="color: var(--danger);">⚠️ Dependency Issues Found</h2>
+                <div id="issues-list" class="space-y-3"></div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 mb-6 flex-wrap fade-in stagger-2">
+                <button class="tab-btn active" data-tab="graph">Dependency Graph</button>
+                <button class="tab-btn" data-tab="gantt">Gantt View</button>
+                <button class="tab-btn" data-tab="table">Table View</button>
+            </div>
+
+            <!-- Legend -->
+            <div class="card p-4 mb-6 fade-in stagger-2">
+                <div class="flex flex-wrap gap-6">
+                    <div class="legend-item"><div class="legend-dot" style="background: var(--success);"></div><span class="text-sm">Done</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: var(--warning);"></div><span class="text-sm">WIP</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: var(--info);"></div><span class="text-sm">New</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: var(--danger);"></div><span class="text-sm">Blocked</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: var(--text-muted);"></div><span class="text-sm">Post-MVP</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="border: 3px solid var(--danger); background: transparent;"></div><span class="text-sm">Has Issue</span></div>
+                </div>
+            </div>
+
+            <!-- Graph Tab -->
+            <div id="tab-graph" class="card p-4 fade-in stagger-3">
+                <div id="graph-container" style="height: 600px; width: 100%;"></div>
+            </div>
+
+            <!-- Gantt Tab -->
+            <div id="tab-gantt" class="card p-4 hidden fade-in">
+                <div id="gantt-container" style="overflow-x: auto;"></div>
+            </div>
+
+            <!-- Table Tab -->
+            <div id="tab-table" class="card p-4 hidden fade-in">
+                <div id="table-container" style="overflow-x: auto;"></div>
+            </div>
+        </section>
+
+        <!-- Tooltip -->
+        <div id="tooltip" class="tooltip"></div>
+    </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            document.documentElement.classList.toggle('dark', event.matches);
+        });
+
+        // State
+        let workbook = null;
+        let projectData = [];
+        let issues = [];
+
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const fileSize = document.getElementById('file-size');
+        const clearFileBtn = document.getElementById('clear-file');
+        const sheetSection = document.getElementById('sheet-section');
+        const sheetSelect = document.getElementById('sheet-select');
+        const resultsSection = document.getElementById('results-section');
+        const tooltip = document.getElementById('tooltip');
+
+        // File Upload Handling
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+        clearFileBtn.addEventListener('click', resetApp);
+
+        function handleFile(file) {
+            if (!file.name.match(/\.xlsx?$/i)) {
+                showCustomAlert('Please upload an Excel file (.xlsx or .xls)');
+                return;
+            }
+
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    workbook = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+                    populateSheetSelector();
+                } catch (err) {
+                    showCustomAlert('Error reading file: ' + err.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function populateSheetSelector() {
+            sheetSelect.innerHTML = '';
+            let defaultSheet = null;
+            let exactMatch = null;
+
+            workbook.SheetNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+
+                // Check for MVP Launch Project Plan - prioritize exact match
+                const nameLower = name.toLowerCase().replace(/\s+/g, ' ').trim();
+                const nameNormalized = name.replace(/\s+/g, ' ').trim();
+
+                // Exact match (case-insensitive) - highest priority
+                if (nameNormalized === 'MVP Launch Project Plan' ||
+                    nameLower === 'mvp launch project plan') {
+                    exactMatch = name;
+                }
+                // Partial match - lower priority (only use if no exact match)
+                else if (nameLower.includes('mvp launch project plan') ||
+                         nameLower.includes('mvp') && nameLower.includes('launch') && nameLower.includes('project')) {
+                    if (!defaultSheet) defaultSheet = name;
+                }
+
+                sheetSelect.appendChild(option);
+            });
+
+            // Prefer exact match, fallback to partial match
+            const selectedSheet = exactMatch || defaultSheet;
+
+            // Set the default selection
+            if (selectedSheet) {
+                sheetSelect.value = selectedSheet;
+            }
+
+            sheetSection.classList.remove('hidden');
+            processSheet(sheetSelect.value);
+        }
+
+        sheetSelect.addEventListener('change', () => processSheet(sheetSelect.value));
+
+        function processSheet(sheetName) {
+            const sheet = workbook.Sheets[sheetName];
+            // Use raw: true to preserve exact numeric values like 2.21 (not formatted to 2.2)
+            const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, dateNF: 'yyyy-mm-dd' });
+
+            // Find header row
+            let headerRowIndex = -1;
+            let headers = [];
+            for (let i = 0; i < Math.min(10, data.length); i++) {
+                const row = data[i];
+                if (row && row.some(cell => cell && cell.toString().toLowerCase().includes('task'))) {
+                    headerRowIndex = i;
+                    headers = row.map(h => h ? h.toString().trim() : '');
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1) {
+                showCustomAlert('Could not find header row with Task column');
+                return;
+            }
+
+            // Map columns
+            const colMap = {};
+            headers.forEach((h, i) => {
+                const hLower = h.toLowerCase();
+                if (hLower.includes('task') && hLower.includes('#')) colMap.taskId = i;
+                else if (hLower.includes('task') && hLower.includes('description')) colMap.description = i;
+                else if (hLower.includes('owner')) colMap.owner = i;
+                else if (hLower === 'status') colMap.status = i;
+                else if (hLower.includes('dependencies') || hLower.includes('dependency')) colMap.dependencies = i;
+                else if (hLower.includes('start')) colMap.startDate = i;
+                else if (hLower.includes('actual') && hLower.includes('end')) colMap.actualEnd = i;
+                else if (hLower.includes('anticipated') && hLower.includes('end')) colMap.anticipatedEnd = i;
+                else if (hLower.includes('comments')) colMap.comments = i;
+            });
+
+            // Parse data
+            projectData = [];
+            for (let i = headerRowIndex + 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row[colMap.taskId] === undefined || row[colMap.taskId] === null) continue;
+
+                // Format task ID - preserve decimal precision for numbers like 2.21
+                let taskId = row[colMap.taskId];
+                if (typeof taskId === 'number') {
+                    // Use toPrecision or toString to preserve decimals
+                    taskId = String(taskId);
+                } else {
+                    taskId = taskId?.toString().trim();
+                }
+                if (!taskId || taskId === '--') continue;
+
+                const status = normalizeStatus(row[colMap.status]);
+                const deps = parseDependencies(row[colMap.dependencies]);
+                const dateHistory = parseDateHistory(row[colMap.anticipatedEnd]);
+                const anticipatedEnd = dateHistory.current;
+                const originalAnticipatedEnd = dateHistory.original;
+                const actualEnd = parseDate(row[colMap.actualEnd]);
+                const startDate = parseDate(row[colMap.startDate]);
+
+                projectData.push({
+                    id: taskId,
+                    description: row[colMap.description]?.toString().trim() || '',
+                    owner: row[colMap.owner]?.toString().trim() || '',
+                    status: status,
+                    dependencies: deps,
+                    startDate: startDate,
+                    actualEnd: actualEnd,
+                    anticipatedEnd: anticipatedEnd,
+                    originalAnticipatedEnd: originalAnticipatedEnd,
+                    dateWasMoved: dateHistory.wasMoved,
+                    dateMovedDays: dateHistory.daysMoved,
+                    comments: row[colMap.comments]?.toString().trim() || ''
+                });
+            }
+
+            // Analyze issues
+            analyzeIssues();
+
+            // Display results
+            displayResults();
+        }
+
+        function normalizeStatus(status) {
+            if (!status) return 'unknown';
+            const s = status.toString().toLowerCase().trim();
+            if (s === 'done') return 'done';
+            if (s === 'wip') return 'wip';
+            if (s === 'new') return 'new';
+            if (s === 'blocked') return 'blocked';
+            if (s.includes('post') || s.includes('mvp')) return 'postmvp';
+            return 'unknown';
+        }
+
+        function parseDependencies(deps) {
+            if (!deps) return [];
+            const depsStr = deps.toString().trim();
+            if (depsStr === '--' || depsStr === '-' || depsStr === '') return [];
+            return depsStr.split(/[,;]/).map(d => d.trim()).filter(d => d && d !== '--');
+        }
+
+        function parseDate(dateVal) {
+            if (!dateVal) return null;
+
+            // Handle Excel date objects
+            if (dateVal instanceof Date && !isNaN(dateVal)) {
+                return dateVal;
+            }
+
+            // Handle Excel serial date numbers (raw: true returns these)
+            // Excel dates are days since 1900-01-01 (with a bug for 1900 leap year)
+            if (typeof dateVal === 'number' && dateVal > 1000 && dateVal < 100000) {
+                // Convert Excel serial to JS Date
+                const excelEpoch = new Date(1899, 11, 30); // Excel epoch (Dec 30, 1899)
+                const jsDate = new Date(excelEpoch.getTime() + dateVal * 24 * 60 * 60 * 1000);
+                if (!isNaN(jsDate)) return jsDate;
+            }
+
+            const str = dateVal.toString().trim();
+            if (!str || str.toLowerCase() === 'post-mvp' || str === '--') return null;
+
+            // Try to extract the last date from strings with multiple dates
+            const datePatterns = str.split(/\s+/);
+            const lastPart = datePatterns[datePatterns.length - 1];
+
+            // Try dd-mm-yyyy
+            let match = lastPart.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+            if (match) {
+                const [, day, month, year] = match;
+                return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            }
+
+            // Try mm/dd/yyyy
+            match = lastPart.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (match) {
+                const [, month, day, year] = match;
+                return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            }
+
+            // Try yyyy-mm-dd
+            match = lastPart.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (match) {
+                const [, year, month, day] = match;
+                return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            }
+
+            // Try parsing as is
+            const parsed = new Date(str);
+            if (!isNaN(parsed)) return parsed;
+
+            return null;
+        }
+
+        // Parse date history to detect moved dates (multiple dates in cell = date was revised)
+        function parseDateHistory(dateVal) {
+            const result = {
+                current: null,
+                original: null,
+                wasMoved: false,
+                daysMoved: 0,
+                allDates: []
+            };
+
+            if (!dateVal) return result;
+
+            // Handle Excel date objects (single date, no history)
+            if (dateVal instanceof Date && !isNaN(dateVal)) {
+                result.current = dateVal;
+                return result;
+            }
+
+            // Handle Excel serial date numbers (single date, no history)
+            if (typeof dateVal === 'number' && dateVal > 1000 && dateVal < 100000) {
+                const excelEpoch = new Date(1899, 11, 30);
+                const jsDate = new Date(excelEpoch.getTime() + dateVal * 24 * 60 * 60 * 1000);
+                if (!isNaN(jsDate)) {
+                    result.current = jsDate;
+                }
+                return result;
+            }
+
+            const str = dateVal.toString().trim();
+            if (!str || str.toLowerCase() === 'post-mvp' || str === '--') return result;
+
+            // Helper function to parse a single date string
+            function parseSingleDate(dateStr) {
+                if (!dateStr) return null;
+                dateStr = dateStr.trim();
+
+                // Try dd-mm-yyyy
+                let match = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+                if (match) {
+                    const [, day, month, year] = match;
+                    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                }
+
+                // Try mm/dd/yyyy
+                match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                if (match) {
+                    const [, month, day, year] = match;
+                    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                }
+
+                // Try yyyy-mm-dd
+                match = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+                if (match) {
+                    const [, year, month, day] = match;
+                    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                }
+
+                return null;
+            }
+
+            // Split by whitespace to find multiple dates
+            const parts = str.split(/\s+/).filter(p => p.length > 0);
+            const dates = [];
+
+            for (const part of parts) {
+                const parsed = parseSingleDate(part);
+                if (parsed && !isNaN(parsed)) {
+                    dates.push(parsed);
+                }
+            }
+
+            result.allDates = dates;
+
+            if (dates.length > 0) {
+                // Current date is the last one (most recent)
+                result.current = dates[dates.length - 1];
+
+                if (dates.length > 1) {
+                    // Original date is the first one
+                    result.original = dates[0];
+                    result.wasMoved = true;
+
+                    // Calculate days moved (positive = pushed out, negative = pulled in)
+                    const diffMs = result.current.getTime() - result.original.getTime();
+                    result.daysMoved = Math.round(diffMs / (1000 * 60 * 60 * 24));
+                }
+            }
+
+            return result;
+        }
+
+        function analyzeIssues() {
+            issues = [];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const taskMap = new Map(projectData.map(t => [t.id, t]));
+
+            projectData.forEach(task => {
+                const taskIssues = [];
+
+                task.dependencies.forEach(depId => {
+                    const dep = taskMap.get(depId);
+                    if (!dep) {
+                        // Dependency not found - could be missing data
+                        taskIssues.push({
+                            type: 'missing',
+                            depId: depId,
+                            message: `Dependency "${depId}" not found in project plan`
+                        });
+                    } else if (dep.status !== 'done') {
+                        // Check if this task's due date has passed but dependency isn't done
+                        const dueDate = task.anticipatedEnd || task.actualEnd;
+                        if (dueDate && dueDate < today) {
+                            taskIssues.push({
+                                type: 'overdue',
+                                depId: depId,
+                                depStatus: dep.status,
+                                dueDate: dueDate,
+                                message: `Dependency "${depId}" (${dep.status.toUpperCase()}) not complete but task was due ${formatDate(dueDate)}`
+                            });
+                        } else if (dep.status === 'wip' || dep.status === 'new' || dep.status === 'blocked') {
+                            taskIssues.push({
+                                type: 'incomplete',
+                                depId: depId,
+                                depStatus: dep.status,
+                                message: `Dependency "${depId}" is ${dep.status.toUpperCase()}, not yet complete`
+                            });
+                        }
+                    }
+                });
+
+                if (taskIssues.length > 0) {
+                    issues.push({
+                        task: task,
+                        issues: taskIssues
+                    });
+                }
+
+                task.hasIssue = taskIssues.some(i => i.type === 'overdue' || i.type === 'missing');
+            });
+        }
+
+        function displayResults() {
+            resultsSection.classList.remove('hidden');
+
+            // Stats
+            document.getElementById('stat-total').textContent = projectData.length;
+            document.getElementById('stat-done').textContent = projectData.filter(t => t.status === 'done').length;
+            document.getElementById('stat-wip').textContent = projectData.filter(t => t.status === 'wip').length;
+            document.getElementById('stat-issues').textContent = issues.filter(i => i.issues.some(is => is.type === 'overdue')).length;
+
+            // Issues Panel
+            const criticalIssues = issues.filter(i => i.issues.some(is => is.type === 'overdue'));
+            const issuesPanel = document.getElementById('issues-panel');
+            const issuesList = document.getElementById('issues-list');
+
+            if (criticalIssues.length > 0) {
+                issuesPanel.classList.remove('hidden');
+                issuesList.innerHTML = criticalIssues.map(issue => `
+                    <div class="issue-card card p-4">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">🚨</span>
+                            <div>
+                                <p class="font-bold mono">${escapeHtml(issue.task.id)}: ${escapeHtml(truncate(issue.task.description, 60))}</p>
+                                <ul class="mt-2 space-y-1">
+                                    ${issue.issues.filter(i => i.type === 'overdue').map(i => `
+                                        <li class="text-sm" style="color: var(--text-secondary);">• ${escapeHtml(i.message)}</li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                issuesPanel.classList.add('hidden');
+            }
+
+            // Render views
+            renderGraph();
+            renderGantt();
+            renderTable();
+
+            // Populate milestone selector
+            populateMilestoneSelector();
+        }
+
+        function populateMilestoneSelector() {
+            const select = document.getElementById('milestone-select');
+            select.innerHTML = '<option value="">Select milestone...</option>';
+
+            projectData.forEach(task => {
+                const option = document.createElement('option');
+                option.value = task.id;
+                option.textContent = `${task.id}: ${truncate(task.description, 50)}`;
+                select.appendChild(option);
+            });
+        }
+
+        function validateGoLiveFeasibility(milestoneId) {
+            const taskMap = new Map(projectData.map(t => [t.id, t]));
+            const milestone = taskMap.get(milestoneId);
+
+            if (!milestone) {
+                showCustomAlert(`Milestone "${milestoneId}" not found`);
+                return;
+            }
+
+            // Trace all dependencies recursively
+            const visited = new Set();
+            const dependencyChain = [];
+            const blockers = [];
+            const warnings = [];
+
+            function traceDependencies(taskId, depth = 0) {
+                if (visited.has(taskId)) return;
+                visited.add(taskId);
+
+                const task = taskMap.get(taskId);
+                if (!task) {
+                    blockers.push({
+                        type: 'missing',
+                        taskId: taskId,
+                        message: `Task "${taskId}" not found in project plan`,
+                        depth: depth
+                    });
+                    return;
+                }
+
+                dependencyChain.push({ task, depth });
+
+                // Check for issues
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (task.status === 'blocked') {
+                    blockers.push({
+                        type: 'blocked',
+                        task: task,
+                        message: `Task ${task.id} is BLOCKED`,
+                        depth: depth
+                    });
+                } else if (task.status !== 'done') {
+                    const dueDate = task.anticipatedEnd;
+                    if (dueDate && dueDate < today) {
+                        blockers.push({
+                            type: 'overdue',
+                            task: task,
+                            message: `Task ${task.id} (${task.status.toUpperCase()}) is overdue - was due ${formatDate(dueDate)}`,
+                            depth: depth
+                        });
+                    } else if (task.status === 'wip' || task.status === 'new') {
+                        warnings.push({
+                            type: 'incomplete',
+                            task: task,
+                            message: `Task ${task.id} is ${task.status.toUpperCase()} - due ${dueDate ? formatDate(dueDate) : 'TBD'}`,
+                            depth: depth
+                        });
+                    }
+                }
+
+                // Recurse into dependencies
+                task.dependencies.forEach(depId => {
+                    traceDependencies(depId, depth + 1);
+                });
+            }
+
+            traceDependencies(milestoneId);
+
+            // Calculate stats
+            const totalDeps = dependencyChain.length;
+            const completedDeps = dependencyChain.filter(d => d.task.status === 'done').length;
+            const completionPercent = totalDeps > 0 ? Math.round((completedDeps / totalDeps) * 100) : 0;
+
+            // Calculate next week outlook
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const nextWeekEnd = new Date(today);
+            nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
+
+            const nextWeekTasks = dependencyChain
+                .filter(d => {
+                    if (d.task.status === 'done') return false;
+                    const dueDate = d.task.anticipatedEnd;
+                    if (!dueDate) return false;
+                    return dueDate >= today && dueDate <= nextWeekEnd;
+                })
+                .sort((a, b) => (a.task.anticipatedEnd || 0) - (b.task.anticipatedEnd || 0));
+
+            // Calculate week after next (for lookahead)
+            const twoWeeksEnd = new Date(today);
+            twoWeeksEnd.setDate(twoWeeksEnd.getDate() + 14);
+
+            const followingWeekTasks = dependencyChain
+                .filter(d => {
+                    if (d.task.status === 'done') return false;
+                    const dueDate = d.task.anticipatedEnd;
+                    if (!dueDate) return false;
+                    return dueDate > nextWeekEnd && dueDate <= twoWeeksEnd;
+                })
+                .sort((a, b) => (a.task.anticipatedEnd || 0) - (b.task.anticipatedEnd || 0));
+
+            // Find tasks without planned dates (not done)
+            const tasksWithoutDates = dependencyChain
+                .filter(d => {
+                    if (d.task.status === 'done') return false;
+                    return !d.task.anticipatedEnd;
+                })
+                .sort((a, b) => {
+                    // Sort by owner, then by task ID
+                    const ownerA = a.task.owner || 'ZZZ';
+                    const ownerB = b.task.owner || 'ZZZ';
+                    if (ownerA !== ownerB) return ownerA.localeCompare(ownerB);
+                    return a.task.id.localeCompare(b.task.id);
+                });
+
+            // Find tasks where dates were moved (pushed out or pulled in)
+            const tasksWithMovedDates = dependencyChain
+                .filter(d => d.task.dateWasMoved)
+                .sort((a, b) => {
+                    // Sort by days moved (largest pushout first)
+                    return b.task.dateMovedDays - a.task.dateMovedDays;
+                });
+
+            // Calculate total slip days
+            const totalSlipDays = tasksWithMovedDates
+                .filter(d => d.task.dateMovedDays > 0)
+                .reduce((sum, d) => sum + d.task.dateMovedDays, 0);
+
+            // Determine feasibility
+            let feasibility = 'go';
+            let feasibilityText = '✅ GO - Plan is on track!';
+            let feasibilityClass = 'feasibility-go';
+
+            if (blockers.length > 0) {
+                feasibility = 'blocked';
+                feasibilityText = '🚫 AT RISK - Critical blockers detected!';
+                feasibilityClass = 'feasibility-blocked';
+            } else if (warnings.length > 0) {
+                feasibility = 'warning';
+                feasibilityText = '⚠️ CAUTION - Tasks still in progress';
+                feasibilityClass = 'feasibility-warning';
+            }
+
+            // Render feasibility panel
+            const panel = document.getElementById('feasibility-panel');
+            const content = document.getElementById('feasibility-content');
+
+            panel.classList.remove('hidden');
+
+            content.innerHTML = `
+                <div class="${feasibilityClass} p-6">
+                    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-1">${feasibilityText}</h2>
+                            <p class="mono" style="color: var(--text-secondary);">
+                                Milestone: <strong>${escapeHtml(milestoneId)}</strong> - ${escapeHtml(truncate(milestone.description, 60))}
+                            </p>
+                            ${milestone.anticipatedEnd ? `<p class="text-sm mt-1" style="color: var(--text-secondary);">Target Date: <strong>${formatDate(milestone.anticipatedEnd)}</strong></p>` : ''}
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold" style="color: ${feasibility === 'go' ? 'var(--success)' : feasibility === 'warning' ? 'var(--warning)' : 'var(--danger)'};">
+                                ${completionPercent}%
+                            </div>
+                            <p class="text-sm" style="color: var(--text-secondary);">${completedDeps}/${totalDeps} tasks done</p>
+                        </div>
+                    </div>
+
+                    ${blockers.length > 0 ? `
+                        <div class="mb-4">
+                            <h3 class="font-bold mb-2" style="color: var(--danger);">🚨 Critical Blockers (${blockers.length})</h3>
+                            <div class="space-y-2">
+                                ${blockers.map(b => `
+                                    <div class="dep-chain-item blocked" style="background: rgba(239, 68, 68, 0.15); border-left-color: var(--danger);">
+                                        <div class="flex justify-between items-start gap-2">
+                                            <div>
+                                                <span class="mono font-medium">${escapeHtml(b.task ? b.task.id : b.taskId)}</span>
+                                                <span class="text-sm ml-2" style="color: var(--danger);">${escapeHtml(b.message)}</span>
+                                                ${b.task && b.task.description ? `<p class="text-sm mt-1" style="color: var(--text-secondary);">${escapeHtml(truncate(b.task.description, 60))}</p>` : ''}
+                                            </div>
+                                            ${b.task && b.task.owner ? `<div class="text-right flex-shrink-0">
+                                                <span class="px-2 py-1 rounded text-xs font-medium" style="background: var(--danger); color: white;">👤 ${escapeHtml(b.task.owner)}</span>
+                                            </div>` : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${warnings.length > 0 ? `
+                        <div class="mb-4">
+                            <h3 class="font-bold mb-2" style="color: var(--warning);">⚠️ In-Progress Tasks (${warnings.length})</h3>
+                            <div class="space-y-2">
+                                ${warnings.map(w => `
+                                    <div class="dep-chain-item ${w.task.status}">
+                                        <div class="flex justify-between items-start gap-2">
+                                            <div>
+                                                <span class="mono font-medium">${escapeHtml(w.task.id)}</span>
+                                                <span class="px-2 py-0.5 rounded text-xs font-medium ml-2 status-${w.task.status}">${w.task.status.toUpperCase()}</span>
+                                                <span class="text-sm ml-2">${escapeHtml(w.message)}</span>
+                                                ${w.task.description ? `<p class="text-sm mt-1" style="color: var(--text-secondary);">${escapeHtml(truncate(w.task.description, 60))}</p>` : ''}
+                                            </div>
+                                            ${w.task.owner ? `<div class="text-right flex-shrink-0">
+                                                <span class="px-2 py-1 rounded text-xs font-medium" style="background: var(--warning); color: white;">👤 ${escapeHtml(w.task.owner)}</span>
+                                            </div>` : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Next Week Outlook -->
+                    <div class="grid md:grid-cols-2 gap-4 mb-4">
+                        <div class="p-4" style="background: var(--bg-tertiary); border-radius: 8px;">
+                            <h3 class="font-bold mb-3" style="color: var(--accent);">
+                                📅 This Week's Focus
+                                <span class="text-sm font-normal ml-2" style="color: var(--text-muted);">(${formatDate(today)} - ${formatDate(nextWeekEnd)})</span>
+                            </h3>
+                            ${nextWeekTasks.length > 0 ? `
+                                <div class="space-y-2">
+                                    ${nextWeekTasks.map(d => {
+                                        const daysLeft = Math.ceil((d.task.anticipatedEnd - today) / (1000 * 60 * 60 * 24));
+                                        const urgencyColor = daysLeft <= 2 ? 'var(--danger)' : daysLeft <= 4 ? 'var(--warning)' : 'var(--text-secondary)';
+                                        return `
+                                            <div class="dep-chain-item ${d.task.status}">
+                                                <div class="flex justify-between items-start gap-2">
+                                                    <div>
+                                                        <span class="mono font-medium">${escapeHtml(d.task.id)}</span>
+                                                        <span class="px-2 py-0.5 rounded text-xs font-medium ml-2 status-${d.task.status}">${d.task.status.toUpperCase()}</span>
+                                                        <p class="text-sm mt-1" style="color: var(--text-secondary);">${escapeHtml(truncate(d.task.description, 50))}</p>
+                                                        ${d.task.owner ? `<p class="text-xs mt-1" style="color: var(--text-muted);">Owner: ${escapeHtml(d.task.owner)}</p>` : ''}
+                                                    </div>
+                                                    <div class="text-right flex-shrink-0">
+                                                        <div class="text-sm font-bold" style="color: ${urgencyColor};">${daysLeft === 0 ? 'TODAY' : daysLeft === 1 ? 'Tomorrow' : daysLeft + ' days'}</div>
+                                                        <div class="text-xs" style="color: var(--text-muted);">${formatDate(d.task.anticipatedEnd)}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            ` : `
+                                <p class="text-sm" style="color: var(--text-muted);">No tasks due this week 🎉</p>
+                            `}
+                        </div>
+
+                        <div class="p-4" style="background: var(--bg-tertiary); border-radius: 8px;">
+                            <h3 class="font-bold mb-3" style="color: var(--text-secondary);">
+                                🔮 Following Week Preview
+                                <span class="text-sm font-normal ml-2" style="color: var(--text-muted);">(${formatDate(new Date(nextWeekEnd.getTime() + 86400000))} - ${formatDate(twoWeeksEnd)})</span>
+                            </h3>
+                            ${followingWeekTasks.length > 0 ? `
+                                <div class="space-y-2">
+                                    ${followingWeekTasks.map(d => `
+                                        <div class="dep-chain-item ${d.task.status}">
+                                            <div class="flex justify-between items-start gap-2">
+                                                <div>
+                                                    <span class="mono font-medium">${escapeHtml(d.task.id)}</span>
+                                                    <span class="px-2 py-0.5 rounded text-xs font-medium ml-2 status-${d.task.status}">${d.task.status.toUpperCase()}</span>
+                                                    <p class="text-sm mt-1" style="color: var(--text-secondary);">${escapeHtml(truncate(d.task.description, 50))}</p>
+                                                </div>
+                                                <div class="text-right flex-shrink-0">
+                                                    <div class="text-xs" style="color: var(--text-muted);">${formatDate(d.task.anticipatedEnd)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : `
+                                <p class="text-sm" style="color: var(--text-muted);">No tasks due next week</p>
+                            `}
+                        </div>
+                    </div>
+
+                    <!-- Tasks Without Planned Dates -->
+                    ${tasksWithoutDates.length > 0 ? `
+                        <div class="mb-4 p-4" style="background: var(--bg-tertiary); border-radius: 8px; border-left: 4px solid var(--text-muted);">
+                            <h3 class="font-bold mb-3" style="color: var(--text-muted);">
+                                📭 Tasks Missing Due Dates (${tasksWithoutDates.length})
+                                <span class="text-sm font-normal ml-2">- Need scheduling attention</span>
+                            </h3>
+                            <div class="space-y-2" style="max-height: 250px; overflow-y: auto;">
+                                ${(() => {
+                                    // Group by owner
+                                    const byOwner = {};
+                                    tasksWithoutDates.forEach(d => {
+                                        const owner = d.task.owner || 'Unassigned';
+                                        if (!byOwner[owner]) byOwner[owner] = [];
+                                        byOwner[owner].push(d);
+                                    });
+
+                                    return Object.entries(byOwner).map(([owner, tasks]) => `
+                                        <div class="mb-3">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <span class="px-2 py-1 rounded text-xs font-medium" style="background: var(--accent); color: white;">👤 ${escapeHtml(owner)}</span>
+                                                <span class="text-sm" style="color: var(--text-muted);">${tasks.length} task${tasks.length > 1 ? 's' : ''}</span>
+                                            </div>
+                                            <div class="space-y-1 ml-4">
+                                                ${tasks.map(d => `
+                                                    <div class="dep-chain-item ${d.task.status}" style="background: var(--bg-secondary);">
+                                                        <div class="flex justify-between items-center gap-2">
+                                                            <div class="flex items-center gap-2 flex-wrap">
+                                                                <span class="mono font-medium">${escapeHtml(d.task.id)}</span>
+                                                                <span class="px-2 py-0.5 rounded text-xs font-medium status-${d.task.status}">${d.task.status.toUpperCase()}</span>
+                                                                <span class="px-2 py-0.5 rounded text-xs font-medium" style="background: var(--text-muted); color: white;">📅 NO DATE</span>
+                                                            </div>
+                                                        </div>
+                                                        <p class="text-sm mt-1" style="color: var(--text-secondary);">${escapeHtml(truncate(d.task.description, 60))}</p>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    `).join('');
+                                })()}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Tasks With Moved Dates -->
+                    ${tasksWithMovedDates.length > 0 ? `
+                        <div class="mb-4 p-4" style="background: var(--bg-tertiary); border-radius: 8px; border-left: 4px solid var(--warning);">
+                            <h3 class="font-bold mb-3" style="color: var(--warning);">
+                                📆 Schedule Slippage Analysis (${tasksWithMovedDates.length} tasks moved)
+                                ${totalSlipDays > 0 ? `<span class="text-sm font-normal ml-2" style="color: var(--danger);">Total slip: +${totalSlipDays} days</span>` : ''}
+                            </h3>
+                            <div class="space-y-2" style="max-height: 300px; overflow-y: auto;">
+                                ${tasksWithMovedDates.map(d => {
+                                    const isPushedOut = d.task.dateMovedDays > 0;
+                                    const moveColor = isPushedOut ? 'var(--danger)' : 'var(--success)';
+                                    const moveIcon = isPushedOut ? '⏩' : '⏪';
+                                    const moveText = isPushedOut ? `+${d.task.dateMovedDays} days` : `${d.task.dateMovedDays} days`;
+                                    const bgStyle = isPushedOut ? 'background: rgba(239, 68, 68, 0.1);' : 'background: rgba(16, 185, 129, 0.1);';
+
+                                    return `
+                                        <div class="dep-chain-item ${d.task.status}" style="${bgStyle}">
+                                            <div class="flex justify-between items-start gap-2">
+                                                <div class="flex-grow">
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <span class="mono font-medium">${escapeHtml(d.task.id)}</span>
+                                                        <span class="px-2 py-0.5 rounded text-xs font-medium status-${d.task.status}">${d.task.status.toUpperCase()}</span>
+                                                        <span class="px-2 py-0.5 rounded text-xs font-medium" style="background: ${moveColor}; color: white;">${moveIcon} ${moveText}</span>
+                                                    </div>
+                                                    <p class="text-sm mt-1" style="color: var(--text-secondary);">${escapeHtml(truncate(d.task.description, 55))}</p>
+                                                    <div class="text-xs mt-1" style="color: var(--text-muted);">
+                                                        <span style="text-decoration: line-through; color: var(--danger);">${formatDate(d.task.originalAnticipatedEnd)}</span>
+                                                        <span class="mx-1">→</span>
+                                                        <span style="font-weight: 600;">${formatDate(d.task.anticipatedEnd)}</span>
+                                                    </div>
+                                                </div>
+                                                ${d.task.owner ? `<div class="text-right flex-shrink-0">
+                                                    <span class="px-2 py-1 rounded text-xs font-medium" style="background: ${moveColor}; color: white;">👤 ${escapeHtml(d.task.owner)}</span>
+                                                </div>` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div>
+                        <h3 class="font-bold mb-2" style="color: var(--text-secondary);">📋 Full Dependency Chain (${totalDeps} tasks)</h3>
+                        <div class="space-y-1" style="max-height: 300px; overflow-y: auto;">
+                            ${dependencyChain.sort((a, b) => a.depth - b.depth).map(d => {
+                                const isOverdue = d.task.status !== 'done' && d.task.anticipatedEnd && d.task.anticipatedEnd < today;
+                                const overdueStyle = isOverdue ? 'background: rgba(239, 68, 68, 0.15); border-left-color: var(--danger);' : '';
+                                return `
+                                <div class="dep-chain-item ${d.task.status}" style="margin-left: ${d.depth * 16}px; ${overdueStyle}">
+                                    <div class="flex justify-between items-center gap-2">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="mono font-medium" ${isOverdue ? 'style="color: var(--danger);"' : ''}>${escapeHtml(d.task.id)}</span>
+                                            <span class="px-2 py-0.5 rounded text-xs font-medium status-${d.task.status}">${d.task.status.toUpperCase()}</span>
+                                            ${isOverdue ? '<span class="px-2 py-0.5 rounded text-xs font-medium" style="background: var(--danger); color: white;">⏰ OVERDUE</span>' : ''}
+                                            <span class="text-sm" style="color: var(--text-secondary);">${escapeHtml(truncate(d.task.description, 35))}</span>
+                                        </div>
+                                        ${d.task.owner ? `<span class="text-xs px-2 py-1 rounded flex-shrink-0" style="background: var(--bg-primary); color: var(--text-muted);">👤 ${escapeHtml(d.task.owner)}</span>` : ''}
+                                    </div>
+                                </div>
+                            `}).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Event listener for validate button
+        document.getElementById('validate-btn').addEventListener('click', () => {
+            const milestoneId = document.getElementById('milestone-select').value;
+            if (!milestoneId) {
+                showCustomAlert('Please select a milestone task');
+                return;
+            }
+            validateGoLiveFeasibility(milestoneId);
+        });
+
+        function renderGraph() {
+            const container = document.getElementById('graph-container');
+            container.innerHTML = '';
+
+            const width = container.clientWidth;
+            const height = 600;
+
+            const svg = d3.select(container)
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Create nodes and links
+            const nodes = projectData.map(t => ({
+                id: t.id,
+                description: t.description,
+                status: t.status,
+                hasIssue: t.hasIssue,
+                owner: t.owner,
+                anticipatedEnd: t.anticipatedEnd
+            }));
+
+            const nodeIds = new Set(nodes.map(n => n.id));
+            const links = [];
+
+            projectData.forEach(task => {
+                task.dependencies.forEach(depId => {
+                    if (nodeIds.has(depId)) {
+                        const hasOverdueIssue = issues.some(i =>
+                            i.task.id === task.id &&
+                            i.issues.some(is => is.depId === depId && is.type === 'overdue')
+                        );
+                        links.push({
+                            source: depId,
+                            target: task.id,
+                            isIssue: hasOverdueIssue
+                        });
+                    }
+                });
+            });
+
+            // Force simulation - use larger collision radius for issue nodes
+            const simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(120))
+                .force('charge', d3.forceManyBody().strength(-400))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => d.hasIssue ? 40 : 25));
+
+            // Arrow marker
+            svg.append('defs').append('marker')
+                .attr('id', 'arrowhead')
+                .attr('viewBox', '-0 -5 10 10')
+                .attr('refX', 20)
+                .attr('refY', 0)
+                .attr('orient', 'auto')
+                .attr('markerWidth', 8)
+                .attr('markerHeight', 8)
+                .append('path')
+                .attr('d', 'M 0,-5 L 10,0 L 0,5')
+                .attr('fill', 'var(--text-muted)');
+
+            svg.append('defs').append('marker')
+                .attr('id', 'arrowhead-issue')
+                .attr('viewBox', '-0 -5 10 10')
+                .attr('refX', 32)
+                .attr('refY', 0)
+                .attr('orient', 'auto')
+                .attr('markerWidth', 10)
+                .attr('markerHeight', 10)
+                .append('path')
+                .attr('d', 'M 0,-5 L 10,0 L 0,5')
+                .attr('fill', 'var(--danger)');
+
+            // Links
+            const link = svg.append('g')
+                .selectAll('line')
+                .data(links)
+                .join('line')
+                .attr('class', d => d.isIssue ? 'link link-issue' : 'link')
+                .attr('stroke-width', d => d.isIssue ? 3 : 1.5)
+                .attr('marker-end', d => d.isIssue ? 'url(#arrowhead-issue)' : 'url(#arrowhead)');
+
+            // Nodes - larger radius for issue nodes
+            const nodeRadius = d => d.hasIssue ? 28 : 15;
+            const node = svg.append('g')
+                .selectAll('circle')
+                .data(nodes)
+                .join('circle')
+                .attr('r', nodeRadius)
+                .attr('class', d => `node-${d.status}${d.hasIssue ? ' node-issue' : ''}`)
+                .style('cursor', 'pointer')
+                .call(drag(simulation));
+
+            // Labels - larger font for issue nodes
+            const label = svg.append('g')
+                .selectAll('text')
+                .data(nodes)
+                .join('text')
+                .text(d => d.id)
+                .attr('text-anchor', 'middle')
+                .attr('dy', 4)
+                .style('fill', 'white')
+                .style('font-weight', d => d.hasIssue ? '700' : '600')
+                .style('font-size', d => d.hasIssue ? '14px' : '11px')
+                .style('pointer-events', 'none');
+
+            // Tooltip
+            node.on('mouseover', (event, d) => {
+                // Find the specific issues for this task
+                let issueHtml = '';
+                if (d.hasIssue) {
+                    const taskIssues = issues.find(i => i.task.id === d.id);
+                    if (taskIssues && taskIssues.issues.length > 0) {
+                        const issueItems = taskIssues.issues.map(i =>
+                            `<li style="margin-left: 12px; list-style: disc;">• ${escapeHtml(i.message)}</li>`
+                        ).join('');
+                        issueHtml = `
+                            <div class="mt-2 p-2" style="background: rgba(239, 68, 68, 0.1); border-radius: 6px; border-left: 3px solid var(--danger);">
+                                <p class="text-sm font-semibold" style="color: var(--danger);">⚠️ Dependency Issues:</p>
+                                <ul class="mt-1 text-sm" style="color: var(--danger);">${issueItems}</ul>
+                            </div>
+                        `;
+                    }
+                }
+
+                tooltip.innerHTML = `
+                    <p class="font-bold mono">${escapeHtml(d.id)}</p>
+                    <p class="mt-1 text-sm">${escapeHtml(truncate(d.description, 100))}</p>
+                    <p class="mt-2 text-sm"><strong>Status:</strong> ${d.status.toUpperCase()}</p>
+                    ${d.owner ? `<p class="text-sm"><strong>Owner:</strong> ${escapeHtml(d.owner)}</p>` : ''}
+                    ${d.anticipatedEnd ? `<p class="text-sm"><strong>Due:</strong> ${formatDate(d.anticipatedEnd)}</p>` : ''}
+                    ${issueHtml}
+                `;
+                tooltip.style.opacity = 1;
+                tooltip.style.left = (event.pageX + 10) + 'px';
+                tooltip.style.top = (event.pageY - 10) + 'px';
+            })
+            .on('mouseout', () => {
+                tooltip.style.opacity = 0;
+            });
+
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('cx', d => d.x = Math.max(20, Math.min(width - 20, d.x)))
+                    .attr('cy', d => d.y = Math.max(20, Math.min(height - 20, d.y)));
+
+                label
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+
+            function drag(simulation) {
+                return d3.drag()
+                    .on('start', (event, d) => {
+                        if (!event.active) simulation.alphaTarget(0.3).restart();
+                        d.fx = d.x;
+                        d.fy = d.y;
+                    })
+                    .on('drag', (event, d) => {
+                        d.fx = event.x;
+                        d.fy = event.y;
+                    })
+                    .on('end', (event, d) => {
+                        if (!event.active) simulation.alphaTarget(0);
+                        d.fx = null;
+                        d.fy = null;
+                    });
+            }
+        }
+
+        function renderGantt() {
+            const container = document.getElementById('gantt-container');
+
+            // Filter tasks with dates
+            const tasksWithDates = projectData.filter(t => t.startDate || t.anticipatedEnd);
+
+            if (tasksWithDates.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 40px;">No tasks with date information found</p>';
+                return;
+            }
+
+            // Find date range - initialize to first task's dates
+            let minDate = null;
+            let maxDate = null;
+
+            tasksWithDates.forEach(t => {
+                const taskStart = t.startDate || t.anticipatedEnd;
+                const taskEnd = t.anticipatedEnd || t.startDate;
+
+                if (taskStart) {
+                    if (!minDate || taskStart < minDate) minDate = new Date(taskStart);
+                    if (!maxDate || taskStart > maxDate) maxDate = new Date(taskStart);
+                }
+                if (taskEnd) {
+                    if (!minDate || taskEnd < minDate) minDate = new Date(taskEnd);
+                    if (!maxDate || taskEnd > maxDate) maxDate = new Date(taskEnd);
+                }
+            });
+
+            // Fallback to today if no dates found
+            if (!minDate) minDate = new Date();
+            if (!maxDate) maxDate = new Date();
+
+            // Extend range a bit
+            minDate = new Date(minDate);
+            minDate.setDate(minDate.getDate() - 7);
+            maxDate = new Date(maxDate);
+            maxDate.setDate(maxDate.getDate() + 14);
+
+            const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+            const dayWidth = Math.max(15, 800 / totalDays);
+            const chartWidth = totalDays * dayWidth;
+            const rowHeight = 36;
+            const leftMargin = 200;
+
+            // Create task index map for dependency lines
+            const taskIndexMap = new Map();
+            tasksWithDates.forEach((task, i) => {
+                taskIndexMap.set(task.id, i);
+            });
+
+            // Calculate bar positions for dependency lines
+            const barPositions = new Map();
+            tasksWithDates.forEach((task, i) => {
+                const start = task.startDate || task.anticipatedEnd;
+                const end = task.anticipatedEnd || task.startDate;
+                const startDay = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
+                const endDay = Math.ceil((end - minDate) / (1000 * 60 * 60 * 24));
+                const barWidth = Math.max(dayWidth, (endDay - startDay + 1) * dayWidth);
+
+                barPositions.set(task.id, {
+                    rowIndex: i,
+                    startX: startDay * dayWidth,
+                    endX: startDay * dayWidth + barWidth,
+                    centerY: i * rowHeight + rowHeight / 2
+                });
+            });
+
+            // Generate dependency lines (SVG paths)
+            let dependencyLines = '';
+            const svgHeight = tasksWithDates.length * rowHeight;
+
+            tasksWithDates.forEach(task => {
+                const targetPos = barPositions.get(task.id);
+                if (!targetPos) return;
+
+                task.dependencies.forEach(depId => {
+                    const sourcePos = barPositions.get(depId);
+                    if (!sourcePos) return;
+
+                    // Check if this is an issue dependency
+                    const hasIssue = issues.some(i =>
+                        i.task.id === task.id &&
+                        i.issues.some(is => is.depId === depId && is.type === 'overdue')
+                    );
+
+                    const lineColor = hasIssue ? 'var(--danger)' : 'var(--text-muted)';
+                    const lineWidth = hasIssue ? 2 : 1;
+                    const dashArray = hasIssue ? '4,2' : 'none';
+
+                    // Draw path from end of source to start of target
+                    const startX = sourcePos.endX;
+                    const startY = sourcePos.centerY;
+                    const endX = targetPos.startX;
+                    const endY = targetPos.centerY;
+
+                    // Create a curved path
+                    const midX = (startX + endX) / 2;
+
+                    if (startX < endX) {
+                        // Normal case: dependency ends before task starts
+                        dependencyLines += `
+                            <path d="M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}"
+                                  fill="none" stroke="${lineColor}" stroke-width="${lineWidth}"
+                                  stroke-dasharray="${dashArray}" opacity="0.7"
+                                  marker-end="url(#gantt-arrow${hasIssue ? '-issue' : ''})"/>
+                        `;
+                    } else {
+                        // Overlap case: need to route around
+                        const offsetY = 15;
+                        const routeY = Math.min(startY, endY) - offsetY;
+                        dependencyLines += `
+                            <path d="M ${startX} ${startY} L ${startX + 10} ${startY} L ${startX + 10} ${routeY} L ${endX - 10} ${routeY} L ${endX - 10} ${endY} L ${endX} ${endY}"
+                                  fill="none" stroke="${lineColor}" stroke-width="${lineWidth}"
+                                  stroke-dasharray="${dashArray}" opacity="0.7"
+                                  marker-end="url(#gantt-arrow${hasIssue ? '-issue' : ''})"/>
+                        `;
+                    }
+                });
+            });
+
+            // Generate week headers
+            let weekHeaders = '';
+            const startWeek = new Date(minDate);
+            startWeek.setDate(startWeek.getDate() - startWeek.getDay()); // Start of week
+            const numWeeks = Math.ceil((maxDate - startWeek) / (1000 * 60 * 60 * 24 * 7)) + 1;
+
+            for (let w = 0; w < numWeeks; w++) {
+                const weekStart = new Date(startWeek);
+                weekStart.setDate(weekStart.getDate() + (w * 7));
+                const left = Math.max(0, ((weekStart - minDate) / (1000 * 60 * 60 * 24)) * dayWidth);
+                const weekWidth = 7 * dayWidth;
+                weekHeaders += `<div style="position: absolute; left: ${left}px; width: ${weekWidth}px; text-align: center; border-left: 1px solid var(--border); font-size: 11px; color: var(--text-muted); padding: 4px 0;">${formatDate(weekStart)}</div>`;
+            }
+
+            // Generate task rows with bars
+            let taskBars = '';
+            tasksWithDates.forEach((task, i) => {
+                const pos = barPositions.get(task.id);
+                const barWidth = pos.endX - pos.startX;
+
+                const statusColor = {
+                    'done': 'var(--success)',
+                    'wip': 'var(--warning)',
+                    'new': 'var(--info)',
+                    'blocked': 'var(--danger)',
+                    'postmvp': 'var(--text-muted)'
+                }[task.status] || 'var(--text-muted)';
+
+                const issueStyle = task.hasIssue ? 'stroke: var(--danger); stroke-width: 2;' : '';
+                const yPos = i * rowHeight + 6;
+
+                taskBars += `
+                    <rect x="${pos.startX}" y="${yPos}" width="${barWidth}" height="24" rx="4"
+                          fill="${statusColor}" style="${issueStyle}" class="gantt-bar-svg"
+                          data-task-id="${escapeHtml(task.id)}">
+                    </rect>
+                `;
+            });
+
+            // Generate task labels (left side)
+            let taskLabels = '';
+            tasksWithDates.forEach((task, i) => {
+                const statusColor = {
+                    'done': 'var(--success)',
+                    'wip': 'var(--warning)',
+                    'new': 'var(--info)',
+                    'blocked': 'var(--danger)',
+                    'postmvp': 'var(--text-muted)'
+                }[task.status] || 'var(--text-muted)';
+
+                taskLabels += `
+                    <div style="display: flex; align-items: center; height: ${rowHeight}px; border-bottom: 1px solid var(--border);">
+                        <div style="width: ${leftMargin}px; flex-shrink: 0; padding: 0 8px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px;" class="mono" title="${escapeHtml(task.id)}: ${escapeHtml(task.description)} (${task.status.toUpperCase()})">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: ${statusColor}; flex-shrink: 0; ${task.hasIssue ? 'box-shadow: 0 0 0 2px var(--danger);' : ''}"></span>
+                            <span style="${task.hasIssue ? 'color: var(--danger);' : ''}">${escapeHtml(task.id)}</span>
+                            ${task.dependencies.length > 0 ? `<span style="color: var(--text-muted); font-size: 10px;">(←${task.dependencies.length})</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = `
+                <div style="display: flex; position: relative;">
+                    <!-- Fixed task column -->
+                    <div style="width: ${leftMargin}px; flex-shrink: 0; position: sticky; left: 0; z-index: 10; background: var(--bg-secondary);">
+                        <div style="font-weight: 600; padding: 8px; border-bottom: 2px solid var(--border); font-size: 13px; height: 38px; display: flex; align-items: center;">Task</div>
+                        <div style="max-height: 500px; overflow-y: auto; overflow-x: hidden;" id="gantt-task-scroll">
+                            ${taskLabels}
+                        </div>
+                    </div>
+                    <!-- Scrollable chart area -->
+                    <div style="flex: 1; overflow-x: auto; overflow-y: hidden;">
+                        <div style="min-width: ${chartWidth}px;">
+                            <div style="position: relative; height: 38px; border-bottom: 2px solid var(--border);">
+                                ${weekHeaders}
+                            </div>
+                            <div style="max-height: 500px; overflow-y: auto; position: relative;" id="gantt-chart-scroll">
+                                <div style="position: relative; height: ${svgHeight}px;">
+                                    <svg width="${chartWidth}" height="${svgHeight}" style="position: absolute; top: 0; left: 0;">
+                                        <defs>
+                                            <marker id="gantt-arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                                                <path d="M0,-4L10,0L0,4" fill="var(--text-muted)"/>
+                                            </marker>
+                                            <marker id="gantt-arrow-issue" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                                                <path d="M0,-4L10,0L0,4" fill="var(--danger)"/>
+                                            </marker>
+                                        </defs>
+                                        <!-- Row backgrounds -->
+                                        ${tasksWithDates.map((task, i) => `
+                                            <rect x="0" y="${i * rowHeight}" width="${chartWidth}" height="${rowHeight}" fill="transparent" stroke="var(--border)" stroke-width="0.5" style="stroke-dasharray: 0 ${chartWidth} ${rowHeight} 0;"/>
+                                            <line x1="0" y1="${(i + 1) * rowHeight}" x2="${chartWidth}" y2="${(i + 1) * rowHeight}" stroke="var(--border)" stroke-width="0.5"/>
+                                        `).join('')}
+                                        <!-- Dependency lines (drawn first, behind bars) -->
+                                        <g class="dependency-lines">
+                                            ${dependencyLines}
+                                        </g>
+                                        <!-- Task bars -->
+                                        <g class="task-bars">
+                                            ${taskBars}
+                                        </g>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 8px; padding: 8px; font-size: 11px; color: var(--text-muted);">
+                    <span style="margin-right: 16px;">📊 Dependencies: <span style="border-bottom: 1px dashed var(--text-muted);">gray lines</span></span>
+                    <span>⚠️ Issue dependencies: <span style="border-bottom: 2px dashed var(--danger); color: var(--danger);">red dashed lines</span></span>
+                </div>
+            `;
+
+            // Sync vertical scrolling between task list and chart
+            const taskScroll = document.getElementById('gantt-task-scroll');
+            const chartScroll = document.getElementById('gantt-chart-scroll');
+            if (taskScroll && chartScroll) {
+                taskScroll.addEventListener('scroll', () => {
+                    chartScroll.scrollTop = taskScroll.scrollTop;
+                });
+                chartScroll.addEventListener('scroll', () => {
+                    taskScroll.scrollTop = chartScroll.scrollTop;
+                });
+            }
+
+            // Add click handlers to Gantt bars
+            container.querySelectorAll('.gantt-bar-svg').forEach(bar => {
+                bar.addEventListener('click', (e) => {
+                    const taskId = bar.getAttribute('data-task-id');
+                    const task = projectData.find(t => t.id === taskId);
+                    if (task) {
+                        showGanttPopup(task, e);
+                    }
+                });
+            });
+        }
+
+        function showGanttPopup(task, event) {
+            // Remove any existing popup
+            const existingPopup = document.getElementById('gantt-popup');
+            if (existingPopup) existingPopup.remove();
+
+            // Find task issues
+            const taskIssues = issues.find(i => i.task.id === task.id);
+            let issueHtml = '';
+            if (taskIssues && taskIssues.issues.length > 0) {
+                issueHtml = `
+                    <div class="mt-3 p-3" style="background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 3px solid var(--danger);">
+                        <p class="font-semibold text-sm" style="color: var(--danger);">⚠️ Issues:</p>
+                        <ul class="mt-1 text-sm space-y-1" style="color: var(--danger);">
+                            ${taskIssues.issues.map(i => `<li>• ${escapeHtml(i.message)}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Date moved info
+            let dateMovedHtml = '';
+            if (task.dateWasMoved) {
+                const isPushed = task.dateMovedDays > 0;
+                dateMovedHtml = `
+                    <div class="mt-2 p-2" style="background: ${isPushed ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; border-radius: 6px;">
+                        <span style="color: ${isPushed ? 'var(--danger)' : 'var(--success)'};">
+                            ${isPushed ? '⏩' : '⏪'} Date moved ${isPushed ? '+' : ''}${task.dateMovedDays} days
+                        </span>
+                        <div class="text-xs mt-1" style="color: var(--text-muted);">
+                            Original: <span style="text-decoration: line-through;">${formatDate(task.originalAnticipatedEnd)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const popup = document.createElement('div');
+            popup.id = 'gantt-popup';
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 20px;
+                z-index: 1000;
+                max-width: 450px;
+                width: 90%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            `;
+
+            popup.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                    <div>
+                        <span class="mono font-bold text-lg" style="color: var(--accent);">${escapeHtml(task.id)}</span>
+                        <span class="px-2 py-1 rounded text-xs font-medium ml-2 status-${task.status}">${task.status.toUpperCase()}</span>
+                    </div>
+                    <button id="close-gantt-popup" style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-muted); padding: 0 4px;">&times;</button>
+                </div>
+                <h3 class="font-semibold mb-3" style="color: var(--text-primary);">${escapeHtml(task.description)}</h3>
+
+                <div class="space-y-2 text-sm">
+                    ${task.owner ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">👤 Owner:</span>
+                            <span style="color: var(--text-primary); font-weight: 500;">${escapeHtml(task.owner)}</span>
+                        </div>
+                    ` : ''}
+                    ${task.startDate ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">📅 Start:</span>
+                            <span class="mono" style="color: var(--text-primary);">${formatDate(task.startDate)}</span>
+                        </div>
+                    ` : ''}
+                    ${task.anticipatedEnd ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">🎯 Due:</span>
+                            <span class="mono" style="color: var(--text-primary);">${formatDate(task.anticipatedEnd)}</span>
+                        </div>
+                    ` : ''}
+                    ${task.actualEnd ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">✅ Completed:</span>
+                            <span class="mono" style="color: var(--success);">${formatDate(task.actualEnd)}</span>
+                        </div>
+                    ` : ''}
+                    ${task.dependencies.length > 0 ? `
+                        <div style="display: flex; gap: 8px;">
+                            <span style="color: var(--text-muted); min-width: 80px;">🔗 Depends on:</span>
+                            <span class="mono" style="color: var(--text-primary);">${escapeHtml(task.dependencies.join(', '))}</span>
+                        </div>
+                    ` : ''}
+                    ${task.comments ? `
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                            <span style="color: var(--text-muted);">💬 Comments:</span>
+                            <p style="color: var(--text-secondary); margin-top: 4px;">${escapeHtml(task.comments)}</p>
+                        </div>
+                    ` : ''}
+                </div>
+                ${dateMovedHtml}
+                ${issueHtml}
+            `;
+
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'gantt-popup-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            `;
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(popup);
+
+            // Close handlers
+            const closePopup = () => {
+                popup.remove();
+                overlay.remove();
+            };
+
+            document.getElementById('close-gantt-popup').addEventListener('click', closePopup);
+            overlay.addEventListener('click', closePopup);
+
+            // Close on Escape key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closePopup();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+        }
+
+        function renderTable() {
+            const container = document.getElementById('table-container');
+
+            const rows = projectData.map(task => `
+                <tr class="${task.hasIssue ? 'issue-card' : ''}" style="border-bottom: 1px solid var(--border);">
+                    <td class="mono px-4 py-3 whitespace-nowrap font-medium">${task.hasIssue ? '⚠️ ' : ''}${escapeHtml(task.id)}</td>
+                    <td class="px-4 py-3" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(truncate(task.description, 80))}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded text-xs font-medium status-${task.status}">${task.status.toUpperCase()}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">${escapeHtml(task.owner) || '-'}</td>
+                    <td class="mono px-4 py-3 text-sm">${task.dependencies.length ? escapeHtml(task.dependencies.join(', ')) : '-'}</td>
+                    <td class="mono px-4 py-3 text-sm">${task.startDate ? formatDate(task.startDate) : '-'}</td>
+                    <td class="mono px-4 py-3 text-sm">${task.anticipatedEnd ? formatDate(task.anticipatedEnd) : '-'}</td>
+                </tr>
+            `).join('');
+
+            container.innerHTML = `
+                <table class="w-full text-sm" style="min-width: 900px;">
+                    <thead>
+                        <tr style="background: var(--bg-tertiary); border-bottom: 2px solid var(--border);">
+                            <th class="px-4 py-3 text-left font-semibold">Task #</th>
+                            <th class="px-4 py-3 text-left font-semibold">Description</th>
+                            <th class="px-4 py-3 text-left font-semibold">Status</th>
+                            <th class="px-4 py-3 text-left font-semibold">Owner</th>
+                            <th class="px-4 py-3 text-left font-semibold">Dependencies</th>
+                            <th class="px-4 py-3 text-left font-semibold">Start</th>
+                            <th class="px-4 py-3 text-left font-semibold">Due</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const tab = btn.dataset.tab;
+                document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('hidden'));
+                document.getElementById('tab-' + tab).classList.remove('hidden');
+
+                // Re-render graph on tab switch to fix sizing
+                if (tab === 'graph') {
+                    setTimeout(renderGraph, 100);
+                }
+            });
+        });
+
+        // Utilities
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function formatDate(date) {
+            if (!date) return '';
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function truncate(str, len) {
+            if (!str) return '';
+            return str.length > len ? str.substring(0, len) + '...' : str;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function resetApp() {
+            workbook = null;
+            projectData = [];
+            issues = [];
+            fileInfo.classList.add('hidden');
+            sheetSection.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            fileInput.value = '';
+        }
+
+        function showCustomAlert(message) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 flex items-center justify-center z-50';
+            modal.style.background = 'rgba(0,0,0,0.5)';
+            modal.innerHTML = `
+                <div class="card p-6 mx-4 max-w-sm w-full">
+                    <p style="color: var(--text-primary);" class="mb-4">${escapeHtml(message)}</p>
+                    <button class="w-full px-4 py-2 rounded-lg font-medium" style="background: var(--accent); color: white;" onclick="this.closest('.fixed').remove()">OK</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
         // Resize handler
+        window.addEventListener('resize', () => {
+            if (projectData.length > 0) {
+                const activeTab = document.querySelector('.tab-btn.active');
+                if (activeTab && activeTab.dataset.tab === 'graph') {
+                    renderGraph();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
         window.addEventListener('resize', () => {
             if (projectData.length > 0) {
                 const activeTab = document.querySelector('.tab-btn.active');
