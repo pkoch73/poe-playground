@@ -196,70 +196,112 @@
             <p style="color: var(--text-secondary);">Upload your Excel file to visualize dependencies and identify issues</p>
         </header>
 
-        <!-- Upload Section -->
-        <section id="upload-section" class="max-w-7xl mx-auto mb-8 fade-in stagger-1">
-            <div class="upload-zone rounded-xl p-8 md:p-12 text-center cursor-pointer" id="drop-zone">
-                <input type="file" id="file-input" accept=".xlsx,.xls" class="hidden">
-                <div class="mb-4">
-                    <svg class="w-16 h-16 mx-auto" style="color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                    </svg>
-                </div>
-                <p class="text-lg font-medium mb-2" style="color: var(--text-primary);">Drop your Excel file here</p>
-                <p class="mb-4" style="color: var(--text-secondary);">or click to browse</p>
-                <p class="text-sm mono" style="color: var(--text-muted);">Supports .xlsx and .xls files</p>
-            </div>
-            <div id="file-info" class="mt-4 hidden">
-                <div class="card p-4 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <span class="text-2xl">📄</span>
+        <!-- Compact Upload Section -->
+        <section id="upload-section" class="max-w-7xl mx-auto mb-6 fade-in stagger-1">
+            <div class="card p-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <!-- Drop Zone (Compact) -->
+                    <div class="upload-zone rounded-lg px-6 py-4 cursor-pointer flex items-center gap-4 flex-grow" id="drop-zone" style="min-width: 200px; border-radius: 8px;">
+                        <input type="file" id="file-input" accept=".xlsx,.xls" class="hidden">
+                        <svg class="w-8 h-8 flex-shrink-0" style="color: var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
                         <div>
-                            <p class="font-medium" id="file-name">filename.xlsx</p>
-                            <p class="text-sm" style="color: var(--text-muted);" id="file-size">0 KB</p>
+                            <p class="font-medium" style="color: var(--text-primary);">Drop Excel file or click to browse</p>
+                            <p class="text-xs mono" style="color: var(--text-muted);">.xlsx, .xls</p>
                         </div>
                     </div>
-                    <button id="clear-file" class="px-4 py-2 rounded-lg text-sm font-medium" style="background: var(--bg-tertiary); color: var(--text-secondary);">
-                        Clear
-                    </button>
-                </div>
-            </div>
-        </section>
 
-        <!-- Sheet Selector -->
-        <section id="sheet-section" class="max-w-7xl mx-auto mb-8 hidden fade-in">
-            <div class="card p-4">
-                <label class="block text-sm font-medium mb-2" style="color: var(--text-secondary);">Select Sheet</label>
-                <select id="sheet-select" class="w-full md:w-auto px-4 py-2 rounded-lg text-base" style="background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border);">
-                </select>
+                    <!-- File Info (shown after upload) -->
+                    <div id="file-info" class="hidden flex items-center gap-3 px-4 py-2 rounded-lg" style="background: var(--bg-tertiary);">
+                        <span class="text-xl">📄</span>
+                        <div>
+                            <p class="font-medium text-sm" id="file-name">filename.xlsx</p>
+                            <p class="text-xs" style="color: var(--text-muted);" id="file-size">0 KB</p>
+                        </div>
+                        <button id="clear-file" class="ml-2 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900" style="color: var(--danger);" title="Clear file">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Sheet Selector (shown after upload) -->
+                    <div id="sheet-section" class="hidden flex items-center gap-2">
+                        <label class="text-sm font-medium" style="color: var(--text-secondary);">Sheet:</label>
+                        <select id="sheet-select" class="px-3 py-2 rounded-lg text-base" style="background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); min-width: 180px;">
+                        </select>
+                    </div>
+                </div>
             </div>
         </section>
 
         <!-- Results Section -->
         <section id="results-section" class="max-w-7xl mx-auto hidden">
-            <!-- Stats + Summary Button -->
-            <div class="flex flex-wrap items-start gap-4 mb-8 fade-in stagger-1">
-                <div class="flex-grow grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="card p-4 text-center">
-                        <p class="text-3xl font-bold" style="color: var(--accent);" id="stat-total">0</p>
-                        <p class="text-sm" style="color: var(--text-secondary);">Total Tasks</p>
+            <!-- Summary Panel (Top of Results) -->
+            <div id="summary-panel" class="card mb-6 fade-in" style="border-left: 4px solid var(--accent);">
+                <div class="p-5">
+                    <!-- Header with stats and actions -->
+                    <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+                        <div>
+                            <h2 class="text-xl font-bold flex items-center gap-2" style="color: var(--accent);">
+                                📊 Project Summary
+                                <span id="summary-date" class="text-sm font-normal" style="color: var(--text-muted);"></span>
+                            </h2>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="copySummaryToClipboard()" class="px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1" style="background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border);" title="Copy as Markdown">
+                                📋 Copy
+                            </button>
+                            <button onclick="printSummary()" class="px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1" style="background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border);" title="Print summary">
+                                🖨️ Print
+                            </button>
+                        </div>
                     </div>
-                    <div class="card p-4 text-center">
-                        <p class="text-3xl font-bold" style="color: var(--success);" id="stat-done">0</p>
-                        <p class="text-sm" style="color: var(--text-secondary);">Completed</p>
+
+                    <!-- Quick Stats Row -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                            <p class="text-2xl font-bold" style="color: var(--accent);" id="stat-total">0</p>
+                            <p class="text-xs" style="color: var(--text-muted);">Total</p>
+                        </div>
+                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                            <p class="text-2xl font-bold" style="color: var(--success);" id="stat-done">0</p>
+                            <p class="text-xs" style="color: var(--text-muted);">Done</p>
+                        </div>
+                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                            <p class="text-2xl font-bold" style="color: var(--warning);" id="stat-wip">0</p>
+                            <p class="text-xs" style="color: var(--text-muted);">In Progress</p>
+                        </div>
+                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                            <p class="text-2xl font-bold" style="color: var(--info);" id="stat-new">0</p>
+                            <p class="text-xs" style="color: var(--text-muted);">Not Started</p>
+                        </div>
+                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                            <p class="text-2xl font-bold" style="color: var(--danger);" id="stat-issues">0</p>
+                            <p class="text-xs" style="color: var(--text-muted);">Issues</p>
+                        </div>
                     </div>
-                    <div class="card p-4 text-center">
-                        <p class="text-3xl font-bold" style="color: var(--warning);" id="stat-wip">0</p>
-                        <p class="text-sm" style="color: var(--text-secondary);">In Progress</p>
+
+                    <!-- Summary Content Grid -->
+                    <div id="summary-content" class="grid md:grid-cols-2 gap-4">
+                        <!-- Content will be populated by JavaScript -->
                     </div>
-                    <div class="card p-4 text-center">
-                        <p class="text-3xl font-bold" style="color: var(--danger);" id="stat-issues">0</p>
-                        <p class="text-sm" style="color: var(--text-secondary);">Issues</p>
+
+                    <!-- Expand/Collapse -->
+                    <div class="mt-4 pt-3 border-t" style="border-color: var(--border);">
+                        <button onclick="toggleSummaryExpand()" id="summary-toggle-btn" class="text-sm font-medium" style="color: var(--accent);">
+                            ▼ Show more details
+                        </button>
+                    </div>
+
+                    <!-- Expanded Section (hidden by default) -->
+                    <div id="summary-expanded" class="hidden mt-4">
+                        <div id="summary-expanded-content" class="grid md:grid-cols-2 gap-4">
+                            <!-- Additional content when expanded -->
+                        </div>
                     </div>
                 </div>
-                <button onclick="showSummaryModal()" class="card p-4 text-center cursor-pointer transition-all hover:scale-105" style="border: 2px dashed var(--accent); min-width: 120px;" title="Generate shareable summary for email, Slack, or print">
-                    <p class="text-2xl mb-1">📋</p>
-                    <p class="text-sm font-medium" style="color: var(--accent);">Generate Summary</p>
-                </button>
             </div>
 
             <!-- Go-Live Milestone Validator -->
@@ -824,7 +866,11 @@
             document.getElementById('stat-total').textContent = projectData.length;
             document.getElementById('stat-done').textContent = projectData.filter(t => t.status === 'done').length;
             document.getElementById('stat-wip').textContent = projectData.filter(t => t.status === 'wip').length;
+            document.getElementById('stat-new').textContent = projectData.filter(t => t.status === 'new').length;
             document.getElementById('stat-issues').textContent = issues.filter(i => i.issues.some(is => is.type === 'overdue')).length;
+
+            // Populate inline summary panel
+            populateSummaryPanel();
 
             // Issues Panel
             const criticalIssues = issues.filter(i => i.issues.some(is => is.type === 'overdue'));
@@ -1920,7 +1966,7 @@
                                             <span class="text-xs" style="color: var(--text-muted);">← click for details</span>
                                         </div>
                                         <p class="text-sm mt-1" style="color: var(--text-primary);">${escapeHtml(truncate(item.task.description, 50))}</p>
-                                        ${item.task.owner ? `<p class="text-xs mt-1" style="color: var(--text-muted);">👤 ${escapeHtml(item.task.owner)}</p>` : ''}
+                                        ${item.task.owner ? `<p class="text-xs mt-1" style="color: var(--text-muted);">���� ${escapeHtml(item.task.owner)}</p>` : ''}
                                     </div>
                                     <div style="flex-shrink: 0; min-width: 180px;">
                                         <!-- Risk Score Bar -->
@@ -2742,7 +2788,301 @@
             document.body.appendChild(modal);
         }
 
-        // === Summary Generation Functions ===
+        // === Inline Summary Panel Functions ===
+
+        let summaryExpanded = false;
+
+        function populateSummaryPanel() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const weekFromNow = new Date(today);
+            weekFromNow.setDate(weekFromNow.getDate() + 7);
+
+            // Set date
+            document.getElementById('summary-date').textContent =
+                `• ${today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+            // Calculate data
+            const totalTasks = projectData.length;
+            const completedTasks = projectData.filter(t => t.status === 'done').length;
+            const completionPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            const overdueTasks = projectData.filter(t => {
+                if (t.status === 'done' || t.status === 'postmvp') return false;
+                if (!t.anticipatedEnd) return false;
+                return t.anticipatedEnd < today;
+            }).sort((a, b) => a.anticipatedEnd - b.anticipatedEnd);
+
+            const tasksDueThisWeek = projectData.filter(t => {
+                if (t.status === 'done' || t.status === 'postmvp') return false;
+                if (!t.anticipatedEnd) return false;
+                return t.anticipatedEnd >= today && t.anticipatedEnd <= weekFromNow;
+            }).sort((a, b) => a.anticipatedEnd - b.anticipatedEnd);
+
+            const blockedTasks = projectData.filter(t => t.status === 'blocked');
+            const slippedTasks = projectData.filter(t => t.dateWasMoved && t.dateMovedDays > 0)
+                .sort((a, b) => b.dateMovedDays - a.dateMovedDays);
+
+            const topRisks = getTopRiskTasks(3);
+
+            // Build main summary content
+            const summaryContent = document.getElementById('summary-content');
+            let mainHtml = '';
+
+            // Progress bar
+            mainHtml += `
+                <div class="md:col-span-2 mb-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium" style="color: var(--text-secondary);">Overall Progress</span>
+                        <span class="text-sm font-bold" style="color: var(--accent);">${completionPct}%</span>
+                    </div>
+                    <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
+                        <div style="height: 100%; width: ${completionPct}%; background: linear-gradient(90deg, var(--accent), var(--success)); border-radius: 4px; transition: width 0.5s;"></div>
+                    </div>
+                </div>
+            `;
+
+            // Critical Alerts (if any)
+            if (overdueTasks.length > 0 || blockedTasks.length > 0) {
+                mainHtml += `
+                    <div class="p-3 rounded-lg" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--danger);">🚨 Critical Alerts</h4>
+                        <ul class="space-y-1 text-sm" style="color: var(--text-secondary);">
+                            ${overdueTasks.length > 0 ? `<li class="flex items-center gap-2 cursor-pointer summary-task-link" data-task-id="${overdueTasks[0].id}">
+                                <span style="color: var(--danger);">⏰</span>
+                                <span><strong>${overdueTasks.length}</strong> overdue task${overdueTasks.length > 1 ? 's' : ''}</span>
+                            </li>` : ''}
+                            ${blockedTasks.length > 0 ? `<li class="flex items-center gap-2 cursor-pointer summary-task-link" data-task-id="${blockedTasks[0].id}">
+                                <span style="color: var(--danger);">🛑</span>
+                                <span><strong>${blockedTasks.length}</strong> blocked task${blockedTasks.length > 1 ? 's' : ''}</span>
+                            </li>` : ''}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // This Week's Focus
+            if (tasksDueThisWeek.length > 0) {
+                mainHtml += `
+                    <div class="p-3 rounded-lg" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--info);">📅 Due This Week (${tasksDueThisWeek.length})</h4>
+                        <ul class="space-y-1 text-sm">
+                            ${tasksDueThisWeek.slice(0, 3).map(t => `
+                                <li class="flex items-center gap-2 cursor-pointer summary-task-link" data-task-id="${escapeHtml(t.id)}" style="color: var(--text-secondary);">
+                                    <span class="mono text-xs" style="color: var(--info);">${escapeHtml(t.id)}</span>
+                                    <span class="truncate">${escapeHtml(truncate(t.description, 30))}</span>
+                                </li>
+                            `).join('')}
+                            ${tasksDueThisWeek.length > 3 ? `<li class="text-xs" style="color: var(--text-muted);">+${tasksDueThisWeek.length - 3} more...</li>` : ''}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Top Risks (if no critical alerts, show in main view)
+            if (overdueTasks.length === 0 && blockedTasks.length === 0 && topRisks.length > 0) {
+                mainHtml += `
+                    <div class="p-3 rounded-lg" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--warning);">🎯 Top Risks</h4>
+                        <ul class="space-y-1 text-sm">
+                            ${topRisks.slice(0, 3).map(r => `
+                                <li class="flex items-center gap-2 cursor-pointer summary-task-link" data-task-id="${escapeHtml(r.task.id)}" style="color: var(--text-secondary);">
+                                    <span class="mono text-xs" style="color: var(--warning);">${escapeHtml(r.task.id)}</span>
+                                    <span class="truncate">${escapeHtml(truncate(r.task.description, 28))}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // If everything looks good
+            if (overdueTasks.length === 0 && blockedTasks.length === 0 && tasksDueThisWeek.length === 0) {
+                mainHtml += `
+                    <div class="p-3 rounded-lg" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--success);">✅ Looking Good!</h4>
+                        <p class="text-sm" style="color: var(--text-secondary);">No overdue or blocked tasks. No items due this week.</p>
+                    </div>
+                `;
+            }
+
+            summaryContent.innerHTML = mainHtml;
+
+            // Build expanded content
+            const expandedContent = document.getElementById('summary-expanded-content');
+            let expandedHtml = '';
+
+            // Top Risks (always show in expanded if there are risks)
+            if (topRisks.length > 0 && (overdueTasks.length > 0 || blockedTasks.length > 0)) {
+                expandedHtml += `
+                    <div class="p-3 rounded-lg" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--warning);">🎯 Top Risk Areas</h4>
+                        <ul class="space-y-1 text-sm">
+                            ${topRisks.map(r => `
+                                <li class="flex items-center justify-between cursor-pointer summary-task-link" data-task-id="${escapeHtml(r.task.id)}" style="color: var(--text-secondary);">
+                                    <span>
+                                        <span class="mono text-xs" style="color: var(--warning);">${escapeHtml(r.task.id)}</span>
+                                        ${escapeHtml(truncate(r.task.description, 25))}
+                                    </span>
+                                    <span class="text-xs mono" style="color: var(--warning);">Score: ${r.riskScore}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Schedule Slippage
+            if (slippedTasks.length > 0) {
+                expandedHtml += `
+                    <div class="p-3 rounded-lg" style="background: var(--bg-tertiary);">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--text-primary);">⏩ Schedule Slippage (${slippedTasks.length})</h4>
+                        <ul class="space-y-1 text-sm">
+                            ${slippedTasks.slice(0, 4).map(t => `
+                                <li class="flex items-center justify-between cursor-pointer summary-task-link" data-task-id="${escapeHtml(t.id)}" style="color: var(--text-secondary);">
+                                    <span class="mono text-xs">${escapeHtml(t.id)}</span>
+                                    <span style="color: var(--danger);">+${t.dateMovedDays}d</span>
+                                </li>
+                            `).join('')}
+                            ${slippedTasks.length > 4 ? `<li class="text-xs" style="color: var(--text-muted);">+${slippedTasks.length - 4} more...</li>` : ''}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Overdue task details (if any)
+            if (overdueTasks.length > 0) {
+                expandedHtml += `
+                    <div class="p-3 rounded-lg" style="background: rgba(239, 68, 68, 0.05);">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--danger);">⏰ Overdue Details</h4>
+                        <ul class="space-y-1 text-sm">
+                            ${overdueTasks.slice(0, 5).map(t => {
+                                const daysOverdue = Math.ceil((today - t.anticipatedEnd) / (1000 * 60 * 60 * 24));
+                                return `
+                                    <li class="flex items-center justify-between cursor-pointer summary-task-link" data-task-id="${escapeHtml(t.id)}" style="color: var(--text-secondary);">
+                                        <span><span class="mono text-xs">${escapeHtml(t.id)}</span> ${escapeHtml(truncate(t.description, 20))}</span>
+                                        <span class="text-xs" style="color: var(--danger);">${daysOverdue}d overdue</span>
+                                    </li>
+                                `;
+                            }).join('')}
+                            ${overdueTasks.length > 5 ? `<li class="text-xs" style="color: var(--text-muted);">+${overdueTasks.length - 5} more...</li>` : ''}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Blocked task details (if any)
+            if (blockedTasks.length > 0) {
+                expandedHtml += `
+                    <div class="p-3 rounded-lg" style="background: rgba(239, 68, 68, 0.05);">
+                        <h4 class="font-bold text-sm mb-2" style="color: var(--danger);">🛑 Blocked Details</h4>
+                        <ul class="space-y-1 text-sm">
+                            ${blockedTasks.slice(0, 5).map(t => `
+                                <li class="flex items-center gap-2 cursor-pointer summary-task-link" data-task-id="${escapeHtml(t.id)}" style="color: var(--text-secondary);">
+                                    <span class="mono text-xs">${escapeHtml(t.id)}</span>
+                                    <span class="truncate">${escapeHtml(truncate(t.description, 30))}</span>
+                                </li>
+                            `).join('')}
+                            ${blockedTasks.length > 5 ? `<li class="text-xs" style="color: var(--text-muted);">+${blockedTasks.length - 5} more...</li>` : ''}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            expandedContent.innerHTML = expandedHtml;
+
+            // Hide toggle if nothing to expand
+            const toggleBtn = document.getElementById('summary-toggle-btn');
+            if (expandedHtml.trim() === '') {
+                toggleBtn.parentElement.classList.add('hidden');
+            } else {
+                toggleBtn.parentElement.classList.remove('hidden');
+            }
+
+            // Add click handlers for task links
+            document.querySelectorAll('.summary-task-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    const taskId = link.getAttribute('data-task-id');
+                    const task = projectData.find(t => t.id === taskId);
+                    if (task) showTaskPopup(task);
+                });
+            });
+        }
+
+        function toggleSummaryExpand() {
+            summaryExpanded = !summaryExpanded;
+            const expanded = document.getElementById('summary-expanded');
+            const btn = document.getElementById('summary-toggle-btn');
+
+            if (summaryExpanded) {
+                expanded.classList.remove('hidden');
+                btn.textContent = '▲ Show less';
+            } else {
+                expanded.classList.add('hidden');
+                btn.textContent = '▼ Show more details';
+            }
+        }
+
+        async function copySummaryToClipboard() {
+            const md = generateSummaryContent();
+            try {
+                await navigator.clipboard.writeText(md);
+                // Show brief feedback
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Copied!';
+                btn.style.color = 'var(--success)';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.color = '';
+                }, 1500);
+            } catch (err) {
+                showCustomAlert('Could not copy to clipboard');
+            }
+        }
+
+        function printSummary() {
+            const md = generateSummaryContent();
+            const htmlContent = convertMarkdownToHtml(md);
+            const printWindow = window.open('', '_blank');
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Project Summary</title>
+                    <style>
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            max-width: 800px;
+                            margin: 0 auto;
+                            padding: 40px 20px;
+                            line-height: 1.6;
+                            color: #1a1a1a;
+                        }
+                        h1 { font-size: 24px; margin-bottom: 8px; }
+                        h2 { font-size: 18px; margin-top: 24px; margin-bottom: 12px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+                        h3 { font-size: 15px; margin-top: 16px; margin-bottom: 8px; }
+                        table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+                        th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+                        th { background: #f5f5f5; }
+                        ul { margin: 8px 0; padding-left: 24px; }
+                        li { margin: 4px 0; }
+                        strong { font-weight: 600; }
+                        em { font-style: italic; color: #666; }
+                        hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+                        @media print { body { padding: 20px; } }
+                    </style>
+                </head>
+                <body>${htmlContent}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 250);
+        }
+
+        // === Summary Generation Functions (for Markdown export) ===
 
         function generateSummaryContent() {
             const today = new Date();
