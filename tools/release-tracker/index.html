@@ -391,6 +391,7 @@
                 <button class="tab-btn active" data-tab="graph">Dependency Graph</button>
                 <button class="tab-btn" data-tab="gantt">Gantt View</button>
                 <button class="tab-btn" data-tab="table">Table View</button>
+                <button class="tab-btn" data-tab="testing" id="testing-tab-btn" style="display: none;">🧪 Testing Readiness</button>
             </div>
 
             <!-- Legend -->
@@ -452,6 +453,56 @@
             <div id="tab-table" class="card p-4 hidden fade-in">
                 <div id="table-container" style="overflow-x: auto;"></div>
             </div>
+
+            <!-- Testing Readiness Tab -->
+            <div id="tab-testing" class="hidden fade-in">
+                <!-- Release Overview Cards -->
+                <div id="testing-overview" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+                    <!-- Release cards will be populated here -->
+                </div>
+
+                <!-- Testing Legend -->
+                <div class="card p-3 mb-6">
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background: var(--success);"></div><span>Ready for Testing</span></div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background: var(--warning);"></div><span>WIP</span></div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background: var(--danger);"></div><span>Testing Blocked</span></div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background: var(--info);"></div><span>New</span></div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background: #9ca3af;"></div><span>Deferred</span></div>
+                        <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full" style="background: var(--bg-tertiary); border: 1px solid var(--border);"></div><span>Not Set</span></div>
+                    </div>
+                </div>
+
+                <!-- Capability Matrix -->
+                <div class="card overflow-hidden">
+                    <div class="p-4" style="border-bottom: 1px solid var(--border); background: var(--bg-tertiary);">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <h3 class="font-bold" style="color: var(--text-primary);">📋 Capability Testing Matrix</h3>
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm" style="color: var(--text-secondary);">Filter:</label>
+                                <select id="testing-filter" class="px-3 py-1.5 rounded text-sm" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border);">
+                                    <option value="all">All Capabilities</option>
+                                    <option value="blocked">Testing Blocked</option>
+                                    <option value="ready">Ready for Testing</option>
+                                    <option value="wip">WIP</option>
+                                    <option value="has-dep">Has Dependencies</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="testing-matrix" style="max-height: 600px; overflow-y: auto;">
+                        <!-- Capability rows will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Dependency Health Summary -->
+                <div id="testing-dep-summary" class="card p-4 mt-6">
+                    <h3 class="font-bold mb-4" style="color: var(--text-primary);">🔗 Dependency Health</h3>
+                    <div id="testing-dep-content">
+                        <!-- Dependency summary will be populated here -->
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Tooltip -->
@@ -471,6 +522,7 @@
         let workbook = null;
         let projectData = [];
         let issues = [];
+        let testingData = []; // R1-R9 Testing Readiness data
 
         // DOM Elements
         const dropZone = document.getElementById('drop-zone');
@@ -644,6 +696,9 @@
 
             // Analyze issues
             analyzeIssues();
+
+            // Check for and process R1-R9 Testing readiness sheet
+            processTestingReadinessSheet();
 
             // Display results
             displayResults();
@@ -915,6 +970,461 @@
 
             // Run automatic risk analysis
             analyzeRiskAreas();
+
+            // Render testing readiness if data available
+            if (testingData.length > 0) {
+                renderTestingReadiness();
+            }
+        }
+
+        // === Testing Readiness Functions ===
+
+        function processTestingReadinessSheet() {
+            testingData = [];
+
+            // Find the R1-R9 Testing readiness sheet
+            const testingSheetName = workbook.SheetNames.find(name =>
+                name.toLowerCase().includes('r1-r9') ||
+                name.toLowerCase().includes('testing readiness')
+            );
+
+            if (!testingSheetName) {
+                // Hide the testing tab if no sheet found
+                document.getElementById('testing-tab-btn').style.display = 'none';
+                return;
+            }
+
+            // Show the testing tab button
+            document.getElementById('testing-tab-btn').style.display = '';
+
+            const sheet = workbook.Sheets[testingSheetName];
+            const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+
+            if (data.length < 2) return;
+
+            // Headers are in first row: ID, Category, Capability, Status, Dependencies, Remarks
+            const headers = data[0].map(h => h ? h.toString().trim().toLowerCase() : '');
+            const colMap = {
+                id: headers.findIndex(h => h === 'id'),
+                category: headers.findIndex(h => h === 'category'),
+                capability: headers.findIndex(h => h === 'capability'),
+                status: headers.findIndex(h => h === 'status'),
+                dependencies: headers.findIndex(h => h === 'dependencies'),
+                remarks: headers.findIndex(h => h === 'remarks')
+            };
+
+            let currentRelease = null;
+            let currentCategory = null;
+
+            // Process rows
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length === 0) continue;
+
+                // Get ID - if present, it's a new release group
+                const id = row[colMap.id]?.toString().trim() || '';
+                if (id && id.match(/^R\d+$/i)) {
+                    currentRelease = id.toUpperCase();
+                }
+
+                // Get category - if present, update current category
+                const category = row[colMap.category]?.toString().trim() || '';
+                if (category && category !== '\u00A0') {
+                    currentCategory = category;
+                }
+
+                // Get capability
+                const capability = row[colMap.capability]?.toString().trim() || '';
+                if (!capability || capability === '\u00A0') continue;
+
+                // Get status and clean it
+                let status = row[colMap.status]?.toString().trim() || '';
+                if (status === '\u00A0' || status === '') status = '';
+
+                // Get dependencies
+                const dependencies = row[colMap.dependencies]?.toString().trim() || '';
+                const depList = dependencies && dependencies !== '\u00A0'
+                    ? dependencies.split(/[,;]/).map(d => d.trim()).filter(d => d)
+                    : [];
+
+                // Get remarks
+                const remarks = row[colMap.remarks]?.toString().trim() || '';
+
+                testingData.push({
+                    release: currentRelease || 'Unknown',
+                    category: currentCategory || '',
+                    capability: capability,
+                    status: normalizeTestingStatus(status),
+                    statusRaw: status,
+                    dependencies: depList,
+                    remarks: remarks !== '\u00A0' ? remarks : ''
+                });
+            }
+        }
+
+        function normalizeTestingStatus(status) {
+            if (!status) return 'notset';
+            const s = status.toLowerCase().trim();
+            if (s.includes('ready') && s.includes('testing')) return 'ready';
+            if (s === 'wip' || s.includes('work in progress')) return 'wip';
+            if (s.includes('blocked')) return 'blocked';
+            if (s === 'deferred') return 'deferred';
+            if (s === 'new') return 'new';
+            return 'notset';
+        }
+
+        function getTestingStatusColor(status) {
+            const colors = {
+                'ready': 'var(--success)',
+                'wip': 'var(--warning)',
+                'blocked': 'var(--danger)',
+                'new': 'var(--info)',
+                'deferred': '#9ca3af',
+                'notset': 'var(--bg-tertiary)'
+            };
+            return colors[status] || colors['notset'];
+        }
+
+        function getTestingStatusLabel(status) {
+            const labels = {
+                'ready': 'Ready for Testing',
+                'wip': 'WIP',
+                'blocked': 'Testing Blocked',
+                'new': 'New',
+                'deferred': 'Deferred',
+                'notset': 'Not Set'
+            };
+            return labels[status] || 'Unknown';
+        }
+
+        function renderTestingReadiness() {
+            renderTestingOverview();
+            renderTestingMatrix();
+            renderTestingDepSummary();
+
+            // Add filter event listener
+            document.getElementById('testing-filter').addEventListener('change', renderTestingMatrix);
+        }
+
+        function renderTestingOverview() {
+            const container = document.getElementById('testing-overview');
+
+            // Group by release
+            const releases = [...new Set(testingData.map(t => t.release))];
+            releases.sort((a, b) => {
+                const numA = parseInt(a.replace('R', '')) || 999;
+                const numB = parseInt(b.replace('R', '')) || 999;
+                return numA - numB;
+            });
+
+            let html = '';
+            releases.forEach(release => {
+                const items = testingData.filter(t => t.release === release);
+                const total = items.length;
+                const ready = items.filter(t => t.status === 'ready').length;
+                const wip = items.filter(t => t.status === 'wip').length;
+                const blocked = items.filter(t => t.status === 'blocked').length;
+                const deferred = items.filter(t => t.status === 'deferred').length;
+                const notset = items.filter(t => t.status === 'notset').length;
+
+                const readyPct = total > 0 ? Math.round((ready / total) * 100) : 0;
+
+                // Determine card color based on status
+                let borderColor = 'var(--border)';
+                if (blocked > 0) borderColor = 'var(--danger)';
+                else if (wip > 0) borderColor = 'var(--warning)';
+                else if (ready === total) borderColor = 'var(--success)';
+
+                html += `
+                    <div class="card p-3 cursor-pointer hover:scale-105 transition-transform" onclick="filterByRelease('${release}')"
+                         style="border-left: 4px solid ${borderColor};">
+                        <div class="text-lg font-bold" style="color: var(--accent);">${release}</div>
+                        <div class="text-2xl font-bold mt-1" style="color: ${readyPct === 100 ? 'var(--success)' : 'var(--text-primary)'};">
+                            ${readyPct}%
+                        </div>
+                        <div class="text-xs mt-1" style="color: var(--text-muted);">ready</div>
+                        <div class="flex gap-1 mt-2">
+                            ${ready > 0 ? `<div class="flex-1 h-1 rounded" style="background: var(--success);" title="${ready} ready"></div>` : ''}
+                            ${wip > 0 ? `<div class="flex-1 h-1 rounded" style="background: var(--warning);" title="${wip} WIP"></div>` : ''}
+                            ${blocked > 0 ? `<div class="flex-1 h-1 rounded" style="background: var(--danger);" title="${blocked} blocked"></div>` : ''}
+                            ${deferred > 0 ? `<div class="flex-1 h-1 rounded" style="background: #9ca3af;" title="${deferred} deferred"></div>` : ''}
+                            ${notset > 0 ? `<div class="flex-1 h-1 rounded" style="background: var(--bg-tertiary); border: 1px solid var(--border);" title="${notset} not set"></div>` : ''}
+                        </div>
+                        <div class="text-xs mt-2 space-y-0.5" style="color: var(--text-secondary);">
+                            ${blocked > 0 ? `<div style="color: var(--danger);">🛑 ${blocked} blocked</div>` : ''}
+                            ${wip > 0 ? `<div>⏳ ${wip} WIP</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function filterByRelease(release) {
+            // Set filter to show all, then scroll to that release section
+            document.getElementById('testing-filter').value = 'all';
+            renderTestingMatrix();
+
+            // Scroll to release header
+            const header = document.querySelector(`[data-release-header="${release}"]`);
+            if (header) {
+                header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function renderTestingMatrix() {
+            const container = document.getElementById('testing-matrix');
+            const filter = document.getElementById('testing-filter').value;
+
+            // Filter data
+            let filtered = testingData;
+            if (filter === 'blocked') {
+                filtered = testingData.filter(t => t.status === 'blocked');
+            } else if (filter === 'ready') {
+                filtered = testingData.filter(t => t.status === 'ready');
+            } else if (filter === 'wip') {
+                filtered = testingData.filter(t => t.status === 'wip');
+            } else if (filter === 'has-dep') {
+                filtered = testingData.filter(t => t.dependencies.length > 0);
+            }
+
+            // Group by release
+            const releases = [...new Set(filtered.map(t => t.release))];
+            releases.sort((a, b) => {
+                const numA = parseInt(a.replace('R', '')) || 999;
+                const numB = parseInt(b.replace('R', '')) || 999;
+                return numA - numB;
+            });
+
+            // Create task map for dependency lookups
+            const taskMap = new Map(projectData.map(t => [t.id, t]));
+
+            let html = '';
+
+            if (filtered.length === 0) {
+                html = `<div class="p-8 text-center" style="color: var(--text-muted);">No capabilities match the filter.</div>`;
+            } else {
+                releases.forEach(release => {
+                    const items = filtered.filter(t => t.release === release);
+                    if (items.length === 0) return;
+
+                    html += `
+                        <div data-release-header="${release}" class="p-3" style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5;">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold" style="color: var(--accent);">${release}</span>
+                                <span class="text-sm" style="color: var(--text-muted);">${items.length} capabilities</span>
+                            </div>
+                        </div>
+                    `;
+
+                    items.forEach((item, idx) => {
+                        const statusColor = getTestingStatusColor(item.status);
+                        const statusLabel = getTestingStatusLabel(item.status);
+
+                        // Check dependency health
+                        let depHealthHtml = '';
+                        if (item.dependencies.length > 0) {
+                            const depDetails = item.dependencies.map(depId => {
+                                const task = taskMap.get(depId);
+                                if (!task) {
+                                    return { id: depId, status: 'unknown', health: 'unknown', task: null };
+                                }
+                                let health = 'ok';
+                                if (task.status === 'done') health = 'complete';
+                                else if (task.status === 'blocked') health = 'blocked';
+                                else if (task.status === 'wip') health = 'inprogress';
+                                else health = 'pending';
+
+                                return { id: depId, status: task.status, health, task };
+                            });
+
+                            depHealthHtml = `
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    ${depDetails.map(d => {
+                                        let icon = '⚪';
+                                        let color = 'var(--text-muted)';
+                                        let tooltip = 'Unknown task';
+
+                                        if (d.health === 'complete') {
+                                            icon = '🟢';
+                                            color = 'var(--success)';
+                                            tooltip = `${d.id}: Done`;
+                                        } else if (d.health === 'blocked') {
+                                            icon = '🔴';
+                                            color = 'var(--danger)';
+                                            tooltip = `${d.id}: Blocked`;
+                                        } else if (d.health === 'inprogress') {
+                                            icon = '🟡';
+                                            color = 'var(--warning)';
+                                            tooltip = `${d.id}: In Progress`;
+                                        } else if (d.health === 'pending') {
+                                            icon = '🔵';
+                                            color = 'var(--info)';
+                                            tooltip = `${d.id}: Not Started`;
+                                        }
+
+                                        const clickHandler = d.task ? `onclick="showTestingDepTask('${d.id}')"` : '';
+                                        const clickStyle = d.task ? 'cursor: pointer;' : '';
+
+                                        return `<span class="px-2 py-0.5 rounded text-xs mono" ${clickHandler}
+                                                      style="background: ${color}20; color: ${color}; border: 1px solid ${color}40; ${clickStyle}"
+                                                      title="${tooltip}">
+                                                    ${icon} ${d.id}
+                                                </span>`;
+                                    }).join('')}
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                            <div class="p-3" style="border-bottom: 1px solid var(--border); ${idx % 2 === 0 ? '' : 'background: var(--bg-tertiary);'}">
+                                <div class="flex flex-wrap items-start gap-3">
+                                    <!-- Status indicator -->
+                                    <div class="flex-shrink-0 w-3 h-3 rounded-full mt-1" style="background: ${statusColor}; ${item.status === 'notset' ? 'border: 1px solid var(--border);' : ''}"></div>
+
+                                    <!-- Main content -->
+                                    <div class="flex-grow min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="font-medium" style="color: var(--text-primary);">${escapeHtml(item.capability)}</span>
+                                            <span class="px-2 py-0.5 rounded text-xs" style="background: ${statusColor}20; color: ${statusColor};">${statusLabel}</span>
+                                        </div>
+                                        ${item.category ? `<div class="text-xs mt-1" style="color: var(--text-muted);">📁 ${escapeHtml(item.category)}</div>` : ''}
+                                        ${depHealthHtml}
+                                        ${item.remarks ? `<div class="text-xs mt-2 p-2 rounded" style="background: var(--bg-tertiary); color: var(--text-secondary);">💬 ${escapeHtml(item.remarks)}</div>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderTestingDepSummary() {
+            const container = document.getElementById('testing-dep-content');
+            const taskMap = new Map(projectData.map(t => [t.id, t]));
+
+            // Find all unique dependencies
+            const allDeps = new Set();
+            testingData.forEach(item => {
+                item.dependencies.forEach(d => allDeps.add(d));
+            });
+
+            if (allDeps.size === 0) {
+                container.innerHTML = `<p class="text-sm" style="color: var(--text-muted);">No dependencies linked to testing capabilities.</p>`;
+                return;
+            }
+
+            // Categorize dependencies
+            const complete = [];
+            const inProgress = [];
+            const blocked = [];
+            const notStarted = [];
+            const unknown = [];
+
+            allDeps.forEach(depId => {
+                const task = taskMap.get(depId);
+                if (!task) {
+                    unknown.push(depId);
+                } else if (task.status === 'done') {
+                    complete.push({ id: depId, task });
+                } else if (task.status === 'wip') {
+                    inProgress.push({ id: depId, task });
+                } else if (task.status === 'blocked') {
+                    blocked.push({ id: depId, task });
+                } else {
+                    notStarted.push({ id: depId, task });
+                }
+            });
+
+            // Count testing items blocked by each category
+            const blockedByDep = testingData.filter(t =>
+                t.status === 'blocked' && t.dependencies.some(d => {
+                    const task = taskMap.get(d);
+                    return task && task.status !== 'done';
+                })
+            ).length;
+
+            let html = `
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                    <div class="p-3 rounded-lg text-center" style="background: rgba(16, 185, 129, 0.1);">
+                        <div class="text-xl font-bold" style="color: var(--success);">${complete.length}</div>
+                        <div class="text-xs" style="color: var(--text-muted);">Complete</div>
+                    </div>
+                    <div class="p-3 rounded-lg text-center" style="background: rgba(245, 158, 11, 0.1);">
+                        <div class="text-xl font-bold" style="color: var(--warning);">${inProgress.length}</div>
+                        <div class="text-xs" style="color: var(--text-muted);">In Progress</div>
+                    </div>
+                    <div class="p-3 rounded-lg text-center" style="background: rgba(239, 68, 68, 0.1);">
+                        <div class="text-xl font-bold" style="color: var(--danger);">${blocked.length}</div>
+                        <div class="text-xs" style="color: var(--text-muted);">Blocked</div>
+                    </div>
+                    <div class="p-3 rounded-lg text-center" style="background: rgba(59, 130, 246, 0.1);">
+                        <div class="text-xl font-bold" style="color: var(--info);">${notStarted.length}</div>
+                        <div class="text-xs" style="color: var(--text-muted);">Not Started</div>
+                    </div>
+                    <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                        <div class="text-xl font-bold" style="color: var(--text-muted);">${unknown.length}</div>
+                        <div class="text-xs" style="color: var(--text-muted);">Unknown</div>
+                    </div>
+                </div>
+            `;
+
+            if (blockedByDep > 0) {
+                html += `
+                    <div class="p-3 rounded-lg mb-4" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <p class="font-medium" style="color: var(--danger);">⚠️ ${blockedByDep} testing item${blockedByDep > 1 ? 's' : ''} blocked waiting for incomplete dependencies</p>
+                    </div>
+                `;
+            }
+
+            // List incomplete dependencies that are blocking testing
+            const blockingDeps = [...inProgress, ...blocked, ...notStarted].filter(item => {
+                return testingData.some(t => t.dependencies.includes(item.id));
+            });
+
+            if (blockingDeps.length > 0) {
+                html += `
+                    <div class="mt-4">
+                        <h4 class="font-medium mb-2" style="color: var(--text-primary);">📋 Dependencies Blocking Testing</h4>
+                        <div class="space-y-2">
+                            ${blockingDeps.slice(0, 10).map(item => {
+                                const statusColor = item.task.status === 'blocked' ? 'var(--danger)' :
+                                                   item.task.status === 'wip' ? 'var(--warning)' : 'var(--info)';
+                                const affectedCount = testingData.filter(t => t.dependencies.includes(item.id)).length;
+
+                                return `
+                                    <div class="p-2 rounded flex items-center justify-between cursor-pointer hover:bg-opacity-80"
+                                         style="background: var(--bg-tertiary);"
+                                         onclick="showTestingDepTask('${item.id}')">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full" style="background: ${statusColor};"></span>
+                                            <span class="mono text-sm font-medium">${escapeHtml(item.id)}</span>
+                                            <span class="text-sm" style="color: var(--text-secondary);">${escapeHtml(truncate(item.task.description, 40))}</span>
+                                        </div>
+                                        <span class="text-xs px-2 py-0.5 rounded" style="background: var(--bg-secondary);">
+                                            Affects ${affectedCount} test${affectedCount > 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+                                `;
+                            }).join('')}
+                            ${blockingDeps.length > 10 ? `<p class="text-xs" style="color: var(--text-muted);">+${blockingDeps.length - 10} more...</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function showTestingDepTask(taskId) {
+            const task = projectData.find(t => t.id === taskId);
+            if (task) {
+                showTaskPopup(task);
+            }
         }
 
         function populateMilestoneSelector() {
@@ -2775,9 +3285,11 @@
             workbook = null;
             projectData = [];
             issues = [];
+            testingData = [];
             fileInfo.classList.add('hidden');
             sheetSection.classList.add('hidden');
             resultsSection.classList.add('hidden');
+            document.getElementById('testing-tab-btn').style.display = 'none';
             fileInput.value = '';
         }
 
