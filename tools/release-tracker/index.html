@@ -566,7 +566,7 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
-                    workbook = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+                    workbook = XLSX.read(e.target.result, { type: 'array', cellDates: true, cellStyles: true });
                     populateSheetSelector();
                 } catch (err) {
                     showCustomAlert('Error reading file: ' + err.message);
@@ -654,6 +654,25 @@
                 else if (hLower.includes('comments')) colMap.comments = i;
             });
 
+            // Helper to check if a cell has strikethrough
+            function isRowStrikethrough(rowIndex, colIndex) {
+                // Convert column index to Excel letter (A, B, C, etc.)
+                const colLetter = XLSX.utils.encode_col(colIndex);
+                const cellRef = colLetter + (rowIndex + 1); // Excel rows are 1-indexed
+                const cell = sheet[cellRef];
+                if (cell && cell.s && cell.s.font && cell.s.font.strike) {
+                    return true;
+                }
+                return false;
+            }
+
+            // Helper to check if task ID is a section header (like "1.0", "2.0", "3.0")
+            function isSectionHeader(taskId) {
+                // Match patterns like "1", "2", "1.0", "2.0", "10.0" - whole numbers or X.0
+                const headerPattern = /^(\d+)(\.0)?$/;
+                return headerPattern.test(taskId);
+            }
+
             // Parse data
             projectData = [];
             for (let i = headerRowIndex + 1; i < data.length; i++) {
@@ -669,6 +688,16 @@
                     taskId = taskId?.toString().trim();
                 }
                 if (!taskId || taskId === '--') continue;
+
+                // Skip section headers (like "1.0 Infrastructure Tasks", "2.0 Build Complete")
+                if (isSectionHeader(taskId)) {
+                    continue;
+                }
+
+                // Skip strikethrough rows (check Task ID cell or Description cell)
+                if (isRowStrikethrough(i, colMap.taskId) || isRowStrikethrough(i, colMap.description)) {
+                    continue;
+                }
 
                 const status = normalizeStatus(row[colMap.status]);
                 const deps = parseDependencies(row[colMap.dependencies]);
