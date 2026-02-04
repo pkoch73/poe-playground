@@ -951,10 +951,12 @@
             resultsSection.classList.remove('hidden');
 
             // Stats
-            document.getElementById('stat-total').textContent = projectData.length;
-            document.getElementById('stat-done').textContent = projectData.filter(t => t.status === 'done').length;
-            document.getElementById('stat-wip').textContent = projectData.filter(t => t.status === 'wip').length;
-            document.getElementById('stat-new').textContent = projectData.filter(t => t.status === 'new').length;
+            // Exclude post-MVP and cancelled tasks from summary stats
+            const mvpTasks = projectData.filter(t => t.status !== 'postmvp' && t.status !== 'cancelled');
+            document.getElementById('stat-total').textContent = mvpTasks.length;
+            document.getElementById('stat-done').textContent = mvpTasks.filter(t => t.status === 'done').length;
+            document.getElementById('stat-wip').textContent = mvpTasks.filter(t => t.status === 'wip').length;
+            document.getElementById('stat-new').textContent = mvpTasks.filter(t => t.status === 'new').length;
             document.getElementById('stat-issues').textContent = issues.filter(i => i.issues.some(is => is.type === 'overdue')).length;
 
             // Populate inline summary panel
@@ -3349,9 +3351,10 @@
             document.getElementById('summary-date').textContent =
                 `• ${today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
-            // Calculate data
-            const totalTasks = projectData.length;
-            const completedTasks = projectData.filter(t => t.status === 'done').length;
+            // Calculate data (exclude post-MVP and cancelled tasks)
+            const mvpTasks = projectData.filter(t => t.status !== 'postmvp' && t.status !== 'cancelled');
+            const totalTasks = mvpTasks.length;
+            const completedTasks = mvpTasks.filter(t => t.status === 'done').length;
             const completionPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
             const overdueTasks = projectData.filter(t => {
