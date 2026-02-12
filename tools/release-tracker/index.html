@@ -141,7 +141,7 @@
             opacity: 0;
             transition: opacity 0.2s;
             z-index: 1000;
-            max-width: 300px;
+            max-width: 360px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
 
@@ -263,23 +263,23 @@
 
                     <!-- Quick Stats Row -->
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                        <div id="card-total" class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
                             <p class="text-2xl font-bold" style="color: var(--accent);" id="stat-total">0</p>
                             <p class="text-xs" style="color: var(--text-muted);">Total</p>
                         </div>
-                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                        <div id="card-done" class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary); cursor: pointer;">
                             <p class="text-2xl font-bold" style="color: var(--success);" id="stat-done">0</p>
                             <p class="text-xs" style="color: var(--text-muted);">Done</p>
                         </div>
-                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                        <div id="card-wip" class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary); cursor: pointer;">
                             <p class="text-2xl font-bold" style="color: var(--warning);" id="stat-wip">0</p>
                             <p class="text-xs" style="color: var(--text-muted);">In Progress</p>
                         </div>
-                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                        <div id="card-new" class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary); cursor: pointer;">
                             <p class="text-2xl font-bold" style="color: var(--info);" id="stat-new">0</p>
                             <p class="text-xs" style="color: var(--text-muted);">Not Started</p>
                         </div>
-                        <div class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary);">
+                        <div id="card-issues" class="p-3 rounded-lg text-center" style="background: var(--bg-tertiary); cursor: pointer;">
                             <p class="text-2xl font-bold" style="color: var(--danger);" id="stat-issues">0</p>
                             <p class="text-xs" style="color: var(--text-muted);">Issues</p>
                         </div>
@@ -962,6 +962,7 @@
 
             // Populate inline summary panel
             populateSummaryPanel();
+            attachStatCardTooltips();
 
             // Issues Panel
             const criticalIssues = issues.filter(i => i.issues.some(is => is.type === 'overdue'));
@@ -1007,6 +1008,73 @@
             if (testingData.length > 0) {
                 renderTestingReadiness();
             }
+        }
+
+        // === Stat Card Tooltips ===
+
+        function attachStatCardTooltips() {
+            const mvpTasks = projectData.filter(t => t.status !== 'postmvp' && t.status !== 'cancelled');
+
+            const configs = [
+                {
+                    cardId: 'card-done',
+                    label: '✅ Done',
+                    color: 'var(--success)',
+                    tasks: mvpTasks.filter(t => t.status === 'done')
+                },
+                {
+                    cardId: 'card-wip',
+                    label: '🔧 In Progress',
+                    color: 'var(--warning)',
+                    tasks: mvpTasks.filter(t => t.status === 'wip')
+                },
+                {
+                    cardId: 'card-new',
+                    label: '🆕 Not Started',
+                    color: 'var(--info)',
+                    tasks: mvpTasks.filter(t => t.status === 'new')
+                },
+                {
+                    cardId: 'card-issues',
+                    label: '🚨 Issues',
+                    color: 'var(--danger)',
+                    tasks: issues.filter(i => i.issues.some(is => is.type === 'overdue')).map(i => i.task)
+                }
+            ];
+
+            configs.forEach(({ cardId, label, color, tasks }) => {
+                const el = document.getElementById(cardId);
+                if (!el) return;
+
+                el.addEventListener('mouseenter', (e) => {
+                    if (tasks.length === 0) return;
+                    const rows = tasks.slice(0, 10).map(t =>
+                        `<div style="margin-bottom: 6px;">
+                            <span class="mono" style="font-size:11px; color:${color};">${escapeHtml(t.id)}</span>
+                            <span style="font-size:12px; color:var(--text-secondary);"> ${escapeHtml(truncate(t.description, 45))}</span>
+                        </div>`
+                    ).join('');
+                    const more = tasks.length > 10
+                        ? `<div style="font-size:11px; color:var(--text-muted); margin-top:4px;">+${tasks.length - 10} more...</div>`
+                        : '';
+                    tooltip.innerHTML = `
+                        <div style="font-weight:700; font-size:13px; margin-bottom:8px; color:${color};">${label} (${tasks.length})</div>
+                        ${rows}${more}
+                    `;
+                    tooltip.style.opacity = 1;
+                    tooltip.style.left = (e.pageX + 14) + 'px';
+                    tooltip.style.top = (e.pageY - 10) + 'px';
+                });
+
+                el.addEventListener('mousemove', (e) => {
+                    tooltip.style.left = (e.pageX + 14) + 'px';
+                    tooltip.style.top = (e.pageY - 10) + 'px';
+                });
+
+                el.addEventListener('mouseleave', () => {
+                    tooltip.style.opacity = 0;
+                });
+            });
         }
 
         // === Testing Readiness Functions ===
