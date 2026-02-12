@@ -903,6 +903,7 @@
             const taskMap = new Map(projectData.map(t => [t.id, t]));
 
             projectData.forEach(task => {
+                if (task.status === 'cancelled' || task.status === 'postmvp') return;
                 const taskIssues = [];
 
                 task.dependencies.forEach(depId => {
@@ -914,7 +915,7 @@
                             depId: depId,
                             message: `Dependency "${depId}" not found in project plan`
                         });
-                    } else if (dep.status !== 'done') {
+                    } else if (dep.status !== 'done' && dep.status !== 'cancelled' && dep.status !== 'postmvp') {
                         // Check if this task's due date has passed but dependency isn't done
                         const dueDate = task.anticipatedEnd || task.actualEnd;
                         if (dueDate && dueDate < today) {
@@ -1158,13 +1159,14 @@
                 const deferred = items.filter(t => t.status === 'deferred').length;
                 const notset = items.filter(t => t.status === 'notset').length;
 
-                const readyPct = total > 0 ? Math.round((ready / total) * 100) : 0;
+                const activeTotal = total - deferred - notset;
+                const readyPct = activeTotal > 0 ? Math.round((ready / activeTotal) * 100) : 0;
 
                 // Determine card color based on status
                 let borderColor = 'var(--border)';
                 if (blocked > 0) borderColor = 'var(--danger)';
                 else if (wip > 0) borderColor = 'var(--warning)';
-                else if (ready === total) borderColor = 'var(--success)';
+                else if (activeTotal > 0 && ready === activeTotal) borderColor = 'var(--success)';
 
                 html += `
                     <div class="card p-3 cursor-pointer hover:scale-105 transition-transform" onclick="filterByRelease('${release}')"
@@ -1178,7 +1180,6 @@
                             ${ready > 0 ? `<div class="flex-1 h-1 rounded" style="background: var(--success);" title="${ready} ready"></div>` : ''}
                             ${wip > 0 ? `<div class="flex-1 h-1 rounded" style="background: var(--warning);" title="${wip} WIP"></div>` : ''}
                             ${blocked > 0 ? `<div class="flex-1 h-1 rounded" style="background: var(--danger);" title="${blocked} blocked"></div>` : ''}
-                            ${deferred > 0 ? `<div class="flex-1 h-1 rounded" style="background: #9ca3af;" title="${deferred} deferred"></div>` : ''}
                             ${notset > 0 ? `<div class="flex-1 h-1 rounded" style="background: var(--bg-tertiary); border: 1px solid var(--border);" title="${notset} not set"></div>` : ''}
                         </div>
                         <div class="text-xs mt-2 space-y-0.5" style="color: var(--text-secondary);">
