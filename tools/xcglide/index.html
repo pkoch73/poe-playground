@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XC GLIDE // Cross-Country Ski Performance Calculator</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #07090d;
+    --surface:   #0c1018;
+    --panel:     #0f1620;
+    --panel2:    #111d2a;
+    --border:    #1b2d42;
+    --border2:   #243d57;
+    --ice:       #00d4ff;
+    --ice-dim:   #0088b3;
+    --ice-dark:  #004466;
+    --green:     #00e87a;
+    --green-dim: #007a40;
+    --amber:     #ffb830;
+    --red:       #ff4444;
+    --white:     #d8eaf8;
+    --muted:     #4a6a88;
+    --muted2:    #2a4560;
+    --mono:      'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--white); font-family: var(--mono); font-size: 12px; }
+
+  #root { min-height: 100%; display: flex; flex-direction: column; }
+
+  /* === HEADER === */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #0a1520 0%, var(--surface) 100%);
+    flex-shrink: 0;
+  }
+  .header-title {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.25em;
+    color: var(--ice); text-transform: uppercase;
+  }
+  .header-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.15em; margin-top: 2px; }
+  .header-right { text-align: right; }
+  .header-mu { font-size: 20px; font-weight: 700; color: var(--ice); letter-spacing: 0.05em; }
+  .header-label { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  /* === LAYOUT === */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* === LEFT PANEL === */
+  .left-panel {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    background: var(--surface);
+  }
+  .left-panel::-webkit-scrollbar { width: 4px; }
+  .left-panel::-webkit-scrollbar-track { background: var(--surface); }
+  .left-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .section {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+  .section-title {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.25em;
+    color: var(--muted); text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .input-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .input-label {
+    width: 130px; font-size: 10px; color: var(--muted); flex-shrink: 0;
+    line-height: 1.3;
+  }
+  .input-label em {
+    font-style: normal; color: var(--ice-dim); font-size: 9px;
+  }
+  .slider-wrap { flex: 1; display: flex; align-items: center; gap: 6px; }
+  .slider {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 3px; background: var(--border2); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px; background: var(--ice);
+    border-radius: 50%; cursor: pointer;
+    box-shadow: 0 0 6px rgba(0,212,255,0.5);
+  }
+  .slider::-moz-range-thumb {
+    width: 12px; height: 12px; background: var(--ice);
+    border-radius: 50%; cursor: pointer; border: none;
+  }
+  .num-input {
+    width: 58px; background: var(--panel2); border: 1px solid var(--border2);
+    color: var(--ice); font-family: var(--mono); font-size: 11px; font-weight: 600;
+    padding: 3px 5px; border-radius: 2px; text-align: right; outline: none;
+  }
+  .num-input:focus { border-color: var(--ice); }
+  .unit { font-size: 9px; color: var(--muted); width: 22px; flex-shrink: 0; }
+
+  /* Terrain linked sliders */
+  .terrain-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .terrain-icon { font-size: 11px; width: 16px; text-align: center; flex-shrink: 0; }
+  .terrain-label { width: 56px; font-size: 10px; flex-shrink: 0; }
+  .terrain-bar-wrap { flex: 1; position: relative; height: 3px; background: var(--border2); border-radius: 2px; }
+  .terrain-bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 2px; }
+  .terrain-slider {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 100%; -webkit-appearance: none; appearance: none;
+    height: 3px; background: transparent; outline: none; cursor: pointer;
+  }
+  .terrain-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px; background: var(--ice);
+    border-radius: 50%; cursor: pointer;
+    box-shadow: 0 0 6px rgba(0,212,255,0.4);
+  }
+  .terrain-pct { width: 36px; font-size: 11px; font-weight: 600; color: var(--ice); text-align: right; flex-shrink: 0; }
+
+  /* Dual μ slider */
+  .mu-track-wrap {
+    margin: 8px 0 4px;
+    position: relative; height: 24px;
+  }
+  .mu-track {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 100%; height: 4px; background: var(--border2); border-radius: 2px;
+  }
+  .mu-range-fill { position: absolute; top: 0; height: 100%; border-radius: 2px; background: var(--ice-dark); }
+  .mu-range-improved { position: absolute; top: 0; height: 100%; border-radius: 2px; background: var(--ice); opacity: 0.8; }
+  .mu-slider {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 100%; -webkit-appearance: none; appearance: none;
+    height: 4px; background: transparent; pointer-events: none;
+    outline: none;
+  }
+  .mu-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; pointer-events: all;
+    width: 14px; height: 14px; border-radius: 50%; cursor: pointer;
+  }
+  .mu-slider-1::-webkit-slider-thumb { background: var(--muted); border: 2px solid var(--border2); }
+  .mu-slider-2::-webkit-slider-thumb { background: var(--ice); box-shadow: 0 0 8px rgba(0,212,255,0.6); }
+  .mu-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); margin-top: 2px; }
+  .mu-values-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .mu-val-box {
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--panel); border: 1px solid var(--border2); border-radius: 3px;
+    padding: 4px 10px; min-width: 80px;
+  }
+  .mu-val-box.improved { border-color: var(--ice-dim); }
+  .mu-val-label { font-size: 9px; color: var(--muted); margin-bottom: 2px; }
+  .mu-val-num { font-size: 15px; font-weight: 700; color: var(--white); }
+  .mu-val-box.improved .mu-val-num { color: var(--ice); }
+  .mu-delta-box {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 4px 8px;
+  }
+  .mu-delta-pct { font-size: 13px; font-weight: 700; color: var(--green); }
+  .mu-delta-lbl { font-size: 9px; color: var(--muted); }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .toggle-label { font-size: 10px; color: var(--muted); flex: 1; }
+  .toggle-switch { position: relative; width: 40px; height: 20px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-thumb {
+    position: absolute; inset: 0; background: var(--border2); border-radius: 10px;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .toggle-thumb::before {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 14px; height: 14px; background: var(--muted); border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+  }
+  input:checked + .toggle-thumb { background: var(--ice-dark); }
+  input:checked + .toggle-thumb::before { transform: translateX(20px); background: var(--ice); }
+  .toggle-option { font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .toggle-option.active { color: var(--ice); }
+
+  /* Computed power */
+  .computed-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px; color: var(--muted);
+  }
+  .computed-val { color: var(--amber); font-weight: 600; font-size: 12px; }
+  .computed-warn { color: var(--red); }
+
+  /* === RIGHT PANEL === */
+  .right-panel {
+    overflow-y: auto; display: flex; flex-direction: column; gap: 0;
+    background: var(--bg);
+  }
+  .right-panel::-webkit-scrollbar { width: 4px; }
+  .right-panel::-webkit-scrollbar-track { background: var(--bg); }
+  .right-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .terrain-cards {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0; border-bottom: 1px solid var(--border);
+  }
+  .terrain-card {
+    padding: 14px; border-right: 1px solid var(--border);
+    position: relative; overflow: hidden;
+  }
+  .terrain-card:last-child { border-right: none; }
+  .terrain-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .terrain-card.uphill::before { background: #ff6b35; }
+  .terrain-card.flat::before { background: var(--ice); }
+  .terrain-card.downhill::before { background: var(--green); }
+
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .card-type { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .card-dist { font-size: 9px; color: var(--muted2); }
+
+  .card-time { font-size: 24px; font-weight: 700; color: var(--white); line-height: 1; }
+  .card-time-unit { font-size: 10px; color: var(--muted); margin-left: 3px; }
+  .card-speed { font-size: 10px; color: var(--ice); margin-top: 2px; margin-bottom: 10px; }
+
+  .card-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+  .card-compare { display: flex; gap: 8px; margin-bottom: 10px; }
+  .compare-box {
+    flex: 1; padding: 5px 7px; border-radius: 2px;
+    border: 1px solid var(--border2); background: var(--panel);
+  }
+  .compare-box.improved { border-color: var(--ice-dark); background: var(--panel2); }
+  .compare-lbl { font-size: 8px; color: var(--muted); margin-bottom: 2px; }
+  .compare-val { font-size: 13px; font-weight: 600; color: var(--white); }
+  .compare-box.improved .compare-val { color: var(--ice); }
+  .compare-sub { font-size: 9px; color: var(--muted); }
+
+  .time-saved-badge {
+    text-align: center; padding: 4px 8px; border-radius: 2px;
+    background: var(--green-dim); color: var(--green);
+    font-size: 11px; font-weight: 700; margin-bottom: 10px;
+  }
+
+  /* Force bars */
+  .forces-section { }
+  .forces-title { font-size: 8px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 5px; }
+  .force-row { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+  .force-name { font-size: 9px; color: var(--muted); width: 40px; flex-shrink: 0; }
+  .force-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 1px; overflow: hidden; position: relative; }
+  .force-bar { height: 100%; border-radius: 1px; transition: width 0.3s ease; }
+  .force-bar.gravity { background: #ff6b35; }
+  .force-bar.friction { background: var(--amber); }
+  .force-bar.friction.improved { background: #886600; }
+  .force-bar.aero { background: var(--ice-dim); }
+  .force-val { font-size: 9px; color: var(--muted); width: 36px; text-align: right; flex-shrink: 0; }
+
+  /* Delta section */
+  .delta-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .delta-title {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.25em; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .delta-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .delta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .delta-item {
+    padding: 8px 10px; background: var(--panel); border: 1px solid var(--border2); border-radius: 3px;
+  }
+  .delta-item.highlight { border-color: var(--ice-dim); background: var(--panel2); }
+  .delta-item-label { font-size: 9px; color: var(--muted); margin-bottom: 4px; }
+  .delta-item-val { font-size: 16px; font-weight: 700; color: var(--white); }
+  .delta-item.highlight .delta-item-val { color: var(--green); }
+  .delta-item-sub { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+  .time-breakdown { display: flex; gap: 6px; margin-top: 8px; }
+  .tbreak-item {
+    flex: 1; padding: 6px 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 2px;
+    text-align: center;
+  }
+  .tbreak-val { font-size: 13px; font-weight: 600; color: var(--green); }
+  .tbreak-lbl { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  .callout {
+    margin-top: 10px; padding: 8px 10px; border-left: 2px solid var(--ice-dim);
+    background: rgba(0, 132, 179, 0.06); font-size: 10px; color: var(--muted); line-height: 1.5;
+  }
+  .callout strong { color: var(--ice); font-weight: 600; }
+
+  /* Warnings */
+  .warnings {
+    padding: 10px 16px;
+    background: rgba(255,68,68,0.05);
+    border-bottom: 1px solid rgba(255,68,68,0.2);
+  }
+  .warning-item {
+    display: flex; align-items: flex-start; gap: 6px;
+    font-size: 10px; color: #ff8888; margin-bottom: 4px;
+  }
+  .warning-item:last-child { margin-bottom: 0; }
+  .warning-icon { color: var(--red); flex-shrink: 0; margin-top: 0; font-size: 11px; }
+
+  /* === SUMMARY BAR === */
+  .summary-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .summary-card {
+    padding: 12px 16px; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .summary-card:last-child { border-right: none; }
+  .summary-label { font-size: 8px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .summary-val { font-size: 22px; font-weight: 700; color: var(--white); line-height: 1.1; }
+  .summary-val.ice { color: var(--ice); }
+  .summary-val.green { color: var(--green); }
+  .summary-sub { font-size: 9px; color: var(--muted); }
+  .summary-compare { display: flex; align-items: baseline; gap: 6px; margin-top: 2px; }
+  .summary-old { font-size: 12px; color: var(--muted); text-decoration: line-through; }
+  .summary-new { font-size: 14px; font-weight: 600; color: var(--ice); }
+  .summary-arrow { font-size: 10px; color: var(--muted); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .left-panel { overflow-y: visible; border-right: none; border-bottom: 1px solid var(--border); }
+    .terrain-cards { grid-template-columns: 1fr; }
+    .summary-bar { grid-template-columns: 1fr 1fr; }
+    .delta-grid { grid-template-columns: 1fr; }
+  }
+
+  /* === FIELD TEST CONVERTER === */
+  .field-test-toggle {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.22em; color: var(--muted);
+    text-transform: uppercase; padding: 10px 16px;
+    background: var(--panel); user-select: none;
+    transition: color 0.15s, background 0.15s; margin-top: 12px;
+    border: 1px solid var(--border); border-radius: 2px;
+  }
+  .field-test-toggle:hover { color: var(--ice); background: var(--panel2); }
+  .field-test-toggle.open { color: var(--ice); border-color: var(--ice-dark); border-bottom-color: transparent; border-radius: 2px 2px 0 0; }
+  .field-test-toggle-icon {
+    width: 13px; height: 13px; border: 1px solid currentColor; border-radius: 2px;
+    display: flex; align-items: center; justify-content: center; font-size: 9px;
+    font-weight: 700; flex-shrink: 0; line-height: 1;
+  }
+  .field-test-spacer { flex: 1; height: 1px; background: var(--border); opacity: 0.5; }
+
+  .field-test-panel {
+    background: var(--panel); border: 1px solid var(--ice-dark);
+    border-top: none; border-radius: 0 0 2px 2px;
+    border-left: 2px solid var(--ice-dark); padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .field-test-desc {
+    font-size: 9px; color: var(--muted); line-height: 1.65; margin-bottom: 10px;
+  }
+  .field-test-desc strong { color: var(--ice-dim); font-weight: 600; }
+  .field-test-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 7px;
+  }
+  .field-test-label {
+    width: 110px; font-size: 10px; color: var(--muted); flex-shrink: 0; line-height: 1.3;
+  }
+  .field-test-input {
+    width: 68px; background: var(--panel2); border: 1px solid var(--border2);
+    color: var(--ice); font-family: var(--mono); font-size: 11px; font-weight: 600;
+    padding: 3px 5px; border-radius: 2px; text-align: right; outline: none;
+  }
+  .field-test-input:focus { border-color: var(--ice); }
+  .field-test-unit { font-size: 9px; color: var(--muted); }
+  .field-test-divider { height: 1px; background: var(--border); margin: 10px 0; }
+  .field-test-output {
+    display: flex; gap: 6px; margin-bottom: 10px;
+  }
+  .field-test-out-box {
+    flex: 1; padding: 6px 8px; background: var(--surface);
+    border: 1px solid var(--border2); border-radius: 2px; text-align: center;
+  }
+  .field-test-out-lbl { font-size: 8px; color: var(--muted); margin-bottom: 2px; letter-spacing: 0.1em; }
+  .field-test-out-val { font-size: 14px; font-weight: 700; color: var(--ice); }
+  .field-test-out-box.mu2 { border-color: var(--ice-dim); }
+  .field-test-out-box.mu2 .field-test-out-val { color: var(--green); }
+  .apply-btn {
+    width: 100%; padding: 7px; background: rgba(0,212,255,0.07);
+    border: 1px solid var(--ice-dim); color: var(--ice);
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.15em; cursor: pointer; border-radius: 2px;
+    text-transform: uppercase; transition: all 0.15s;
+  }
+  .apply-btn:hover { background: rgba(0,212,255,0.15); }
+  .apply-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .field-test-note {
+    font-size: 9px; color: var(--muted2); line-height: 1.5; margin-top: 8px;
+  }
+
+  /* Glide equiv sub-label under μ value boxes */
+  .mu-glide-equiv { font-size: 9px; color: var(--muted); margin-top: 2px; }
+  .mu-glide-equiv em { color: var(--ice-dim); font-style: normal; }
+  .mu-delta-glide { font-size: 9px; color: var(--green); margin-top: 2px; }
+
+  /* === HELP BUTTON === */
+  .help-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: 1px solid var(--border2);
+    color: var(--muted); font-family: var(--mono); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.12em; padding: 5px 12px; border-radius: 2px;
+    cursor: pointer; transition: all 0.15s; text-transform: uppercase;
+    margin-left: 20px; flex-shrink: 0;
+  }
+  .help-btn:hover { border-color: var(--ice-dim); color: var(--ice); background: rgba(0,212,255,0.05); }
+  .help-btn svg { opacity: 0.7; }
+  .help-btn:hover svg { opacity: 1; }
+
+  /* === HELP MODAL === */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(4, 7, 12, 0.7);
+    backdrop-filter: blur(3px);
+    z-index: 200;
+    display: flex; align-items: stretch; justify-content: flex-end;
+  }
+  .modal-panel {
+    width: 540px; max-width: 100vw;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    animation: slideIn 0.18s ease-out;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(40px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  .modal-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #0a1520 0%, var(--surface) 100%);
+    flex-shrink: 0;
+  }
+  .modal-header-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid var(--ice-dim); color: var(--ice);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .modal-title { font-size: 11px; font-weight: 700; letter-spacing: 0.2em; color: var(--ice); flex: 1; }
+  .modal-sub { font-size: 9px; color: var(--muted); margin-top: 1px; }
+  .modal-close {
+    background: none; border: 1px solid var(--border2); color: var(--muted);
+    cursor: pointer; font-size: 13px; width: 26px; height: 26px;
+    border-radius: 2px; font-family: var(--mono); display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { border-color: var(--ice-dim); color: var(--ice); }
+
+  .modal-tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    overflow-x: auto; flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .modal-tabs::-webkit-scrollbar { display: none; }
+  .modal-tab {
+    padding: 9px 16px; font-size: 9px; font-weight: 700; letter-spacing: 0.15em;
+    color: var(--muted); cursor: pointer; white-space: nowrap;
+    border: none; border-bottom: 2px solid transparent;
+    background: none; font-family: var(--mono); transition: color 0.15s;
+    text-transform: uppercase; flex-shrink: 0;
+  }
+  .modal-tab:hover { color: var(--white); }
+  .modal-tab.active { color: var(--ice); border-bottom-color: var(--ice); }
+
+  .modal-body {
+    flex: 1; overflow-y: auto; padding: 20px 22px;
+  }
+  .modal-body::-webkit-scrollbar { width: 4px; }
+  .modal-body::-webkit-scrollbar-track { background: var(--surface); }
+  .modal-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Doc content styles */
+  .doc-section { margin-bottom: 26px; }
+  .doc-heading {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.22em; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .doc-heading::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .doc-p {
+    font-size: 10px; color: var(--muted); line-height: 1.75; margin-bottom: 8px;
+  }
+  .doc-p strong { color: var(--white); font-weight: 600; }
+  .doc-p em { color: var(--ice); font-style: normal; }
+  .doc-p a { color: var(--ice-dim); text-decoration: none; }
+
+  .formula-block {
+    background: var(--panel); border: 1px solid var(--border2);
+    border-left: 3px solid var(--ice-dim);
+    padding: 10px 14px; border-radius: 2px; margin: 10px 0;
+    font-size: 11px; color: var(--ice); line-height: 2;
+    overflow-x: auto;
+  }
+  .formula-block .cmt { color: var(--muted); font-size: 9px; }
+  .formula-block .lbl { color: var(--amber); }
+
+  .param-grid { display: flex; flex-direction: column; gap: 0; }
+  .param-row {
+    display: grid; grid-template-columns: 110px 46px 1fr;
+    gap: 8px; align-items: flex-start;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 10px;
+  }
+  .param-row:last-child { border-bottom: none; }
+  .param-name { color: var(--ice); font-weight: 600; }
+  .param-unit { color: var(--muted); font-size: 9px; padding-top: 1px; }
+  .param-desc { color: var(--muted); line-height: 1.55; }
+  .param-desc strong { color: var(--white); font-weight: 600; }
+  .param-desc code {
+    background: var(--panel); border: 1px solid var(--border2);
+    padding: 0px 4px; border-radius: 2px; font-family: var(--mono);
+    color: var(--ice); font-size: 9px;
+  }
+
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 10px 0; }
+  .ref-table th {
+    color: var(--muted); font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase;
+    font-weight: 700; text-align: left; padding: 5px 8px;
+    border-bottom: 1px solid var(--border2); background: var(--panel);
+  }
+  .ref-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table .val { color: var(--ice); font-weight: 600; }
+  .ref-table .good { color: var(--green); }
+  .ref-table .warn { color: var(--amber); }
+
+  .tip-item {
+    display: flex; gap: 10px; padding: 10px; margin-bottom: 8px;
+    background: var(--panel); border: 1px solid var(--border2); border-radius: 3px;
+  }
+  .tip-icon { font-size: 16px; flex-shrink: 0; line-height: 1.3; }
+  .tip-body { flex: 1; }
+  .tip-title { font-size: 10px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+  .tip-text { font-size: 10px; color: var(--muted); line-height: 1.6; }
+  .tip-text strong { color: var(--ice); font-weight: 600; }
+
+  .badge {
+    display: inline-block; padding: 1px 6px; border-radius: 2px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+    margin-right: 4px; vertical-align: middle;
+  }
+  .badge-ice { background: rgba(0,212,255,0.12); color: var(--ice); border: 1px solid var(--ice-dark); }
+  .badge-green { background: rgba(0,232,122,0.1); color: var(--green); border: 1px solid var(--green-dim); }
+  .badge-amber { background: rgba(255,184,48,0.1); color: var(--amber); border: 1px solid #664800; }
+  .badge-orange { background: rgba(255,107,53,0.1); color: #ff6b35; border: 1px solid #662a14; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useCallback } = React;
+
+// ─── Physics Engine ──────────────────────────────────────────────────────────
+
+function computePhysics(inp) {
+  const {
+    mass, efficiency, totalDistance,
+    uphillPct, flatPct, downhillPct,
+    slope, vUphill, vFlat, vDownhill,
+    mu1, mu2, rho, cdaUpright, cdaTuck, reinvest
+  } = inp;
+
+  const g = 9.81;
+  const eff = efficiency / 100;
+  const theta = Math.atan(slope / 100);
+  const sinT = Math.sin(theta);
+  const cosT = Math.cos(theta);
+  const total = uphillPct + flatPct + downhillPct;
+
+  const d_up   = totalDistance * 1000 * (uphillPct / 100);
+  const d_flat = totalDistance * 1000 * (flatPct / 100);
+  const d_down = totalDistance * 1000 * (downhillPct / 100);
+
+  // Forces for a given terrain, mu, and speed
+  function forces(mu, terrain, v) {
+    const isDown = terrain === 'downhill';
+    const isFlat = terrain === 'flat';
+    const F_grav  = isFlat ? 0 : mass * g * sinT;
+    const F_fric  = mu * mass * g * (isFlat ? 1 : cosT);
+    const cda     = isDown ? cdaTuck : cdaUpright;
+    const F_aero  = 0.5 * rho * cda * v * v;
+    const F_net   = isDown
+      ? F_fric + F_aero - mass * g * sinT   // gravity assists
+      : F_grav + F_fric + F_aero;
+    return { F_grav: Math.abs(F_grav), F_fric, F_aero, F_net };
+  }
+
+  // Bisection: find v where F_net(v)*v = P, for uphill or flat (not downhill)
+  function solveSpeed(P, mu, isUphill) {
+    const terrain = isUphill ? 'uphill' : 'flat';
+    let lo = 0.01, hi = 50;
+    for (let i = 0; i < 80; i++) {
+      const mid = (lo + hi) / 2;
+      const { F_net } = forces(mu, terrain, mid);
+      if (F_net * mid > P) hi = mid; else lo = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  // Terminal velocity (downhill)
+  function termV(mu) {
+    const num = mass * g * sinT - mu * mass * g * cosT;
+    if (num <= 0) return null;
+    return Math.sqrt(num / (0.5 * rho * cdaTuck));
+  }
+
+  const tv1 = termV(mu1);
+  const tv2 = termV(mu2);
+
+  // Baseline: use input speeds as given
+  const fU1 = forces(mu1, 'uphill', vUphill);
+  const fF1 = forces(mu1, 'flat', vFlat);
+  const fD1 = forces(mu1, 'downhill', vDownhill);
+
+  const t_u1 = d_up   / vUphill;
+  const t_f1 = d_flat / vFlat;
+  const t_d1 = d_down / vDownhill;
+  const E_u1 = fU1.F_net * d_up;
+  const E_f1 = fF1.F_net * d_flat;
+  const E_d1 = Math.max(0, fD1.F_net * d_down);
+  const P_u1 = fU1.F_net * vUphill;
+  const P_f1 = fF1.F_net * vFlat;
+
+  // Improved downhill speed (terminal velocity scale)
+  let v_d2 = vDownhill;
+  if (tv1 && tv2) {
+    v_d2 = vDownhill * (tv2 / tv1);
+  } else if (tv2) {
+    v_d2 = tv2;
+  }
+
+  // Glide-only improved speeds (same power, lower μ → higher v)
+  const v_u_glide = solveSpeed(P_u1, mu2, true);
+  const v_f_glide = solveSpeed(P_f1, mu2, false);
+
+  // Reinvest: add saved friction energy as extra power
+  const dF_fric_u = (mu1 - mu2) * mass * g * cosT;
+  const dF_fric_f = (mu1 - mu2) * mass * g;
+  const E_saved_u_mech = dF_fric_u * d_up;
+  const E_saved_f_mech = dF_fric_f * d_flat;
+  const P_extra_u = E_saved_u_mech / t_u1;
+  const P_extra_f = E_saved_f_mech / t_f1;
+
+  const v_u2 = reinvest
+    ? solveSpeed(P_u1 + P_extra_u, mu2, true)
+    : v_u_glide;
+  const v_f2 = reinvest
+    ? solveSpeed(P_f1 + P_extra_f, mu2, false)
+    : v_f_glide;
+
+  const fU2 = forces(mu2, 'uphill', v_u2);
+  const fF2 = forces(mu2, 'flat', v_f2);
+  const fD2 = forces(mu2, 'downhill', v_d2);
+
+  const t_u2 = d_up   / v_u2;
+  const t_f2 = d_flat / v_f2;
+  const t_d2 = d_down / v_d2;
+  const E_u2 = fU2.F_net * d_up;
+  const E_f2 = fF2.F_net * d_flat;
+  const E_d2 = Math.max(0, fD2.F_net * d_down);
+
+  // Glide-effect time savings
+  const dt_u_glide = t_u1 - d_up / v_u_glide;
+  const dt_f_glide = t_f1 - d_flat / v_f_glide;
+  const dt_d_glide = t_d1 - t_d2;
+  const dt_glide = dt_u_glide + dt_f_glide + dt_d_glide;
+
+  // Total savings
+  const dt_u = t_u1 - t_u2;
+  const dt_f = t_f1 - t_f2;
+  const dt_d = t_d1 - t_d2;
+  const dt_total = dt_u + dt_f + dt_d;
+  const dt_reinvest = reinvest ? dt_total - dt_glide : 0;
+
+  // Energy metrics (propulsive segments only for "freed" energy)
+  const E_prop1 = E_u1 + E_f1;
+  const E_prop2 = E_u2 + E_f2;
+  const E_saved_mech = E_prop1 - E_prop2;
+  const E_saved_meta = E_saved_mech / eff;
+  const pct_saved = E_prop1 > 0 ? (E_saved_mech / (E_u1 + E_f1 + E_d1)) * 100 : 0;
+  const equiv_minutes = (P_u1 > 0) ? E_saved_meta / (P_u1 / eff) / 60 : 0;
+
+  // Max force (for bar scaling)
+  const maxF = Math.max(
+    fU1.F_grav + fU1.F_fric + fU1.F_aero,
+    fF1.F_fric + fF1.F_aero,
+    fD1.F_grav + fD1.F_fric + fD1.F_aero,
+    fU2.F_grav + fU2.F_fric + fU2.F_aero,
+    fF2.F_fric + fF2.F_aero,
+    fD2.F_grav + fD2.F_fric + fD2.F_aero,
+  );
+
+  // Validation warnings
+  const warnings = [];
+  if (Math.abs(total - 100) > 0.5)
+    warnings.push(`Terrain split sums to ${total.toFixed(1)}% (must be 100%)`);
+  if (mu2 >= mu1)
+    warnings.push('μ₂ ≥ μ₁ — improvement direction reversed. μ₂ should be lower.');
+  if (fD1.F_net >= 0 && vDownhill > (tv1 || vDownhill))
+    warnings.push('Downhill speed exceeds terminal velocity — net force is resistive; skier must brake.');
+  const P_meta = P_u1 / eff;
+  if (P_meta > 400)
+    warnings.push(`Implied metabolic power ${P_meta.toFixed(0)} W exceeds plausible sustained range (>400 W). Check speed/slope inputs.`);
+
+  return {
+    baseline: {
+      uphill:   { ...fU1, v: vUphill, t: t_u1, E: E_u1, d: d_up,   P: P_u1 },
+      flat:     { ...fF1, v: vFlat,   t: t_f1, E: E_f1, d: d_flat, P: P_f1 },
+      downhill: { ...fD1, v: vDownhill, t: t_d1, E: E_d1, d: d_down },
+      total: { t: t_u1 + t_f1 + t_d1, E: E_u1 + E_f1 + E_d1 },
+      termV: tv1,
+    },
+    improved: {
+      uphill:   { ...fU2, v: v_u2, t: t_u2, E: E_u2, d: d_up },
+      flat:     { ...fF2, v: v_f2, t: t_f2, E: E_f2, d: d_flat },
+      downhill: { ...fD2, v: v_d2, t: t_d2, E: E_d2, d: d_down },
+      total: { t: t_u2 + t_f2 + t_d2, E: E_u2 + E_f2 + E_d2 },
+      termV: tv2,
+    },
+    delta: {
+      dt_u, dt_f, dt_d, dt_total, dt_glide, dt_reinvest,
+      E_saved_mech, E_saved_meta, pct_saved, equiv_minutes,
+    },
+    maxF,
+    warnings,
+  };
+}
+
+// ─── Formatters ──────────────────────────────────────────────────────────────
+
+function fmtTime(s) {
+  if (!isFinite(s) || s < 0) return '--:--';
+  const m = Math.floor(s / 60);
+  const sec = Math.round(s % 60);
+  return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+function fmtTimeSec(s) {
+  if (!isFinite(s)) return '-.--';
+  return s.toFixed(1) + 's';
+}
+function fmtN(n) { return isFinite(n) ? n.toFixed(1) : '--'; }
+function fmtKJ(j) { return (j / 1000).toFixed(1); }
+function fmtV(v) { return isFinite(v) ? v.toFixed(2) : '--'; }
+function fmtKmh(v) { return isFinite(v) ? (v * 3.6).toFixed(1) : '--'; }
+function fmtMu(v) { return v.toFixed(3); }
+function fmtPct(v) { return v.toFixed(1) + '%'; }
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function SliderInput({ label, sublabel, min, max, step, value, onChange, unit, decimals = 0, width = 58 }) {
+  const fmt = v => decimals > 0 ? v.toFixed(decimals) : v;
+  return (
+    <div className="input-row">
+      <div className="input-label">{label}{sublabel && <><br/><em>{sublabel}</em></>}</div>
+      <div className="slider-wrap">
+        <input type="range" className="slider"
+          min={min} max={max} step={step} value={value}
+          onChange={e => onChange(parseFloat(e.target.value))}
+        />
+        <input type="number" className="num-input"
+          style={{width}}
+          min={min} max={max} step={step} value={fmt(value)}
+          onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v))); }}
+        />
+        <span className="unit">{unit}</span>
+      </div>
+    </div>
+  );
+}
+
+function LinkedTerrainSliders({ uphillPct, flatPct, downhillPct, onChange }) {
+  const segments = [
+    { key: 'uphillPct',   label: 'Uphill',   icon: '▲', color: '#ff6b35', value: uphillPct },
+    { key: 'flatPct',     label: 'Flat',     icon: '━', color: '#00d4ff', value: flatPct },
+    { key: 'downhillPct', label: 'Downhill', icon: '▼', color: '#00e87a', value: downhillPct },
+  ];
+
+  function adjust(changed, newVal) {
+    const clamped = Math.max(0, Math.min(100, newVal));
+    const others = segments.filter(s => s.key !== changed);
+    const oldSum = others.reduce((s, o) => s + o.value, 0);
+    const needed = 100 - clamped;
+    let newVals = { uphillPct, flatPct, downhillPct, [changed]: clamped };
+    if (oldSum > 0) {
+      others.forEach(o => { newVals[o.key] = Math.max(0, (o.value / oldSum) * needed); });
+    } else {
+      const share = needed / others.length;
+      others.forEach(o => { newVals[o.key] = share; });
+    }
+    // Normalize to exactly 100
+    const sum = newVals.uphillPct + newVals.flatPct + newVals.downhillPct;
+    if (sum > 0) { ['uphillPct','flatPct','downhillPct'].forEach(k => { newVals[k] = newVals[k] / sum * 100; }); }
+    onChange(newVals);
+  }
+
+  return (
+    <div>
+      {segments.map(({ key, label, icon, color, value }) => (
+        <div key={key} className="terrain-row">
+          <span className="terrain-icon" style={{color}}>{icon}</span>
+          <span className="terrain-label" style={{color: '#6a8aa8', fontSize: '10px'}}>{label}</span>
+          <div className="terrain-bar-wrap">
+            <div className="terrain-bar-fill" style={{width: value + '%', background: color, opacity: 0.4}} />
+            <input type="range" className="terrain-slider"
+              min={0} max={100} step={0.5} value={value}
+              onChange={e => adjust(key, parseFloat(e.target.value))}
+            />
+          </div>
+          <span className="terrain-pct">{Math.round(value)}%</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DualMuSlider({ mu1, mu2, onMu1, onMu2, testSpeed }) {
+  const MU_MIN = 0.005, MU_MAX = 0.045;
+  const g = 9.81;
+  const toP = v => ((v - MU_MIN) / (MU_MAX - MU_MIN)) * 100;
+  const pct1 = toP(mu1), pct2 = toP(mu2);
+  const lo = Math.min(pct1, pct2), hi = Math.max(pct1, pct2);
+  const muImprovement = mu1 > 0 ? ((mu1 - mu2) / mu1 * 100) : 0;
+
+  // Glide distance equivalent: d = v₀² / (2μg), ignoring aero drag
+  const v0 = testSpeed || 3.0;
+  const glide1 = mu1 > 0 ? (v0 * v0) / (2 * g * mu1) : null;
+  const glide2 = mu2 > 0 ? (v0 * v0) / (2 * g * mu2) : null;
+  const deltaGlide = (glide1 && glide2) ? glide2 - glide1 : null;
+
+  return (
+    <div>
+      <div className="mu-track-wrap">
+        <div className="mu-track">
+          <div className="mu-range-fill" style={{left: 0, width: hi + '%'}} />
+          <div className="mu-range-improved" style={{left: 0, width: lo + '%'}} />
+        </div>
+        <input type="range" className="mu-slider mu-slider-1"
+          min={MU_MIN} max={MU_MAX} step={0.001} value={mu1}
+          onChange={e => onMu1(parseFloat(e.target.value))}
+        />
+        <input type="range" className="mu-slider mu-slider-2"
+          min={MU_MIN} max={MU_MAX} step={0.001} value={mu2}
+          onChange={e => onMu2(parseFloat(e.target.value))}
+        />
+      </div>
+      <div className="mu-labels">
+        <span>0.005</span><span>0.010</span><span>0.020</span><span>0.030</span><span>0.045</span>
+      </div>
+      <div className="mu-values-row">
+        <div className="mu-val-box">
+          <span className="mu-val-label">μ₁ BASELINE</span>
+          <span className="mu-val-num">{fmtMu(mu1)}</span>
+          {glide1 && <span className="mu-glide-equiv">≡ <em>{glide1.toFixed(1)} m</em> glide</span>}
+        </div>
+        <div className="mu-delta-box">
+          <span className="mu-delta-pct">{muImprovement >= 0 ? '-' : '+'}{Math.abs(muImprovement).toFixed(1)}%</span>
+          <span className="mu-delta-lbl">ΔFRICTION</span>
+          {deltaGlide && <span className="mu-delta-glide">+{deltaGlide.toFixed(1)} m</span>}
+        </div>
+        <div className="mu-val-box improved">
+          <span className="mu-val-label">μ₂ IMPROVED</span>
+          <span className="mu-val-num">{fmtMu(mu2)}</span>
+          {glide2 && <span className="mu-glide-equiv">≡ <em>{glide2.toFixed(1)} m</em> glide</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ForceBar({ label, value, maxF, color, altValue, altColor }) {
+  const pct = maxF > 0 ? Math.min(100, (value / maxF) * 100) : 0;
+  const pct2 = altValue != null && maxF > 0 ? Math.min(100, (altValue / maxF) * 100) : null;
+  return (
+    <div className="force-row">
+      <span className="force-name">{label}</span>
+      <div className="force-bar-wrap">
+        <div className="force-bar" style={{width: pct + '%', background: color}} />
+      </div>
+      <span className="force-val">{fmtN(value)} N</span>
+    </div>
+  );
+}
+
+function TerrainCard({ type, label, icon, accentColor, baseline, improved, delta_t, maxF }) {
+  const isDown = type === 'downhill';
+  return (
+    <div className={`terrain-card ${type}`}>
+      <div className="card-header">
+        <span className="card-type" style={{color: accentColor}}>{icon} {label}</span>
+        <span className="card-dist">{(baseline.d / 1000).toFixed(1)} km</span>
+      </div>
+
+      {/* Baseline time */}
+      <div className="card-time">
+        {fmtTime(baseline.t)}
+        <span className="card-time-unit">baseline</span>
+      </div>
+      <div className="card-speed">
+        {fmtV(baseline.v)} m/s · {fmtKmh(baseline.v)} km/h
+        {type === 'downhill' && baseline.termV &&
+          <span style={{color: '#4a6a88', marginLeft: 6}}>↑ v_t = {fmtV(baseline.termV)} m/s</span>}
+      </div>
+
+      {/* Compare boxes */}
+      <div className="card-compare">
+        <div className="compare-box">
+          <div className="compare-lbl">μ₁</div>
+          <div className="compare-val">{fmtTime(baseline.t)}</div>
+          <div className="compare-sub">{fmtV(baseline.v)} m/s</div>
+        </div>
+        <div className="compare-box improved">
+          <div className="compare-lbl">μ₂</div>
+          <div className="compare-val">{fmtTime(improved.t)}</div>
+          <div className="compare-sub">{fmtV(improved.v)} m/s</div>
+        </div>
+      </div>
+
+      {/* Time saved */}
+      <div className="time-saved-badge">
+        {delta_t > 0 ? '−' : '+'}{fmtTime(Math.abs(delta_t))} saved
+      </div>
+
+      {/* Force breakdown */}
+      <div className="forces-section">
+        <div className="forces-title">FORCE BREAKDOWN (μ₁ → μ₂)</div>
+        {!isDown && (
+          <ForceBar label="Gravity" value={baseline.F_grav} maxF={maxF} color="#ff6b35" />
+        )}
+        {isDown && (
+          <ForceBar label="Gravity" value={-baseline.F_grav} maxF={maxF} color="#00e87a" />
+        )}
+        <div className="force-row">
+          <span className="force-name">Friction</span>
+          <div className="force-bar-wrap">
+            <div className="force-bar" style={{width: Math.min(100,(baseline.F_fric/maxF)*100) + '%', background: '#ffb830', opacity: 0.6}} />
+            <div style={{position:'absolute',left:0,top:0,height:'100%',width: Math.min(100,(improved.F_fric/maxF)*100) + '%', background:'#886600', borderRadius:'1px'}} />
+          </div>
+          <span className="force-val">{fmtN(improved.F_fric)} N</span>
+        </div>
+        <ForceBar label="Aero" value={baseline.F_aero} maxF={maxF} color="#0088b3" />
+        <div className="card-divider" />
+        <div className="force-row">
+          <span className="force-name" style={{color:'#d8eaf8'}}>F total</span>
+          <div className="force-bar-wrap">
+            <div className="force-bar" style={{
+              width: Math.min(100, Math.max(0, (Math.abs(baseline.F_net)/maxF)*100)) + '%',
+              background: baseline.F_net < 0 ? '#00e87a' : '#d8eaf8', opacity: 0.4
+            }} />
+          </div>
+          <span className="force-val" style={{color:'#d8eaf8'}}>{fmtN(baseline.F_net)} N</span>
+        </div>
+        <div className="force-row">
+          <span className="force-name" style={{color:'#00d4ff'}}>F total μ₂</span>
+          <div className="force-bar-wrap">
+            <div className="force-bar" style={{
+              width: Math.min(100, Math.max(0, (Math.abs(improved.F_net)/maxF)*100)) + '%',
+              background: improved.F_net < 0 ? '#00e87a' : '#00d4ff', opacity: 0.5
+            }} />
+          </div>
+          <span className="force-val" style={{color:'#00d4ff'}}>{fmtN(improved.F_net)} N</span>
+        </div>
+      </div>
+
+      {/* Energy */}
+      <div className="card-divider" />
+      <div style={{display:'flex', justifyContent:'space-between', fontSize:'9px', color:'#4a6a88'}}>
+        <span>E (μ₁): <span style={{color:'#d8eaf8'}}>{fmtKJ(baseline.E)} kJ</span></span>
+        <span>E (μ₂): <span style={{color:'#00d4ff'}}>{fmtKJ(improved.E)} kJ</span></span>
+        <span>ΔE: <span style={{color:'#00e87a'}}>-{fmtKJ(Math.max(0, baseline.E - improved.E))} kJ</span></span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Field Test Converter ─────────────────────────────────────────────────────
+
+function FieldTestConverter({ mu1, mu2, testSpeed, onTestSpeed, onApply }) {
+  const [open, setOpen] = useState(false);
+  const g = 9.81;
+
+  // μ = v₀² / (2gd) — derive glide distances from current μ values as defaults
+  const defaultD1 = mu1 > 0 ? (testSpeed * testSpeed) / (2 * g * mu1) : 20;
+  const defaultD2 = mu2 > 0 ? (testSpeed * testSpeed) / (2 * g * mu2) : 27;
+
+  const [d1, setD1] = useState(parseFloat(defaultD1.toFixed(1)));
+  const [d2, setD2] = useState(parseFloat(defaultD2.toFixed(1)));
+
+  // Keep local d1/d2 in sync when μ sliders change externally (only while closed)
+  React.useEffect(() => {
+    if (!open) {
+      setD1(parseFloat(((testSpeed * testSpeed) / (2 * g * mu1)).toFixed(1)));
+      setD2(parseFloat(((testSpeed * testSpeed) / (2 * g * mu2)).toFixed(1)));
+    }
+  }, [mu1, mu2, testSpeed, open]);
+
+  const computedMu1 = d1 > 0 ? (testSpeed * testSpeed) / (2 * g * d1) : null;
+  const computedMu2 = d2 > 0 ? (testSpeed * testSpeed) / (2 * g * d2) : null;
+  const canApply = computedMu1 && computedMu2 && computedMu1 > 0.001 && computedMu2 > 0.001
+    && computedMu1 <= 0.045 && computedMu2 <= 0.045;
+
+  function handleD(setter, val) {
+    const n = parseFloat(val);
+    if (!isNaN(n) && n > 0) setter(n);
+  }
+
+  return (
+    <div>
+      <div
+        className={`field-test-toggle ${open ? 'open' : ''}`}
+        onClick={() => setOpen(o => !o)}
+        role="button" aria-expanded={open}
+      >
+        <span className="field-test-toggle-icon">{open ? '−' : '+'}</span>
+        Field Test Converter
+        <span className="field-test-spacer" />
+      </div>
+
+      {open && (
+        <div className="field-test-panel">
+          <div className="field-test-desc">
+            Push a ski or dummy at a consistent speed on flat groomed snow and
+            measure how far it glides. Enter the two distances below —
+            the calculator infers <strong>μ₁</strong> (baseline wax) and{' '}
+            <strong>μ₂</strong> (improved wax) automatically.
+          </div>
+
+          {/* Push speed */}
+          <div className="field-test-row">
+            <span className="field-test-label">Push speed v₀</span>
+            <input type="number" className="field-test-input"
+              min={0.5} max={6} step={0.1} value={testSpeed.toFixed(1)}
+              onChange={e => onTestSpeed(parseFloat(e.target.value))}
+            />
+            <span className="field-test-unit">m/s</span>
+          </div>
+
+          {/* Baseline glide */}
+          <div className="field-test-row">
+            <span className="field-test-label">Baseline glide d₁<br/><em style={{color:'var(--muted2)',fontSize:'9px'}}>current wax / μ₁</em></span>
+            <input type="number" className="field-test-input"
+              min={1} max={200} step={0.1} value={d1}
+              onChange={e => handleD(setD1, e.target.value)}
+            />
+            <span className="field-test-unit">m</span>
+          </div>
+
+          {/* Improved glide */}
+          <div className="field-test-row">
+            <span className="field-test-label">Improved glide d₂<br/><em style={{color:'var(--muted2)',fontSize:'9px'}}>better wax / μ₂</em></span>
+            <input type="number" className="field-test-input"
+              min={1} max={200} step={0.1} value={d2}
+              onChange={e => handleD(setD2, e.target.value)}
+            />
+            <span className="field-test-unit">m</span>
+          </div>
+
+          <div className="field-test-divider" />
+
+          {/* Live computed μ output */}
+          <div className="field-test-output">
+            <div className="field-test-out-box">
+              <div className="field-test-out-lbl">INFERRED μ₁</div>
+              <div className="field-test-out-val">
+                {computedMu1 ? computedMu1.toFixed(4) : '—'}
+              </div>
+            </div>
+            <div className="field-test-out-box mu2">
+              <div className="field-test-out-lbl">INFERRED μ₂</div>
+              <div className="field-test-out-val">
+                {computedMu2 ? computedMu2.toFixed(4) : '—'}
+              </div>
+            </div>
+          </div>
+
+          {/* Delta hint */}
+          {computedMu1 && computedMu2 && d2 > d1 && (
+            <div style={{fontSize:'9px', color:'var(--green)', marginBottom:8, textAlign:'center'}}>
+              +{(d2 - d1).toFixed(1)} m further glide &nbsp;≡&nbsp; Δμ = −{(computedMu1 - computedMu2).toFixed(4)}
+            </div>
+          )}
+          {computedMu1 && computedMu2 && d2 <= d1 && (
+            <div style={{fontSize:'9px', color:'var(--amber)', marginBottom:8, textAlign:'center'}}>
+              ⚠ d₂ should be greater than d₁ (μ₂ must be lower than μ₁)
+            </div>
+          )}
+
+          <button className="apply-btn" disabled={!canApply || d2 <= d1}
+            onClick={() => { onApply(computedMu1, computedMu2); }}>
+            ↑ Apply to Calculator
+          </button>
+
+          <div className="field-test-note">
+            Formula: μ = v₀² / (2 · g · d) — flat surface, no aero drag.
+            Valid for push speeds ≤ 4 m/s. For faster slope-based tests, μ will be slightly underestimated.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Help Modal ───────────────────────────────────────────────────────────────
+
+const HELP_TABS = ['Overview', 'Physics', 'Inputs', 'Outputs', 'Tips'];
+
+function HelpModal({ onClose }) {
+  const [tab, setTab] = React.useState(0);
+
+  // Close on Escape
+  React.useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-panel" role="dialog" aria-modal="true" aria-label="Help documentation">
+        {/* Header */}
+        <div className="modal-header">
+          <div className="modal-header-icon">?</div>
+          <div style={{flex:1}}>
+            <div className="modal-title">Documentation</div>
+            <div className="modal-sub">XC Glide Performance Calculator · v1.0</div>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close help">✕</button>
+        </div>
+
+        {/* Tabs */}
+        <div className="modal-tabs" role="tablist">
+          {HELP_TABS.map((t, i) => (
+            <button key={t} role="tab" aria-selected={tab === i}
+              className={`modal-tab ${tab === i ? 'active' : ''}`}
+              onClick={() => setTab(i)}>{t}</button>
+          ))}
+        </div>
+
+        {/* Body */}
+        <div className="modal-body">
+          {tab === 0 && <HelpOverview />}
+          {tab === 1 && <HelpPhysics />}
+          {tab === 2 && <HelpInputs />}
+          {tab === 3 && <HelpOutputs />}
+          {tab === 4 && <HelpTips />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Tab: Overview ─────────────────────────────────────────────────────────────
+function HelpOverview() {
+  return (
+    <div>
+      <div className="doc-section">
+        <div className="doc-heading">What This Calculator Does</div>
+        <div className="doc-p">
+          XC Glide quantifies the performance impact of improving your ski's glide coefficient —
+          via <strong>wax selection, ski structure, or camber tuning</strong> — across a full race profile
+          broken into uphill, flat, and downhill terrain segments.
+        </div>
+        <div className="doc-p">
+          The central question: <em>"If I drop my friction coefficient by Δμ, how many seconds do I save
+          — and how much energy is freed up for the final climb?"</em>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Two Performance Levers</div>
+        <div className="tip-item">
+          <div className="tip-icon">🧊</div>
+          <div className="tip-body">
+            <div className="tip-title"><span className="badge badge-ice">GLIDE EFFECT</span> Lower friction → higher speed at the same power</div>
+            <div className="tip-text">With lower μ, every watt you produce moves you faster because less force is wasted on friction.
+            This benefit appears on all three terrain types and is always present.</div>
+          </div>
+        </div>
+        <div className="tip-item">
+          <div className="tip-icon">⚡</div>
+          <div className="tip-body">
+            <div className="tip-title"><span className="badge badge-green">REINVESTMENT EFFECT</span> Saved friction energy → more propulsive power</div>
+            <div className="tip-text">In <strong>SPEND mode</strong>, the energy that would have been lost to friction is redistributed
+            as additional power on uphill and flat segments. Toggle <strong>BANK / SPEND</strong> to compare.</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Workflow</div>
+        <div className="doc-p">
+          <strong>1.</strong> Set your <em>Skier Profile</em> (mass, mechanical efficiency).<br/>
+          <strong>2.</strong> Configure the <em>Race Profile</em> — distance, slope, and terrain split.<br/>
+          <strong>3.</strong> Enter your measured or estimated segment <em>speeds</em>.<br/>
+          <strong>4.</strong> Set <em>μ₁</em> (your current wax condition) and drag <em>μ₂</em> lower to model an improvement.<br/>
+          <strong>5.</strong> Read time savings and energy delta in real time on the right panel.
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Default Scenario</div>
+        <div className="doc-p">
+          The defaults model a <strong>20 km race</strong> with 35/30/35 split at 5% grade,
+          75 kg skier at 221 W mechanical output. Friction improves from
+          <em> μ = 0.020 </em>(untreated or mediocre wax) to <em>μ = 0.015</em> (good fluorocarbon-free race wax).
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Limitations</div>
+        <div className="doc-p">
+          This is a <strong>simplified physics model</strong>. It assumes constant speed per segment,
+          uniform slope gradient, and that the skier can fully utilise any freed energy as extra power.
+          Real races involve variable terrain, tactical pacing, and fatigue — factors this model treats
+          qualitatively, not numerically.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Tab: Physics ──────────────────────────────────────────────────────────────
+function HelpPhysics() {
+  return (
+    <div>
+      <div className="doc-section">
+        <div className="doc-heading">Slope Angle</div>
+        <div className="doc-p">The slope percentage is converted to a true angle in radians:</div>
+        <div className="formula-block">
+          θ = arctan(slope% / 100)<br/>
+          sin θ = slope / √(1 + slope²)<br/>
+          cos θ = 1 / √(1 + slope²)
+        </div>
+        <div className="doc-p">At 5% grade: θ ≈ 2.86°, sin θ ≈ 0.0499, cos θ ≈ 0.9988</div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Forces per Segment</div>
+        <div className="doc-p">Three forces act on the skier. Their direction depends on terrain:</div>
+        <div className="formula-block">
+          <span className="lbl">// Gravity component (along slope)</span><br/>
+          F_gravity = m · g · sin θ<br/>
+          <span className="cmt">  uphill: opposes motion (+)  downhill: aids motion (−)</span><br/>
+          <br/>
+          <span className="lbl">// Kinetic friction</span><br/>
+          F_friction = μ · m · g · cos θ<span className="cmt">  (always opposes motion)</span><br/>
+          F_friction_flat = μ · m · g<span className="cmt">  (cos 0° = 1)</span><br/>
+          <br/>
+          <span className="lbl">// Aerodynamic drag</span><br/>
+          F_aero = ½ · ρ · CdA · v²<span className="cmt">  (always opposes motion)</span>
+        </div>
+        <div className="doc-p">
+          <strong>Net force per terrain:</strong>
+        </div>
+        <div className="formula-block">
+          F_uphill   = F_gravity + F_friction + F_aero<br/>
+          F_flat     = F_friction + F_aero<br/>
+          F_downhill = F_friction + F_aero − F_gravity<span className="cmt">  (gravity assists)</span>
+        </div>
+        <div className="doc-p">If F_downhill is negative, gravity overcomes drag and friction — the skier accelerates toward terminal velocity without any effort.</div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Energy & Time</div>
+        <div className="formula-block">
+          E = F_net · d<span className="cmt">  [J] = [N] · [m]</span><br/>
+          t = d / v<span className="cmt">  [s] = [m] / [m/s]</span><br/>
+          P = F_net · v<span className="cmt">  [W] = [N] · [m/s]</span>
+        </div>
+        <div className="doc-p">
+          The <em>implied mechanical power</em> shown in the left panel is computed from
+          your uphill inputs as P = F_uphill · v_uphill. This should match your known
+          threshold power output (typically 200–280 W for competitive skiers).
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Terminal Velocity (Downhill)</div>
+        <div className="doc-p">Terminal velocity is reached when gravity exactly balances friction + aero drag:</div>
+        <div className="formula-block">
+          F_gravity = F_friction + F_aero<br/>
+          m·g·sin θ = μ·m·g·cos θ + ½·ρ·CdA·v²<br/>
+          <br/>
+          v_terminal = √( (m·g·sin θ − μ·m·g·cos θ) / (½·ρ·CdA) )
+        </div>
+        <div className="doc-p">
+          The improved downhill speed scales proportionally: <em>v₂ = v₁ · (v_t2 / v_t1)</em>.
+          If gravity cannot overcome friction (very low slope, high μ), terminal velocity is undefined
+          and the downhill segment requires active propulsion.
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Speed Solver (Bisection)</div>
+        <div className="doc-p">
+          When μ changes, the new speed at the same power output is found by solving the implicit equation:
+        </div>
+        <div className="formula-block">
+          P = F_net(v) · v<br/>
+          P = (F_gravity + μ·m·g·cos θ + ½·ρ·CdA·v²) · v<br/>
+          <br/>
+          <span className="cmt">// Rearranged — a cubic in v with no closed-form solution:</span><br/>
+          ½·ρ·CdA·v³ + (F_gravity + F_friction_static)·v − P = 0
+        </div>
+        <div className="doc-p">
+          The app uses 80-iteration <strong>bisection</strong> on [0.01, 50] m/s, converging to
+          sub-millimetre precision. This is numerically exact for the model's assumptions.
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Energy Reinvestment Model</div>
+        <div className="formula-block">
+          <span className="lbl">// Friction energy saved per segment:</span><br/>
+          ΔF_fric = (μ₁ − μ₂) · m · g · cos θ<br/>
+          E_saved = ΔF_fric · d<br/>
+          <br/>
+          <span className="lbl">// Spread as additional constant power:</span><br/>
+          P_extra = E_saved / t_baseline<br/>
+          P_total_new = P_baseline + P_extra<br/>
+          <br/>
+          <span className="lbl">// Solve for new speed (bisection):</span><br/>
+          F_net(v_new) · v_new = P_total_new
+        </div>
+        <div className="doc-p">
+          In <strong>BANK mode</strong>, only the glide effect applies (P_baseline, lower μ → higher v).
+          In <strong>SPEND mode</strong>, the saved friction energy is added as extra power before solving
+          for the new speed, producing larger time savings at the cost of the fatigue reserve.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Tab: Inputs ───────────────────────────────────────────────────────────────
+function HelpInputs() {
+  return (
+    <div>
+      <div className="doc-section">
+        <div className="doc-heading">Skier Profile</div>
+        <div className="param-grid">
+          <div className="param-row">
+            <span className="param-name">Mass</span>
+            <span className="param-unit">kg</span>
+            <span className="param-desc">Combined skier + ski + boots + poles + clothing weight.
+              Typical competitive range: <strong>55–85 kg</strong>. Affects all gravity and friction forces linearly.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Efficiency</span>
+            <span className="param-unit">%</span>
+            <span className="param-desc">Ratio of mechanical output to metabolic energy consumed.
+              Human muscles run at roughly <strong>20–30%</strong> efficiency during sustained skiing.
+              Used to convert mechanical energy savings into metabolic equivalents.</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Race Profile</div>
+        <div className="param-grid">
+          <div className="param-row">
+            <span className="param-name">Distance</span>
+            <span className="param-unit">km</span>
+            <span className="param-desc">Total race distance. Affects segment lengths proportionally.
+              Common formats: sprint 1.4 km, 10 km, 15 km, 20 km, 30 km, 50 km.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Slope %</span>
+            <span className="param-unit">%</span>
+            <span className="param-desc">Applied uniformly to uphill and downhill segments.
+              <strong> 5% = 50 m altitude per 1 km horizontal.</strong> FIS racing profiles typically
+              average 5–8% on competitive climbs.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Terrain split</span>
+            <span className="param-unit">%</span>
+            <span className="param-desc">Linked sliders that always sum to 100%. Drag any slider — the
+              others redistribute proportionally. A <strong>35/30/35</strong> split is typical for FIS
+              classic races; sprint courses skew uphill-heavy (40–50%).</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Segment Speeds</div>
+        <div className="param-grid">
+          <div className="param-row">
+            <span className="param-name">Uphill</span>
+            <span className="param-unit">m/s</span>
+            <span className="param-desc">Your average uphill speed. <strong>3.5–5.0 m/s</strong> is typical
+              for competitive skiers. This speed, combined with slope and mass, fully determines the
+              implied mechanical power shown below the skier profile.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Flat</span>
+            <span className="param-unit">m/s</span>
+            <span className="param-desc">Average speed on flat terrain. <strong>5.0–7.5 m/s</strong> for
+              competitive classic; higher for skate. Glide improvement has proportionally larger impact
+              here than uphill because gravity is absent.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Downhill</span>
+            <span className="param-unit">m/s</span>
+            <span className="param-desc">Your <em>baseline average</em> downhill speed (at μ₁).
+              The improved speed at μ₂ is computed automatically by scaling to the terminal velocity ratio.
+              <strong> 8–15 m/s</strong> is a typical race range.</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Glide Parameters — Friction Coefficient μ</div>
+        <div className="doc-p">
+          The kinetic friction coefficient μ describes how much resistive force the snow exerts per
+          unit of normal force: <em>F_friction = μ · m · g · cosθ</em>. It is a <strong>dimensionless
+          ratio</strong> — you cannot read it off a wax tin or a snow thermometer. It must be
+          <strong> inferred from a controlled glide test</strong>.
+        </div>
+
+        <div className="doc-p"><strong>Push-glide test (flat, no aero drag):</strong></div>
+        <div className="formula-block">
+          d = v₀² / (2 · g · μ)   <span className="cmt">← how far the ski glides</span><br/>
+          μ = v₀² / (2 · g · d)   <span className="cmt">← invert to find μ from measurement</span><br/>
+          <br/>
+          <span className="lbl">At v₀ = 3 m/s (typical push):</span><br/>
+          μ = 0.030  →  d ≈ 15.3 m<br/>
+          μ = 0.020  →  d ≈ 22.9 m<br/>
+          μ = 0.015  →  d ≈ 30.6 m   <span className="cmt">(+7.7 m, Δμ = 0.005)</span><br/>
+          μ = 0.010  →  d ≈ 45.9 m
+        </div>
+
+        <div className="doc-p">
+          <strong>Practical protocol:</strong> Find a flat, well-groomed section. Apply a
+          consistent double-pole push or use a start gate to reach a repeatable speed (~3 m/s).
+          Mark the start point. Measure where the ski stops. Repeat 3× and average. Use the
+          <em> Field Test Converter</em> in the Glide Parameters panel to translate distances
+          directly into μ values and apply them to the calculator.
+        </div>
+        <div className="doc-p" style={{color:'var(--muted2)', fontSize:'9px'}}>
+          Note: aero drag is negligible below ~4 m/s. For slope-based timing-gate tests,
+          the full equation is needed — the simplified formula slightly underestimates μ at
+          higher speeds.
+        </div>
+
+        <div className="param-grid">
+          <div className="param-row">
+            <span className="param-name">μ₁ Baseline</span>
+            <span className="param-unit">—</span>
+            <span className="param-desc">Your <strong>current wax / race-day condition</strong>.
+              Drag the grey thumb or use the Field Test Converter. A typical training ski
+              on groomed snow is 0.020–0.025; a well-waxed race ski is 0.013–0.018.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">μ₂ Improved</span>
+            <span className="param-unit">—</span>
+            <span className="param-desc"><strong>Target or comparison condition</strong> — the
+              wax or structure you are evaluating. Drag the blue thumb <em>lower</em> than μ₁.
+              The slider shows glide distance equivalents in real time, and the delta box shows
+              how many additional metres the ski travels in a push test.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Air density ρ</span>
+            <span className="param-unit">kg/m³</span>
+            <span className="param-desc">Sea level standard = <strong>1.225</strong>. Lower at altitude:
+              at 1500 m ≈ 1.06, at 2500 m ≈ 0.94. Reduces aerodynamic drag proportionally —
+              affects downhill speed and flat times most.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">CdA upright</span>
+            <span className="param-unit">m²</span>
+            <span className="param-desc">Drag area in upright (diagonal stride / double-pole) position.
+              Competitive range: <strong>0.35–0.55 m²</strong>. Higher for classic than skate.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">CdA tuck</span>
+            <span className="param-unit">m²</span>
+            <span className="param-desc">Drag area in tuck position (downhill). <strong>0.20–0.30 m²</strong>
+              for a good tuck. Reducing CdA_tuck has large effect at high downhill speeds (drag ∝ v²).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Tab: Outputs ──────────────────────────────────────────────────────────────
+function HelpOutputs() {
+  return (
+    <div>
+      <div className="doc-section">
+        <div className="doc-heading">Terrain Cards (Uphill / Flat / Downhill)</div>
+        <div className="doc-p">Each card shows both μ₁ and μ₂ scenarios side by side for that segment:</div>
+        <div className="param-grid">
+          <div className="param-row">
+            <span className="param-name">Time display</span>
+            <span className="param-unit">min:sec</span>
+            <span className="param-desc">Large number = <strong>baseline time at μ₁</strong>.
+              The two boxes below show μ₁ vs μ₂ times directly. Green badge = seconds saved.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Force bars</span>
+            <span className="param-unit">N</span>
+            <span className="param-desc">Horizontal bars scaled to the maximum force across all segments.
+              <strong> Orange = gravity</strong> (uphill: resistance; downhill: assist shown in green).
+              <strong> Dual amber/dark-amber bars = friction μ₁ / μ₂</strong> — the narrowing gap
+              is your glide improvement. <strong>Blue = aerodynamic drag.</strong></span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">F total rows</span>
+            <span className="param-unit">N</span>
+            <span className="param-desc">White bar = net force at μ₁. Blue bar = net force at μ₂.
+              Shorter bar = less resistance = faster skiing at same power.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Energy footer</span>
+            <span className="param-unit">kJ</span>
+            <span className="param-desc">E(μ₁) → E(μ₂) mechanical energy, and ΔE saved per segment.
+              Negative ΔE on downhill means gravity does net work for the skier.</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Delta Analysis Panel</div>
+        <div className="param-grid">
+          <div className="param-row">
+            <span className="param-name">Total time saved</span>
+            <span className="param-unit">min:sec</span>
+            <span className="param-desc"><strong>Headline output.</strong> Sum of all three segment savings.
+              Negative = you save time; positive = you lose time (check μ₂ ≥ μ₁ warning).</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Energy freed</span>
+            <span className="param-unit">kJ</span>
+            <span className="param-desc">Mechanical energy saved on <em>propulsive</em> segments
+              (uphill + flat). Downhill excluded since gravity does the work. The % figure is
+              relative to total propulsive race energy.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Glide-effect saving</span>
+            <span className="param-unit">min:sec</span>
+            <span className="param-desc">Time saved purely from lower friction allowing higher speed
+              at the same baseline power — present in both BANK and SPEND modes.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Reinvestment saving</span>
+            <span className="param-unit">min:sec</span>
+            <span className="param-desc">Additional time saved by <em>spending</em> the friction-saved
+              energy as extra propulsive power. Only computed in <strong>SPEND mode</strong>.
+              Total = glide effect + reinvestment.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Metabolic energy saved</span>
+            <span className="param-unit">kJ</span>
+            <span className="param-desc">Mechanical savings divided by efficiency. Represents the
+              physiological reserve preserved — what your body didn't have to burn.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Terminal velocity μ₂</span>
+            <span className="param-unit">m/s</span>
+            <span className="param-desc">Maximum freewheel speed on the downhill segment at μ₂.
+              Improved downhill speed is calculated by scaling your baseline speed by the ratio
+              of terminal velocities (v₂/v₁).</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Summary Bar (Bottom)</div>
+        <div className="param-grid">
+          <div className="param-row">
+            <span className="param-name">Race time</span>
+            <span className="param-unit">—</span>
+            <span className="param-desc">Strikethrough = μ₁ total time. Blue = μ₂ total time.
+              The difference is your total race time savings.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Total saved</span>
+            <span className="param-unit">min:sec</span>
+            <span className="param-desc">Large green display — the headline performance delta
+              summed across all segments.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Energy freed</span>
+            <span className="param-unit">kJ</span>
+            <span className="param-desc">Mechanical energy saved, plus metabolic equivalent and
+              percentage of total propulsive race output.</span>
+          </div>
+          <div className="param-row">
+            <span className="param-name">Equivalent effort</span>
+            <span className="param-unit">min</span>
+            <span className="param-desc">Metabolic energy saved expressed as minutes of hard climbing
+              at your uphill power output. E.g. "2.3 min" means the saved energy equals what your
+              body burns in 2.3 minutes of hard uphill skiing.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Tab: Tips ─────────────────────────────────────────────────────────────────
+function HelpTips() {
+  return (
+    <div>
+      <div className="doc-section">
+        <div className="doc-heading">Friction Coefficient Reference</div>
+        <div className="doc-p" style={{fontSize:'9px', color:'var(--muted)', marginBottom:8}}>
+          Glide distances computed at v₀ = 3 m/s using d = v₀²/(2gμ). Use the Field Test
+          Converter panel to calibrate against your specific push speed.
+        </div>
+        <table className="ref-table">
+          <thead>
+            <tr><th>Condition / Wax</th><th>μ range</th><th>Glide @ 3 m/s</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Klister, wet snow</td>
+              <td className="val">0.035–0.050</td>
+              <td className="val" style={{color:'var(--amber)'}}>9–13 m</td>
+              <td>Grip wax zone; very slow</td>
+            </tr>
+            <tr>
+              <td>Hard wax, cold fresh snow</td>
+              <td className="val">0.025–0.035</td>
+              <td className="val" style={{color:'var(--amber)'}}>13–18 m</td>
+              <td>Typical training day</td>
+            </tr>
+            <tr>
+              <td>Fluorocarbon-free glider, avg</td>
+              <td className="val">0.018–0.025</td>
+              <td className="val">18–26 m</td>
+              <td>Competitive baseline</td>
+            </tr>
+            <tr>
+              <td className="good">Good race glide wax</td>
+              <td className="val good">0.013–0.018</td>
+              <td className="val good">26–35 m</td>
+              <td>Race-prepared, correct temp</td>
+            </tr>
+            <tr>
+              <td className="good">Optimal race condition</td>
+              <td className="val good">0.008–0.013</td>
+              <td className="val good">35–57 m</td>
+              <td>Perfect wax + structure</td>
+            </tr>
+            <tr>
+              <td>Roller ski (asphalt)</td>
+              <td className="val warn">0.010–0.020</td>
+              <td className="val warn">23–46 m</td>
+              <td>Bearing quality dependent</td>
+            </tr>
+          </tbody>
+        </table>
+        <div className="doc-p">
+          A <em>0.005 μ improvement</em> (e.g., 0.020 → 0.015) adds roughly <strong>+7.7 m</strong> of
+          glide at 3 m/s. Elite wax techs debate at 0.001 resolution; the calculator matches that precision.
+          The "1 meter further" intuition maps to Δμ ≈ 0.001–0.004 depending on baseline glide length.
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Practical Tips</div>
+        <div className="tip-item">
+          <div className="tip-icon">⚖️</div>
+          <div className="tip-body">
+            <div className="tip-title">Calibrate from known race times</div>
+            <div className="tip-text">Enter a known race result as your baseline speed, then adjust slope
+            and terrain split until the calculated time matches. You now have a validated model for
+            that course — future μ changes will give trustworthy predictions.</div>
+          </div>
+        </div>
+        <div className="tip-item">
+          <div className="tip-icon">🏔️</div>
+          <div className="tip-body">
+            <div className="tip-title">Altitude races: adjust air density</div>
+            <div className="tip-text">
+              At altitude, thinner air reduces aerodynamic drag. Use the ρ slider:
+              <strong> 1500 m ≈ 1.06 kg/m³ · 2000 m ≈ 1.01 · 2500 m ≈ 0.94.</strong> This matters
+              most on fast downhills and flat sections where v² drag is significant.
+            </div>
+          </div>
+        </div>
+        <div className="tip-item">
+          <div className="tip-icon">🎿</div>
+          <div className="tip-body">
+            <div className="tip-title">BANK mode for pacing decisions</div>
+            <div className="tip-text">Use <strong>BANK mode</strong> to see how much metabolic energy
+            better glide saves without assuming you go faster. The "equivalent effort" figure in the
+            summary bar tells you how many minutes of hard climbing you've effectively removed from
+            the race — valuable for deciding how aggressively to wax for a hilly final segment.</div>
+          </div>
+        </div>
+        <div className="tip-item">
+          <div className="tip-icon">📐</div>
+          <div className="tip-body">
+            <div className="tip-title">Flat segment: highest μ sensitivity</div>
+            <div className="tip-text">Because flat skiing has no gravity component, <em>all</em> resistance
+            is friction + aero. A given Δμ has a proportionally larger effect on flat speed than uphill,
+            where gravity dominates. On flat-heavy courses (>40% flat), glide wax pays disproportionately.</div>
+          </div>
+        </div>
+        <div className="tip-item">
+          <div className="tip-icon">⚡</div>
+          <div className="tip-body">
+            <div className="tip-title">SPEND mode: optimistic upper bound</div>
+            <div className="tip-text"><strong>SPEND mode</strong> assumes the skier can perfectly and
+            immediately convert every saved friction joule into additional propulsive power — an
+            idealised model. Real savings are typically 60–80% of the SPEND prediction due to
+            physiological lag and pacing strategy. Use SPEND as an upper bound, BANK as a lower bound.</div>
+          </div>
+        </div>
+        <div className="tip-item">
+          <div className="tip-icon">📊</div>
+          <div className="tip-body">
+            <div className="tip-title">Power sanity check</div>
+            <div className="tip-text">Watch the <strong>implied power</strong> readout below the skier
+            profile. Sustained output above 350–400 W metabolic is unrealistic for most skiers. If it's
+            too high, your uphill speed or slope inputs may be off. The app warns at &gt;400 W.</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <div className="doc-heading">Quick Reference: Default Scenario</div>
+        <table className="ref-table">
+          <thead><tr><th>Segment</th><th>μ₁ = 0.020</th><th>μ₂ = 0.015</th><th>Saved</th></tr></thead>
+          <tbody>
+            <tr><td><span className="badge badge-orange">▲ Uphill</span> 7 km</td><td className="val">29:10</td><td className="val">~27:20</td><td className="good">~1:50</td></tr>
+            <tr><td><span className="badge badge-ice">━ Flat</span> 6 km</td><td className="val">16:40</td><td className="val">~16:00</td><td className="good">~0:40</td></tr>
+            <tr><td><span className="badge badge-green">▼ Downhill</span> 7 km</td><td className="val">11:40</td><td className="val">~11:00</td><td className="good">~0:40</td></tr>
+            <tr><td><strong>Total</strong></td><td className="val">57:30</td><td className="val">~54:20</td><td className="good">~3:10</td></tr>
+          </tbody>
+        </table>
+        <div className="doc-p">
+          Exact values depend on <em>BANK vs SPEND mode</em>. SPEND mode produces larger savings;
+          BANK mode shows only the glide effect. Adjust slope, mass, and split to match your race course.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+
+function App() {
+  const [s, setS] = useState({
+    mass: 75, efficiency: 25,
+    totalDistance: 20,
+    uphillPct: 35, flatPct: 30, downhillPct: 35,
+    slope: 5,
+    vUphill: 4.0, vFlat: 6.0, vDownhill: 10.0,
+    mu1: 0.020, mu2: 0.015,
+    rho: 1.20, cdaUpright: 0.40, cdaTuck: 0.25,
+    reinvest: true,
+  });
+
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [testSpeed, setTestSpeed] = useState(3.0);
+  const set = useCallback((field, val) => setS(prev => ({ ...prev, [field]: val })), []);
+  const setAll = useCallback(obj => setS(prev => ({ ...prev, ...obj })), []);
+
+  const res = useMemo(() => computePhysics(s), [s]);
+  const { baseline: bl, improved: im, delta: dt, maxF, warnings } = res;
+
+  // Auto-compute power display
+  const impliedPower = bl.uphill.P;
+  const impliedMetabolic = impliedPower / (s.efficiency / 100);
+
+  const muImprovePct = s.mu1 > 0 ? ((s.mu1 - s.mu2) / s.mu1 * 100) : 0;
+
+  return (
+    <div id="app" style={{display:'flex', flexDirection:'column', minHeight:'100vh'}}>
+      {/* HELP MODAL */}
+      {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
+
+      {/* HEADER */}
+      <div className="header">
+        <div>
+          <div className="header-title">XC GLIDE</div>
+          <div className="header-sub">Cross-Country Ski Glide Performance Calculator · v1.0</div>
+        </div>
+        <div style={{display:'flex', alignItems:'center', gap:0}}>
+          <div className="header-right">
+            <div className="header-label">friction delta</div>
+            <div className="header-mu">
+              {fmtMu(s.mu1)} → {fmtMu(s.mu2)}
+              <span style={{fontSize:'13px', color:'#00e87a', marginLeft:10}}>−{muImprovePct.toFixed(1)}%</span>
+            </div>
+            <div className="header-label">{s.totalDistance} km · {s.slope}% grade · {s.uphillPct}↑ {s.flatPct}━ {s.downhillPct}↓</div>
+          </div>
+          <button className="help-btn" onClick={() => setHelpOpen(true)} aria-label="Open documentation">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="7" cy="7" r="6.25" stroke="currentColor" strokeWidth="1.25"/>
+              <path d="M5.5 5.25C5.5 4.42 6.17 3.75 7 3.75s1.5.67 1.5 1.5c0 1-1.5 1.25-1.5 2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              <circle cx="7" cy="10.25" r="0.65" fill="currentColor"/>
+            </svg>
+            HELP
+          </button>
+        </div>
+      </div>
+
+      {/* MAIN */}
+      <div className="main-layout" style={{flex:1}}>
+
+        {/* LEFT PANEL — INPUTS */}
+        <div className="left-panel">
+
+          {/* Skier Profile */}
+          <div className="section">
+            <div className="section-title">Skier Profile</div>
+            <SliderInput label="Skier + gear mass" min={40} max={120} step={1}
+              value={s.mass} onChange={v => set('mass', v)} unit="kg" />
+            <SliderInput label="Mechanical efficiency" sublabel="mech/metabolic" min={15} max={40} step={1}
+              value={s.efficiency} onChange={v => set('efficiency', v)} unit="%" />
+          </div>
+
+          {/* Computed power row */}
+          <div className="computed-row">
+            <span style={{flex:1}}>Implied uphill mechanical power</span>
+            <span className={`computed-val ${impliedMetabolic > 400 ? 'computed-warn' : ''}`}>
+              {impliedPower.toFixed(0)} W mech · {impliedMetabolic.toFixed(0)} W metabolic
+            </span>
+            {impliedMetabolic > 400 && <span className="computed-warn" title="Exceeds physiological range">⚠</span>}
+          </div>
+
+          {/* Race Profile */}
+          <div className="section">
+            <div className="section-title">Race Profile</div>
+            <SliderInput label="Total distance" min={1} max={50} step={0.5}
+              value={s.totalDistance} onChange={v => set('totalDistance', v)} unit="km" decimals={1} />
+            <SliderInput label="Slope gradient" sublabel="uphill & downhill" min={1} max={20} step={0.5}
+              value={s.slope} onChange={v => set('slope', v)} unit="%" decimals={1} />
+
+            <div className="section-title" style={{marginTop:10}}>Terrain Split</div>
+            <LinkedTerrainSliders
+              uphillPct={s.uphillPct} flatPct={s.flatPct} downhillPct={s.downhillPct}
+              onChange={vals => setAll(vals)}
+            />
+          </div>
+
+          {/* Speeds */}
+          <div className="section">
+            <div className="section-title">Segment Speeds</div>
+            <SliderInput label="Uphill speed" min={1} max={8} step={0.1}
+              value={s.vUphill} onChange={v => set('vUphill', v)} unit="m/s" decimals={1} />
+            <SliderInput label="Flat speed" min={2} max={12} step={0.1}
+              value={s.vFlat} onChange={v => set('vFlat', v)} unit="m/s" decimals={1} />
+            <SliderInput label="Downhill speed" sublabel="baseline avg" min={3} max={20} step={0.5}
+              value={s.vDownhill} onChange={v => set('vDownhill', v)} unit="m/s" decimals={1} />
+          </div>
+
+          {/* Glide Parameters */}
+          <div className="section">
+            <div className="section-title">Glide Parameters</div>
+            <DualMuSlider
+              mu1={s.mu1} mu2={s.mu2}
+              onMu1={v => set('mu1', v)} onMu2={v => set('mu2', v)}
+              testSpeed={testSpeed}
+            />
+            <FieldTestConverter
+              mu1={s.mu1} mu2={s.mu2}
+              testSpeed={testSpeed}
+              onTestSpeed={v => setTestSpeed(v)}
+              onApply={(m1, m2) => {
+                set('mu1', Math.min(0.045, Math.max(0.005, parseFloat(m1.toFixed(4)))));
+                set('mu2', Math.min(0.045, Math.max(0.005, parseFloat(m2.toFixed(4)))));
+              }}
+            />
+            <div style={{marginTop:14}} />
+            <SliderInput label="Air density ρ" sublabel="sea level = 1.225" min={0.8} max={1.3} step={0.005}
+              value={s.rho} onChange={v => set('rho', v)} unit="kg/m³" decimals={3} width={64} />
+            <SliderInput label="CdA upright" sublabel="uphill & flat" min={0.15} max={0.8} step={0.01}
+              value={s.cdaUpright} onChange={v => set('cdaUpright', v)} unit="m²" decimals={2} />
+            <SliderInput label="CdA tuck" sublabel="downhill" min={0.1} max={0.5} step={0.01}
+              value={s.cdaTuck} onChange={v => set('cdaTuck', v)} unit="m²" decimals={2} />
+          </div>
+
+          {/* Reinvest toggle */}
+          <div className="toggle-row">
+            <span className="toggle-label" style={{fontSize:'10px', color:'#4a6a88', lineHeight:1.4}}>
+              Energy reinvestment mode:<br/>
+              <span style={{fontSize:'9px'}}>Off = bank energy (fatigue reserve) · On = spend it (speed)</span>
+            </span>
+            <span className={`toggle-option ${!s.reinvest ? 'active' : ''}`}>BANK</span>
+            <label className="toggle-switch">
+              <input type="checkbox" checked={s.reinvest} onChange={e => set('reinvest', e.target.checked)} />
+              <span className="toggle-thumb" />
+            </label>
+            <span className={`toggle-option ${s.reinvest ? 'active' : ''}`}>SPEND</span>
+          </div>
+
+        </div>
+
+        {/* RIGHT PANEL — RESULTS */}
+        <div className="right-panel">
+
+          {/* Validation warnings */}
+          {warnings.length > 0 && (
+            <div className="warnings">
+              {warnings.map((w, i) => (
+                <div key={i} className="warning-item">
+                  <span className="warning-icon">⚠</span>
+                  <span>{w}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Terrain Cards */}
+          <div className="terrain-cards">
+            <TerrainCard
+              type="uphill" label="Uphill" icon="▲" accentColor="#ff6b35"
+              baseline={bl.uphill} improved={im.uphill}
+              delta_t={dt.dt_u} maxF={maxF}
+            />
+            <TerrainCard
+              type="flat" label="Flat" icon="━" accentColor="#00d4ff"
+              baseline={bl.flat} improved={im.flat}
+              delta_t={dt.dt_f} maxF={maxF}
+            />
+            <TerrainCard
+              type="downhill" label="Downhill" icon="▼" accentColor="#00e87a"
+              baseline={{...bl.downhill, termV: bl.termV}}
+              improved={{...im.downhill, termV: im.termV}}
+              delta_t={dt.dt_d} maxF={maxF}
+            />
+          </div>
+
+          {/* Delta Analysis */}
+          <div className="delta-section">
+            <div className="delta-title">Delta Analysis // μ₁ → μ₂</div>
+
+            <div className="delta-grid">
+              <div className="delta-item highlight">
+                <div className="delta-item-label">Total time saved</div>
+                <div className="delta-item-val">{dt.dt_total > 0 ? '-' : '+'}{fmtTime(Math.abs(dt.dt_total))}</div>
+                <div className="delta-item-sub">{Math.abs(dt.dt_total).toFixed(1)} seconds</div>
+              </div>
+              <div className="delta-item highlight">
+                <div className="delta-item-label">Mechanical energy freed</div>
+                <div className="delta-item-val">{fmtKJ(Math.max(0, dt.E_saved_mech))} kJ</div>
+                <div className="delta-item-sub">{fmtPct(dt.pct_saved)} of race output</div>
+              </div>
+              <div className="delta-item">
+                <div className="delta-item-label">Glide-effect time saving</div>
+                <div className="delta-item-val" style={{color:'#00d4ff'}}>{dt.dt_glide > 0 ? '-' : '+'}{fmtTime(Math.abs(dt.dt_glide))}</div>
+                <div className="delta-item-sub">lower friction → higher speed at same power</div>
+              </div>
+              <div className="delta-item">
+                <div className="delta-item-label">Reinvestment time saving</div>
+                <div className="delta-item-val" style={{color: s.reinvest ? '#00e87a' : '#4a6a88'}}>
+                  {s.reinvest ? (dt.dt_reinvest > 0 ? '-' : '+') + fmtTime(Math.abs(dt.dt_reinvest)) : '—'}
+                </div>
+                <div className="delta-item-sub">{s.reinvest ? 'saved energy spent as extra power' : 'toggle SPEND mode to compute'}</div>
+              </div>
+              <div className="delta-item">
+                <div className="delta-item-label">Metabolic energy saved</div>
+                <div className="delta-item-val" style={{color:'#ffb830'}}>{fmtKJ(Math.max(0, dt.E_saved_meta))} kJ</div>
+                <div className="delta-item-sub">at {s.efficiency}% mechanical efficiency</div>
+              </div>
+              <div className="delta-item">
+                <div className="delta-item-label">Downhill terminal velocity μ₂</div>
+                <div className="delta-item-val" style={{color:'#00e87a'}}>
+                  {im.termV ? fmtV(im.termV) + ' m/s' : 'n/a'}
+                </div>
+                <div className="delta-item-sub">{im.termV ? fmtKmh(im.termV) + ' km/h' : 'gravity < friction'}</div>
+              </div>
+            </div>
+
+            {/* Per-segment time breakdown */}
+            <div style={{marginTop:12}}>
+              <div style={{fontSize:'9px', color:'#4a6a88', marginBottom:6, letterSpacing:'0.15em'}}>TIME SAVED PER SEGMENT</div>
+              <div className="time-breakdown">
+                <div className="tbreak-item">
+                  <div className="tbreak-val" style={{color: '#ff6b35'}}>{dt.dt_u >= 0 ? '-' : '+'}{fmtTime(Math.abs(dt.dt_u))}</div>
+                  <div className="tbreak-lbl">▲ Uphill</div>
+                </div>
+                <div className="tbreak-item">
+                  <div className="tbreak-val" style={{color: '#00d4ff'}}>{dt.dt_f >= 0 ? '-' : '+'}{fmtTime(Math.abs(dt.dt_f))}</div>
+                  <div className="tbreak-lbl">━ Flat</div>
+                </div>
+                <div className="tbreak-item">
+                  <div className="tbreak-val" style={{color: '#00e87a'}}>{dt.dt_d >= 0 ? '-' : '+'}{fmtTime(Math.abs(dt.dt_d))}</div>
+                  <div className="tbreak-lbl">▼ Downhill</div>
+                </div>
+                <div className="tbreak-item" style={{background:'rgba(0,212,255,0.05)', borderColor:'#1b3d5a'}}>
+                  <div className="tbreak-val" style={{fontSize:'16px'}}>{dt.dt_total >= 0 ? '-' : '+'}{fmtTime(Math.abs(dt.dt_total))}</div>
+                  <div className="tbreak-lbl">TOTAL</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Qualitative callout */}
+            {!s.reinvest && (
+              <div className="callout">
+                <strong>BANK MODE:</strong> Energy saved in early climbs is preserved as physiological reserve.
+                The {fmtKJ(Math.max(0, dt.E_saved_meta))} kJ metabolic savings compound as fatigue resistance —
+                equivalent to <strong>{dt.equiv_minutes.toFixed(1)} min</strong> of hard climbing avoided.
+                Activate <strong>SPEND</strong> mode to model reinvestment as additional speed.
+              </div>
+            )}
+            {s.reinvest && dt.E_saved_mech > 0 && (
+              <div className="callout">
+                <strong>SPEND MODE:</strong> Saved friction energy reinvested as additional propulsive power.
+                Physiological reserve preserved in early climbs still compounds in the final segment —
+                modelled as <strong>{fmtKJ(dt.E_saved_meta)} kJ</strong> metabolic headroom unavailable to numerical capture.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* SUMMARY BAR */}
+      <div className="summary-bar">
+        <div className="summary-card">
+          <div className="summary-label">Race Time μ₁ → μ₂</div>
+          <div className="summary-compare">
+            <span className="summary-old">{fmtTime(bl.total.t)}</span>
+            <span className="summary-arrow">→</span>
+            <span className="summary-new">{fmtTime(im.total.t)}</span>
+          </div>
+          <div className="summary-sub">
+            {fmtKJ(bl.total.E)} kJ → {fmtKJ(im.total.E)} kJ mechanical
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-label">Total Time Saved</div>
+          <div className="summary-val green">
+            {dt.dt_total >= 0 ? '−' : '+'}{fmtTime(Math.abs(dt.dt_total))}
+          </div>
+          <div className="summary-sub">
+            {Math.abs(dt.dt_total).toFixed(1)} s · Δμ = {(s.mu1 - s.mu2).toFixed(3)}
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-label">Energy Freed</div>
+          <div className="summary-val ice">{fmtKJ(Math.max(0, dt.E_saved_mech))} kJ</div>
+          <div className="summary-sub">
+            mech · {fmtKJ(Math.max(0, dt.E_saved_meta))} kJ metabolic · {fmtPct(dt.pct_saved)} of race
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-label">Equivalent Effort</div>
+          <div className="summary-val" style={{color:'#ffb830', fontSize:'18px'}}>
+            {dt.equiv_minutes.toFixed(1)} min
+          </div>
+          <div className="summary-sub">
+            of hard climbing avoided · {im.termV ? fmtV(im.termV) + ' m/s terminal' : '—'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
