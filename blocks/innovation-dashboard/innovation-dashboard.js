@@ -193,36 +193,84 @@ function renderMetrics(metricsData, experimentsData) {
 }
 
 /**
- * Creates a status badge element
+ * Pancake chart category definitions
+ * Maps experiment status to visual pancake stack categories
+ */
+const PANCAKE_CATEGORIES = [
+  { id: 'mapOfInterest', label: 'Map of Interest', statuses: ['unknown'] },
+  { id: 'learning', label: 'Learning', statuses: ['learn'] },
+  { id: 'understandManualSolve', label: 'Understand Manual Solve', statuses: ['understand'] },
+  { id: 'autoTriggerManualSolve', label: 'Auto Trigger Manual Solve', statuses: ['hypothesis'] },
+  { id: 'autoTriggerAutoSolve', label: 'Auto Trigger Auto Solve', statuses: ['auto solve', 'wip'] },
+];
+
+/**
+ * Gets the pancake category for a given experiment status
+ * @param {string} status - Experiment status
+ * @returns {Object|null} - Category object or null if not found
+ */
+function getPancakeCategory(status) {
+  const statusLower = (status || '').toLowerCase();
+  return PANCAKE_CATEGORIES.find((cat) => cat.statuses.includes(statusLower)) || null;
+}
+
+/**
+ * Formats learnings text into an HTML list
+ * Learnings are separated by newlines and may start with '-'
+ * @param {string} learnings - Raw learnings text
+ * @returns {string} - Formatted HTML (either a <ul> list or a <p>)
+ */
+function formatLearnings(learnings) {
+  if (!learnings || learnings.trim() === '') return '<p>-</p>';
+
+  const lines = learnings.split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length === 0) return '<p>-</p>';
+
+  if (lines.length === 1 && !lines[0].startsWith('-')) {
+    return `<p>${lines[0]}</p>`;
+  }
+
+  const listItems = lines.map((line) => {
+    const text = line.startsWith('-') ? line.substring(1).trim() : line;
+    return `<li>${text}</li>`;
+  }).join('');
+
+  return `<ul class="learnings-list">${listItems}</ul>`;
+}
+
+/**
+ * Creates a status badge element using pancake chart category labels
  * @param {string} status - Status string
  * @returns {HTMLElement} - Badge element
  */
 function createStatusBadge(status) {
   const badge = document.createElement('span');
   badge.className = 'status-badge';
+  const category = getPancakeCategory(status);
+  const categoryLabel = category ? category.label : (status || 'Unknown');
   const statusLower = (status || '').toLowerCase();
 
-  if (statusLower.includes('auto solve') || statusLower === 'yes') {
+  if (statusLower.includes('auto solve') || statusLower === 'wip' || statusLower === 'yes') {
     badge.classList.add('status-success');
-    badge.textContent = `✅ ${status}`;
-  } else if (statusLower === 'wip') {
-    badge.classList.add('status-wip');
-    badge.textContent = `🔵 ${status}`;
+    badge.textContent = `✅ ${categoryLabel}`;
   } else if (statusLower === 'no') {
     badge.classList.add('status-no');
-    badge.textContent = `❌ ${status}`;
+    badge.textContent = `❌ ${categoryLabel}`;
   } else if (statusLower === 'learn') {
     badge.classList.add('status-learn');
-    badge.textContent = `🔄 ${status}`;
+    badge.textContent = `🔄 ${categoryLabel}`;
   } else if (statusLower === 'understand') {
     badge.classList.add('status-understand');
-    badge.textContent = `📖 ${status}`;
+    badge.textContent = `📖 ${categoryLabel}`;
   } else if (statusLower === 'hypothesis') {
     badge.classList.add('status-hypothesis');
-    badge.textContent = `💡 ${status}`;
+    badge.textContent = `💡 ${categoryLabel}`;
   } else {
     badge.classList.add('status-unknown');
-    badge.textContent = status || 'Unknown';
+    badge.textContent = categoryLabel;
   }
 
   return badge;
@@ -290,74 +338,24 @@ function renderCustomerUse(experimentsData) {
 }
 
 /**
- * Stage progression order for deriving pipeline from status
+ * Groups experiments by pancake category
+ * @param {Array} experimentsData - Array of experiment objects
+ * @returns {Object} - Object with category IDs as keys and arrays of experiments as values
  */
-const STAGE_ORDER = ['unknown', 'learn', 'understand', 'hypothesis', 'auto solve'];
+function groupExperimentsByCategory(experimentsData) {
+  const grouped = {};
+  PANCAKE_CATEGORIES.forEach((cat) => {
+    grouped[cat.id] = [];
+  });
 
-/**
- * Derives stage completion based on current status
- * @param {string} status - Current experiment status
- * @param {string} stage - Stage to check
- * @returns {string} - 'yes', 'wip', or 'no'
- */
-function getStageStatus(status, stage) {
-  const statusLower = (status || '').toLowerCase();
-  const currentIndex = STAGE_ORDER.indexOf(statusLower);
-  const stageIndex = STAGE_ORDER.indexOf(stage);
+  experimentsData.forEach((exp) => {
+    const category = getPancakeCategory(exp.status);
+    if (category) {
+      grouped[category.id].push(exp);
+    }
+  });
 
-  // Handle WIP as between hypothesis and auto solve
-  if (statusLower === 'wip') {
-    if (stageIndex <= 3) return 'yes'; // hypothesis and before
-    return 'wip'; // auto solve column shows WIP
-  }
-
-  if (currentIndex === -1) return 'no'; // Unknown status
-  if (stageIndex < currentIndex) return 'yes'; // Completed stage
-  if (stageIndex === currentIndex) return 'yes'; // Current stage
-  return 'no'; // Future stage
-}
-
-/**
- * Creates a stage cell for the opportunities pipeline
- * @param {string} value - Stage value (yes, no, wip)
- * @returns {HTMLElement} - Cell element
- */
-function createStageCell(value) {
-  const cell = document.createElement('td');
-  cell.className = 'stage-cell';
-  const val = (value || '').toLowerCase();
-
-  if (val === 'yes') {
-    cell.classList.add('stage-yes');
-    cell.textContent = '✓';
-  } else if (val === 'wip') {
-    cell.classList.add('stage-wip');
-    cell.textContent = 'WIP';
-  } else {
-    cell.classList.add('stage-no');
-    cell.textContent = '✗';
-  }
-
-  return cell;
-}
-
-/**
- * Calculates completion score based on status for sorting
- * Higher score = more stages completed
- * @param {string} status - Experiment status
- * @returns {number} - Completion score
- */
-function getCompletionScore(status) {
-  const statusLower = (status || '').toLowerCase();
-  const scores = {
-    'auto solve': 5,
-    wip: 4.5,
-    hypothesis: 4,
-    understand: 3,
-    learn: 2,
-    unknown: 1,
-  };
-  return scores[statusLower] || 0;
+  return grouped;
 }
 
 /**
@@ -370,12 +368,15 @@ function showExperimentModal(exp, section) {
   const existingModal = section.querySelector('.experiment-modal-overlay');
   if (existingModal) existingModal.remove();
 
-  const stages = ['Unknown', 'Learn', 'Understand', 'Hypothesis', 'Auto Solve'];
-  const stageProgress = stages.map((stage) => {
-    const status = getStageStatus(exp.status, stage.toLowerCase());
-    if (status === 'yes') return `✓ ${stage}`;
-    if (status === 'wip') return `🔵 ${stage}`;
-    return `✗ ${stage}`;
+  const currentCategory = getPancakeCategory(exp.status);
+  const currentCategoryIndex = currentCategory
+    ? PANCAKE_CATEGORIES.findIndex((cat) => cat.id === currentCategory.id)
+    : -1;
+
+  const stageProgress = PANCAKE_CATEGORIES.map((cat, index) => {
+    if (index < currentCategoryIndex) return `✓ ${cat.label}`;
+    if (index === currentCategoryIndex) return `✓ ${cat.label}`;
+    return `✗ ${cat.label}`;
   }).join(' → ');
 
   const overlay = document.createElement('div');
@@ -409,7 +410,7 @@ function showExperimentModal(exp, section) {
         </div>
         <div class="modal-field">
           <label>Learnings</label>
-          <p>${exp.learnings || '-'}</p>
+          ${formatLearnings(exp.learnings)}
         </div>
         <div class="modal-field">
           <label>Stage Progression</label>
@@ -433,137 +434,65 @@ function showExperimentModal(exp, section) {
 }
 
 /**
- * Renders the opportunities pipeline table derived from experiments data
+ * Renders the pancake chart visualization
+ * Each stack represents a category, each pancake is a clickable experiment
  * @param {Array} experimentsData - Experiments data from sheet
- * @returns {HTMLElement} - Opportunities section element
+ * @returns {HTMLElement} - Pancake chart section element
  */
-function renderOpportunities(experimentsData) {
+function renderPancakeChart(experimentsData) {
   const section = document.createElement('div');
-  section.className = 'opportunities-section';
+  section.className = 'pancake-chart-section';
 
-  // Header with filters
   const header = document.createElement('div');
-  header.className = 'section-header';
+  header.className = 'section-header pancake-chart-header';
   header.innerHTML = `
-    <h2>Pancake chart</h2>
-    <div class="filters">
-      <select class="filter-status">
-        <option value="">All Status</option>
-        <option value="Auto Solve">Auto Solve</option>
-        <option value="WIP">WIP</option>
-        <option value="Hypothesis">Hypothesis</option>
-        <option value="Learn">Learn</option>
-        <option value="Understand">Understand</option>
-        <option value="Unknown">Unknown</option>
-      </select>
-      <select class="filter-customer">
-        <option value="">All Customers</option>
-      </select>
-    </div>
+    <h2>Nothing new comes from knowing</h2>
+    <span class="pancake-chart-subtitle">The Pancake Chart</span>
   `;
 
-  // Populate customer filter
-  const customers = new Set();
-  experimentsData.forEach((exp) => {
-    if (exp.customers) {
-      exp.customers.split(',').forEach((c) => {
-        const trimmed = c.trim();
-        if (trimmed) customers.add(trimmed);
-      });
-    }
-  });
-  const customerSelect = header.querySelector('.filter-customer');
-  [...customers].sort().forEach((customer) => {
-    const option = document.createElement('option');
-    option.value = customer;
-    option.textContent = customer;
-    customerSelect.append(option);
-  });
+  const chartContainer = document.createElement('div');
+  chartContainer.className = 'pancake-chart-container';
 
-  const tableWrapper = document.createElement('div');
-  tableWrapper.className = 'table-wrapper';
+  const grouped = groupExperimentsByCategory(experimentsData);
 
-  const table = document.createElement('table');
-  table.className = 'opportunities-table';
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>Opportunity</th>
-        <th>Unknown</th>
-        <th>Learn</th>
-        <th>Understand</th>
-        <th>Hypothesis</th>
-        <th>Auto Solve</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  `;
+  PANCAKE_CATEGORIES.forEach((category) => {
+    const experiments = grouped[category.id] || [];
 
-  const tbody = table.querySelector('tbody');
+    const stackWrapper = document.createElement('div');
+    stackWrapper.className = 'pancake-stack-wrapper';
 
-  function renderRows(data) {
-    tbody.innerHTML = '';
+    const stack = document.createElement('div');
+    stack.className = 'pancake-stack';
+    stack.setAttribute('data-category', category.id);
 
-    // Sort by completion score (most complete first)
-    const sorted = [...data].sort(
-      (a, b) => getCompletionScore(b.status) - getCompletionScore(a.status),
-    );
+    experiments.forEach((exp, index) => {
+      const pancake = document.createElement('button');
+      pancake.className = 'pancake';
+      pancake.setAttribute('type', 'button');
+      pancake.setAttribute('aria-label', `${exp.title || 'Experiment'} - Click to view details`);
+      pancake.setAttribute('title', exp.title || 'Experiment');
+      pancake.style.setProperty('--pancake-index', index);
 
-    sorted.forEach((exp) => {
-      const row = document.createElement('tr');
-      row.className = 'clickable-row';
-      row.setAttribute('role', 'button');
-      row.setAttribute('tabindex', '0');
-
-      const titleCell = document.createElement('td');
-      titleCell.className = 'col-opportunity';
-      titleCell.textContent = exp.title || '';
-      row.append(titleCell);
-
-      // Derive stage completion from status
-      row.append(createStageCell(getStageStatus(exp.status, 'unknown')));
-      row.append(createStageCell(getStageStatus(exp.status, 'learn')));
-      row.append(createStageCell(getStageStatus(exp.status, 'understand')));
-      row.append(createStageCell(getStageStatus(exp.status, 'hypothesis')));
-      row.append(createStageCell(getStageStatus(exp.status, 'auto solve')));
-
-      // Click handler for modal
-      row.addEventListener('click', () => showExperimentModal(exp, section));
-      row.addEventListener('keydown', (e) => {
+      pancake.addEventListener('click', () => showExperimentModal(exp, section));
+      pancake.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           showExperimentModal(exp, section);
         }
       });
 
-      tbody.append(row);
-    });
-  }
-
-  renderRows(experimentsData);
-
-  // Filter logic
-  function applyFilters() {
-    const statusFilter = header.querySelector('.filter-status').value;
-    const customerFilter = header.querySelector('.filter-customer').value;
-
-    const filtered = experimentsData.filter((exp) => {
-      const statusLower = (exp.status || '').toLowerCase();
-      const filterLower = statusFilter.toLowerCase();
-      const statusMatch = !statusFilter || statusLower === filterLower;
-      const hasCustomer = exp.customers && exp.customers.includes(customerFilter);
-      const customerMatch = !customerFilter || hasCustomer;
-      return statusMatch && customerMatch;
+      stack.append(pancake);
     });
 
-    renderRows(filtered);
-  }
+    const label = document.createElement('div');
+    label.className = 'pancake-stack-label';
+    label.innerHTML = `<span class="label-text">${category.label}</span><span class="label-count">${experiments.length}</span>`;
 
-  header.querySelector('.filter-status').addEventListener('change', applyFilters);
-  header.querySelector('.filter-customer').addEventListener('change', applyFilters);
+    stackWrapper.append(stack, label);
+    chartContainer.append(stackWrapper);
+  });
 
-  tableWrapper.append(table);
-  section.append(header, tableWrapper);
+  section.append(header, chartContainer);
   return section;
 }
 
@@ -660,7 +589,7 @@ export default async function decorate(block) {
 
   // Render all sections
   block.append(renderMetrics(metricsData, experimentsData));
-  block.append(renderOpportunities(experimentsData));
+  block.append(renderPancakeChart(experimentsData));
   block.append(renderCustomerUse(experimentsData));
   block.append(renderKnowledgeArtifacts(artifactsData, ksMetrics));
 }
