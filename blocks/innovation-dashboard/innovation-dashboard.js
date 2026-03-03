@@ -359,6 +359,17 @@ function groupExperimentsByCategory(experimentsData) {
 }
 
 /**
+ * Checks if a field value is considered empty
+ * @param {string} value - Field value to check
+ * @returns {boolean} - True if empty
+ */
+function isEmptyField(value) {
+  if (!value) return true;
+  const trimmed = value.trim();
+  return trimmed === '' || trimmed === '-';
+}
+
+/**
  * Creates and shows a modal with experiment details
  * @param {Object} exp - Experiment data
  * @param {HTMLElement} section - Parent section for modal
@@ -379,6 +390,28 @@ function showExperimentModal(exp, section) {
     return `✗ ${cat.label}`;
   }).join(' → ');
 
+  // Build detail fields, filtering out empty values
+  const detailFields = [
+    { label: 'Description', value: exp.description },
+    { label: 'Success Function', value: exp.successFunction },
+    { label: 'Usage Data', value: exp.usageData },
+    { label: 'Customers', value: exp.customers },
+  ].filter((d) => !isEmptyField(d.value));
+
+  const detailsHtml = detailFields.length > 0
+    ? `<div class="modal-details">
+        <div class="modal-details-header">Details</div>
+        ${detailFields.map((d) => `
+          <div class="modal-detail-row">
+            <span class="modal-detail-label">${d.label}</span>
+            <span class="modal-detail-value">${d.value}</span>
+          </div>
+        `).join('')}
+      </div>`
+    : '';
+
+  const hasLearnings = !isEmptyField(exp.learnings);
+
   const overlay = document.createElement('div');
   overlay.className = 'experiment-modal-overlay';
   overlay.innerHTML = `
@@ -388,32 +421,24 @@ function showExperimentModal(exp, section) {
         <button class="modal-close" aria-label="Close">✕</button>
       </div>
       <div class="modal-body">
-        <div class="modal-field">
-          <label>Status</label>
+        <div class="modal-status-row">
           <div class="modal-status"></div>
         </div>
-        <div class="modal-field">
-          <label>Description</label>
-          <p>${exp.description || '-'}</p>
-        </div>
-        <div class="modal-field">
-          <label>Success Function</label>
-          <p>${exp.successFunction || '-'}</p>
-        </div>
-        <div class="modal-field">
-          <label>Usage Data</label>
-          <p>${exp.usageData || '-'}</p>
-        </div>
-        <div class="modal-field">
-          <label>Customers</label>
-          <p>${exp.customers || '-'}</p>
-        </div>
-        <div class="modal-field">
-          <label>Learnings</label>
-          ${formatLearnings(exp.learnings)}
-        </div>
-        <div class="modal-field">
-          <label>Stage Progression</label>
+        ${hasLearnings ? `
+          <div class="modal-learnings-hero">
+            <div class="modal-learnings-label">Learnings</div>
+            <div class="modal-learnings-content">
+              ${formatLearnings(exp.learnings)}
+            </div>
+          </div>
+        ` : `
+          <div class="modal-no-learnings">
+            <p>No learnings recorded yet.</p>
+          </div>
+        `}
+        ${detailsHtml}
+        <div class="modal-stage-progression">
+          <div class="modal-details-header">Stage Progression</div>
           <p class="stage-progress">${stageProgress}</p>
         </div>
       </div>
